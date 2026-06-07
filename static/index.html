@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kevidence — AOP Regulatory Chatbot</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --radius: 12px;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--surface2);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header .logo {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700;
+  }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header .subtitle { font-size: 13px; color: var(--text2); }
+
+  /* Container */
+  .container {
+    flex: 1;
+    display: flex;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 300px;
+    background: var(--surface);
+    border-right: 1px solid var(--surface2);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+  .sidebar h2 { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+  .sidebar p { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+  .suggestion-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    background: var(--surface2);
+    color: var(--text);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .chip:hover { background: var(--accent); color: var(--bg); }
+
+  .aop-list { max-height: 300px; overflow-y: auto; }
+  .aop-item {
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .aop-item:hover { background: var(--surface2); }
+  .aop-item .status {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: var(--surface2);
+    white-space: nowrap;
+  }
+  .status-endorsed { border-left: 3px solid var(--success); }
+  .status-review { border-left: 3px solid var(--warning); }
+  .status-development { border-left: 3px solid var(--danger); }
+
+  /* Main chat area */
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .msg {
+    display: flex;
+    gap: 10px;
+    max-width: 85%;
+    animation: fadeIn 0.3s;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg.bot { align-self: flex-start; }
+
+  .msg-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; flex-shrink: 0;
+  }
+  .msg.user .msg-avatar { background: var(--accent2); }
+  .msg.bot .msg-avatar { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+
+  .msg-bubble {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    position: relative;
+  }
+  .msg.user .msg-bubble { background: var(--accent2); color: var(--bg); }
+
+  .msg-bubble p { margin-bottom: 8px; }
+  .msg-bubble p:last-child { margin-bottom: 0; }
+  .msg-bubble ul, .msg-bubble ol { padding-left: 20px; margin-bottom: 8px; }
+  .msg-bubble li { margin-bottom: 4px; }
+  .msg-bubble strong { color: var(--accent); }
+  .msg.user .msg-bubble strong { color: var(--bg); }
+  .msg-bubble code {
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .sources {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .source-tag {
+    font-size: 11px;
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .source-tag:hover { background: var(--accent); color: var(--bg); }
+
+  .typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 4px 0;
+  }
+  .typing-indicator span {
+    width: 8px; height: 8px;
+    background: var(--text2);
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+  }
+  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+  }
+
+  /* Input */
+  .input-area {
+    padding: 16px 20px;
+    background: var(--surface);
+    border-top: 1px solid var(--surface2);
+  }
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+  .input-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--surface2);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-row input:focus { border-color: var(--accent); }
+  .input-row input::placeholder { color: var(--text2); }
+
+  .input-row button {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: var(--radius);
+    padding: 12px 20px;
+    color: var(--bg);
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .input-row button:hover { opacity: 0.9; }
+  .input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Empty state */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px;
+    text-align: center;
+  }
+  .empty-state .big-icon { font-size: 48px; }
+  .empty-state h2 { font-size: 20px; color: var(--text2); }
+  .empty-state p { font-size: 14px; color: var(--text2); max-width: 400px; line-height: 1.6; }
+
+  /* Welcome suggestions */
+  .welcome-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .container { flex-direction: column; }
+    .msg { max-width: 95%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡</div>
+  <div>
+    <h1>kevidence</h1>
+    <div class="subtitle">AOP Regulatory Chatbot • AI-assisted adverse outcome pathway intelligence</div>
+  </div>
+</header>
+
+<div class="container">
+  <aside class="sidebar">
+    <h2>About</h2>
+    <p>Ask regulatory science questions about chemicals, pathways, and adverse outcomes. KEvidence searches the OECD AOP-Wiki (536+ AOPs) and returns grounded answers with weight of evidence, OECD status, and source citations.</p>
+
+    <h2>Quick questions</h2>
+    <div class="suggestion-chips" id="chips"></div>
+
+    <h2>Notable AOPs</h2>
+    <div class="aop-list" id="aopList"></div>
+  </aside>
+
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="empty-state" id="emptyState">
+        <div class="big-icon">🧬</div>
+        <h2>Ask about Adverse Outcome Pathways</h2>
+        <p>Regulatory science questions about AOPs, weight of evidence, chemical pathways, and OECD review status — answered with grounded AOP-Wiki data.</p>
+        <div class="welcome-suggestions" id="welcomeChips"></div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <input type="text" id="input" placeholder="Ask about an AOP, chemical, or regulatory pathway..." autofocus>
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('sendBtn');
+const messagesEl = document.getElementById('messages');
+const emptyState = document.getElementById('emptyState');
+const chipsEl = document.getElementById('chips');
+const welcomeChips = document.getElementById('welcomeChips');
+const aopListEl = document.getElementById('aopList');
+
+const API_BASE = window.location.pathname.startsWith('/kevidence') ? '/kevidence/api' : '/api';
+
+const SUGGESTIONS = [
+  'Which AOPs involve mitochondrial dysfunction?',
+  'What is the weight of evidence for AOP 3?',
+  'How do I submit an AOP for OECD review?',
+  'Find AOPs related to liver steatosis',
+  'What chemicals inhibit complex I?',
+  'Explain the AOP framework for risk assessment',
+  'Which AOPs are WPHA/WNT endorsed?',
+  'Show me AOP 42 (thyroid peroxidase)',
+];
+
+// Populate suggestion chips
+SUGGESTIONS.forEach(s => {
+  const chip = document.createElement('button');
+  chip.className = 'chip';
+  chip.textContent = s;
+  chip.onclick = () => sendMessage(s);
+  chipsEl.appendChild(chip);
+
+  // Also add 4 to welcome screen
+  if (SUGGESTIONS.indexOf(s) < 4) {
+    const wc = chip.cloneNode(true);
+    wc.onclick = () => sendMessage(s);
+    welcomeChips.appendChild(wc);
+  }
+});
+
+// Load AOP list
+async function loadAopList() {
+  try {
+    const res = await fetch(API_BASE + '/aops?limit=20');
+    const data = await res.json();
+    aopListEl.innerHTML = data.results.slice(0, 15).map(a => {
+      const statusClass = 'status-development';
+      const statusText = a.oecd_status || 'Active';
+      return `<div class="aop-item ${statusClass}" onclick="sendMessage('Tell me about AOP ${a.id}')">
+        <span><strong>AOP ${a.id}</strong>: ${a.title?.substring(0, 50) || ''}...</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+loadAopList();
+
+let isLoading = false;
+
+input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+sendBtn.addEventListener('click', send);
+
+function send() {
+  const msg = input.value.trim();
+  if (!msg || isLoading) return;
+  sendMessage(msg);
+  input.value = '';
+}
+
+async function sendMessage(text) {
+  if (isLoading) return;
+  isLoading = true;
+  sendBtn.disabled = true;
+
+  // Hide empty state
+  emptyState.style.display = 'none';
+
+  // Add user message
+  addMessage(text, 'user');
+  scrollToBottom();
+
+  // Show typing
+  const typingId = showTyping();
+
+  try {
+    const res = await fetch(API_BASE + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text }),
+    });
+    const data = await res.json();
+
+    // Remove typing
+    removeTyping(typingId);
+
+    // Add bot message — show no-data state differently
+    if (data.no_data) {
+      addNoDataMessage(data.answer);
+    } else {
+      addMessage(data.answer, 'bot', data.sources);
+    }
+  } catch(e) {
+    removeTyping(typingId);
+    addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+  }
+
+  isLoading = false;
+  sendBtn.disabled = false;
+  scrollToBottom();
+}
+
+function addMessage(text, role, sources) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `
+    <div class="msg-avatar">${role === 'user' ? 'P' : '⚡'}</div>
+    <div class="msg-bubble">
+      ${renderMarkdown(text)}
+      ${sources && sources.length ? renderSources(sources) : ''}
+    </div>`;
+  messagesEl.appendChild(div);
+  scrollToBottom();
+}
+
+function addNoDataMessage(text) {
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.innerHTML = `
+    <div class="msg-avatar">⚡</div>
+    <div class="msg-bubble" style="border-left: 3px solid var(--warning);">
+      <p>🔍 <strong>No AOP data found</strong></p>
+      ${renderMarkdown(text)}
+    </div>`;
+  messagesEl.appendChild(div);
+  scrollToBottom();
+}
+
+function renderMarkdown(text) {
+  // Simple markdown: paragraphs, bold, lists, code
+  let html = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.*?)`/g, '<code>$1</code>');
+
+  // Handle lists
+  html = html.replace(/^- (.*?)(?:\n|$)/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*?<\/li>)/s, '<ul>$1</ul>');
+
+  // Handle paragraphs
+  const paragraphs = html.split(/\n\n+/);
+  return paragraphs.map(p => {
+    if (p.startsWith('<ul>')) return `<ul>${p.replace('<ul>', '').replace('</ul>', '')}</ul>`;
+    return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+  }).join('');
+}
+
+function renderSources(sources) {
+  return `<div class="sources">${sources.map(s => 
+    `<span class="source-tag" onclick="sendMessage('Show me AOP ${s.id}')">AOP ${s.id}</span>`
+  ).join('')}</div>`;
+}
+
+function showTyping() {
+  const id = 'typing-' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = id;
+  div.innerHTML = `
+    <div class="msg-avatar">⚡</div>
+    <div class="msg-bubble">
+      <div class="typing-indicator">
+        <span></span><span></span><span></span>
+      </div>
+    </div>`;
+  messagesEl.appendChild(div);
+  scrollToBottom();
+  return id;
+}
+
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function scrollToBottom() {
+  setTimeout(() => {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }, 50);
+}
+</script>
+</body>
+</html>
