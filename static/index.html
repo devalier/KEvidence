@@ -109,6 +109,74 @@
   .status-review { border-left: 3px solid var(--warning); }
   .status-development { border-left: 3px solid var(--danger); }
 
+
+  /* Assessment workspace */
+  .assessment-panel {
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    border-radius: var(--radius);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .assessment-panel label {
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .assessment-panel input, .assessment-panel select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--surface2);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 12px;
+    padding: 8px;
+  }
+  .assessment-panel button {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 8px;
+    color: var(--bg);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 9px 10px;
+  }
+  .assessment-panel button:disabled { opacity: 0.55; cursor: not-allowed; }
+  .assessment-result {
+    background: var(--bg);
+    border-radius: 8px;
+    color: var(--text2);
+    display: none;
+    font-size: 12px;
+    line-height: 1.45;
+    padding: 10px;
+  }
+  .assessment-result strong { color: var(--accent); }
+  .assessment-result ul { margin: 6px 0 0 16px; }
+  .confidence-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin: 8px 0;
+  }
+  .confidence-card {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 6px;
+  }
+  .confidence-card span {
+    color: var(--text);
+    display: block;
+    font-weight: 700;
+    text-transform: capitalize;
+  }
+
+
   /* Main chat area */
   .chat-area {
     flex: 1;
@@ -285,6 +353,23 @@
     <h2>About</h2>
     <p>Ask regulatory science questions about chemicals, pathways, and adverse outcomes. KEvidence searches the OECD AOP-Wiki (536+ AOPs) and returns grounded answers with weight of evidence, OECD status, and source citations.</p>
 
+
+
+    <h2>Assessment Workspace</h2>
+    <p>Generate a structured hazard hypothesis, confidence roll-up, uncertainty register, and data-gap plan.</p>
+    <div class="assessment-panel">
+      <label for="assessmentChemical">Chemical or stressor</label>
+      <input type="text" id="assessmentChemical" placeholder="e.g., rotenone">
+      <label for="assessmentUseCase">Use case</label>
+      <select id="assessmentUseCase">
+        <option value="screening">Screening / prioritization</option>
+        <option value="read-across support">Read-across support</option>
+        <option value="data-gap analysis">Data-gap analysis</option>
+      </select>
+      <button id="assessmentBtn" type="button">Build assessment</button>
+      <div class="assessment-result" id="assessmentResult"></div>
+    </div>
+
     <h2>Quick questions</h2>
     <div class="suggestion-chips" id="chips"></div>
 
@@ -319,6 +404,10 @@ const emptyState = document.getElementById('emptyState');
 const chipsEl = document.getElementById('chips');
 const welcomeChips = document.getElementById('welcomeChips');
 const aopListEl = document.getElementById('aopList');
+const assessmentChemical = document.getElementById('assessmentChemical');
+const assessmentUseCase = document.getElementById('assessmentUseCase');
+const assessmentBtn = document.getElementById('assessmentBtn');
+const assessmentResult = document.getElementById('assessmentResult');
 
 const API_BASE = window.location.pathname.startsWith('/kevidence') ? '/kevidence/api' : '/api';
 
@@ -369,6 +458,7 @@ let isLoading = false;
 
 input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
 sendBtn.addEventListener('click', send);
+assessmentBtn.addEventListener('click', buildAssessment);
 
 function send() {
   const msg = input.value.trim();
@@ -417,6 +507,68 @@ async function sendMessage(text) {
   isLoading = false;
   sendBtn.disabled = false;
   scrollToBottom();
+}
+
+
+async function buildAssessment() {
+  const chemical = assessmentChemical.value.trim();
+  if (!chemical) {
+    assessmentResult.style.display = 'block';
+    assessmentResult.innerHTML = 'Enter a chemical or stressor first.';
+    return;
+  }
+  assessmentBtn.disabled = true;
+  assessmentResult.style.display = 'block';
+  assessmentResult.innerHTML = 'Building evidence-to-decision assessment…';
+
+  try {
+    const res = await fetch(API_BASE + '/assess', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chemical,
+        context: { use_case: assessmentUseCase.value },
+        available_data: []
+      }),
+    });
+    const data = await res.json();
+    assessmentResult.innerHTML = renderAssessment(data);
+  } catch(e) {
+    assessmentResult.innerHTML = 'Assessment failed. Please try again.';
+  }
+
+  assessmentBtn.disabled = false;
+}
+
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderAssessment(data) {
+  const first = data.hazard_hypotheses && data.hazard_hypotheses[0];
+  const confidence = data.confidence || {};
+  const gaps = data.critical_data_gaps || [];
+  const uncertainties = data.uncertainties || [];
+  if (!first) {
+    return `<strong>No AOP-grounded hypothesis found.</strong><p>${escapeHtml(data.regulatory_summary || '')}</p>`;
+  }
+  return `
+    <strong>${escapeHtml(first.conclusion)}</strong>
+    <div class="confidence-grid">
+      ${Object.entries(confidence).map(([k, v]) => `<div class="confidence-card">${escapeHtml(k.replace('_', ' '))}<span>${escapeHtml(v)}</span></div>`).join('')}
+    </div>
+    <p><strong>Regulatory summary:</strong> ${escapeHtml(data.regulatory_summary || '')}</p>
+    <p><strong>Top data gaps</strong></p>
+    <ul>${gaps.slice(0, 3).map(g => `<li>${escapeHtml(g.priority)}: ${escapeHtml(g.gap)}</li>`).join('') || '<li>No critical gaps identified.</li>'}</ul>
+    <p><strong>Uncertainties</strong></p>
+    <ul>${uncertainties.slice(0, 3).map(u => `<li>${escapeHtml(u.type)}: ${escapeHtml(u.description)}</li>`).join('') || '<li>No major uncertainties identified.</li>'}</ul>
+  `;
 }
 
 function addMessage(text, role, sources) {
