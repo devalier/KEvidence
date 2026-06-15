@@ -370,6 +370,26 @@
       <div class="assessment-result" id="assessmentResult"></div>
     </div>
 
+
+
+    <h2>Quantitative Risk</h2>
+    <p>Compare a NAM point of departure with exposure to calculate a screening bioactivity-exposure ratio.</p>
+    <div class="assessment-panel">
+      <label for="quantChemical">Chemical</label>
+      <input type="text" id="quantChemical" placeholder="e.g., rotenone">
+      <label for="quantAop">AOP ID</label>
+      <input type="number" id="quantAop" placeholder="e.g., 3">
+      <label for="quantEvent">Mapped KE/Event ID</label>
+      <input type="number" id="quantEvent" placeholder="e.g., 887">
+      <label for="quantPod">NAM POD</label>
+      <input type="text" id="quantPod" placeholder="AC50 value, e.g., 0.3 uM">
+      <label for="quantExposure">Exposure</label>
+      <input type="text" id="quantExposure" placeholder="value and unit, e.g., 0.01 uM">
+      <button id="quantBtn" type="button">Calculate margin</button>
+      <div class="assessment-result" id="quantResult"></div>
+    </div>
+
+
     <h2>Quick questions</h2>
     <div class="suggestion-chips" id="chips"></div>
 
@@ -408,6 +428,14 @@ const assessmentChemical = document.getElementById('assessmentChemical');
 const assessmentUseCase = document.getElementById('assessmentUseCase');
 const assessmentBtn = document.getElementById('assessmentBtn');
 const assessmentResult = document.getElementById('assessmentResult');
+
+const quantChemical = document.getElementById('quantChemical');
+const quantAop = document.getElementById('quantAop');
+const quantEvent = document.getElementById('quantEvent');
+const quantPod = document.getElementById('quantPod');
+const quantExposure = document.getElementById('quantExposure');
+const quantBtn = document.getElementById('quantBtn');
+const quantResult = document.getElementById('quantResult');
 
 const API_BASE = window.location.pathname.startsWith('/kevidence') ? '/kevidence/api' : '/api';
 
@@ -459,6 +487,8 @@ let isLoading = false;
 input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
 sendBtn.addEventListener('click', send);
 assessmentBtn.addEventListener('click', buildAssessment);
+
+quantBtn.addEventListener('click', buildQuantitativeAssessment);
 
 function send() {
   const msg = input.value.trim();
@@ -571,6 +601,73 @@ function renderAssessment(data) {
   `;
 }
 
+
+
+function parseValueUnit(text) {
+  const match = String(text || '').trim().match(/^([0-9.eE+-]+)\s*(.+)$/);
+  if (!match) return { value: null, unit: '' };
+  return { value: Number(match[1]), unit: match[2].trim() };
+}
+
+async function buildQuantitativeAssessment() {
+  const chemical = quantChemical.value.trim();
+  const aopId = Number(quantAop.value);
+  const eventId = Number(quantEvent.value);
+  const pod = parseValueUnit(quantPod.value);
+  const exposure = parseValueUnit(quantExposure.value);
+  if (!chemical || !aopId || !eventId || pod.value === null || exposure.value === null) {
+    quantResult.style.display = 'block';
+    quantResult.innerHTML = 'Enter chemical, AOP ID, event ID, NAM POD, and exposure first.';
+    return;
+  }
+  quantBtn.disabled = true;
+  quantResult.style.display = 'block';
+  quantResult.innerHTML = 'Calculating screening margin…';
+
+  try {
+    const res = await fetch(API_BASE + '/quantitative-assessment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chemical,
+        aop_id: aopId,
+        nam_results: [{
+          assay: 'User-entered NAM result',
+          mapped_event_id: eventId,
+          pod_type: 'POD',
+          pod_value: pod.value,
+          pod_unit: pod.unit
+        }],
+        exposure
+      }),
+    });
+    const data = await res.json();
+    quantResult.innerHTML = renderQuantitativeAssessment(data);
+  } catch(e) {
+    quantResult.innerHTML = 'Quantitative assessment failed. Please try again.';
+  }
+
+  quantBtn.disabled = false;
+}
+
+function renderQuantitativeAssessment(data) {
+  if (data.detail) return `<strong>Assessment error:</strong> ${escapeHtml(data.detail)}`;
+  const ke = data.most_sensitive_ke || {};
+  const ber = data.bioactivity_exposure_ratio;
+  return `
+    <strong>${escapeHtml(data.chemical)} AOP ${escapeHtml(data.aop_id)} quantitative screen</strong>
+    <div class="confidence-grid">
+      <div class="confidence-card">BER<span>${escapeHtml(ber ?? 'not calculated')}</span></div>
+      <div class="confidence-card">Confidence<span>${escapeHtml(data.quantitative_confidence || '')}</span></div>
+      <div class="confidence-card">Hazard quotient<span>${escapeHtml(data.hazard_quotient ?? 'not calculated')}</span></div>
+      <div class="confidence-card">Most sensitive KE<span>${escapeHtml(ke.mapped_event_id || 'n/a')}</span></div>
+    </div>
+    <p><strong>Interpretation:</strong> ${escapeHtml(data.interpretation || '')}</p>
+    <p><strong>Most sensitive event:</strong> ${escapeHtml(ke.mapped_event_name || 'No mapped event')}</p>
+    <p><strong>Uncertainties</strong></p>
+    <ul>${(data.uncertainties || []).map(u => `<li>${escapeHtml(u)}</li>`).join('') || '<li>No major quantitative uncertainties identified.</li>'}</ul>
+  `;
+}
 function addMessage(text, role, sources) {
   const div = document.createElement('div');
   div.className = `msg ${role}`;
