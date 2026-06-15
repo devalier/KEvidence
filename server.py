@@ -1331,6 +1331,272 @@ def build_evidence_to_decision_assessment(body: dict[str, Any]) -> dict[str, Any
 
 
 # ---------------------------------------------------------------------------
+# Quantitative AOP / exposure-aware risk module
+# ---------------------------------------------------------------------------
+
+CONCENTRATION_FACTORS_TO_UM = {
+    "um": 1.0,
+    "µm": 1.0,
+    "μm": 1.0,
+    "micromolar": 1.0,
+    "nm": 0.001,
+    "nanomolar": 0.001,
+    "mm": 1000.0,
+    "millimolar": 1000.0,
+    "pm": 0.000001,
+    "picomolar": 0.000001,
+}
+
+DOSE_FACTORS_TO_MG_KG_DAY = {
+    "mg/kg/day": 1.0,
+    "mg/kg-d": 1.0,
+    "mg/kg bw/day": 1.0,
+    "ug/kg/day": 0.001,
+    "µg/kg/day": 0.001,
+    "μg/kg/day": 0.001,
+    "ng/kg/day": 0.000001,
+}
+
+PREFERRED_POD_ORDER = {"bmc": 0, "bmcl": 0, "lec": 1, "ac50": 2, "ec50": 2, "ic50": 2, "loaec": 3}
+
+
+def _normalize_unit(unit: Any) -> str:
+    return str(unit or "").strip().lower().replace(" ", " ")
+
+
+def _safe_float(value) -> Optional[float]:
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return None
+    if value < 0:
+        return None
+    return value
+
+
+def _convert_value(value: float, unit: str) -> tuple[Optional[float], Optional[str]]:
+    """Normalize common concentration or administered-dose units for margin calculations."""
+    normalized = _normalize_unit(unit).replace(" ", "")
+    normalized = normalized.replace("μ", "µ")
+    if normalized in CONCENTRATION_FACTORS_TO_UM:
+        return value * CONCENTRATION_FACTORS_TO_UM[normalized], "uM"
+    if normalized in DOSE_FACTORS_TO_MG_KG_DAY:
+        return value * DOSE_FACTORS_TO_MG_KG_DAY[normalized], "mg/kg/day"
+    if "plasmaequivalent" in normalized and normalized.startswith(("um", "µm")):
+        return value, "uM"
+    if "plasmaequivalent" in normalized and normalized.startswith("nm"):
+        return value * 0.001, "uM"
+    return None, None
+
+
+def _event_lookup(detail: dict) -> dict[int, dict[str, Any]]:
+    return {ev.get("event_id"): ev for ev in detail.get("events", []) if ev.get("event_id") is not None}
+
+
+def _normalize_nam_result(record: dict[str, Any], event_by_id: dict[int, dict[str, Any]]) -> dict[str, Any]:
+    pod_value = _safe_float(record.get("pod_value"))
+    pod_unit = record.get("pod_unit")
+    normalized_value, normalized_unit = (None, None)
+    if pod_value is not None:
+        normalized_value, normalized_unit = _convert_value(pod_value, pod_unit)
+
+    mapped_event_id = _safe_int(record.get("mapped_event_id") or record.get("event_id"))
+    event = event_by_id.get(mapped_event_id, {})
+    return {
+        "assay": record.get("assay") or record.get("endpoint") or "Unspecified NAM assay",
+        "mapped_event_id": mapped_event_id,
+        "mapped_event_name": event.get("event_name"),
+        "mapped_event_type": event.get("event_type"),
+        "pod_type": str(record.get("pod_type") or "POD").upper(),
+        "pod_value": pod_value,
+        "pod_unit": pod_unit,
+        "normalized_pod_value": normalized_value,
+        "normalized_pod_unit": normalized_unit,
+        "ivive": record.get("ivive") or {},
+        "raw": record,
+    }
+
+
+def _apply_ivive_if_available(nam: dict[str, Any]) -> dict[str, Any]:
+    """Apply a simple user-supplied IVIVE conversion factor when provided.
+
+    Expected shape: {"conversion_factor": 10, "output_unit": "mg/kg/day"}; the
+    converted POD equals normalized_pod_value * conversion_factor. More complex
+    toxicokinetic models should be run upstream and submitted as converted PODs.
+    """
+    ivive = nam.get("ivive") or {}
+    factor = _safe_float(ivive.get("conversion_factor"))
+    output_unit = ivive.get("output_unit")
+    if factor is None or not output_unit or nam.get("normalized_pod_value") is None:
+        return nam
+    nam = dict(nam)
+    nam["ivive_pod_value"] = nam["normalized_pod_value"] * factor
+    nam["ivive_pod_unit"] = output_unit
+    return nam
+
+
+def _normalize_exposure(exposure: dict[str, Any]) -> dict[str, Any]:
+    value = _safe_float(exposure.get("value")) if isinstance(exposure, dict) else None
+    unit = exposure.get("unit") if isinstance(exposure, dict) else None
+    normalized_value, normalized_unit = (None, None)
+    if value is not None:
+        normalized_value, normalized_unit = _convert_value(value, unit)
+    return {
+        "value": value,
+        "unit": unit,
+        "normalized_value": normalized_value,
+        "normalized_unit": normalized_unit,
+    }
+
+
+def _margin_for_nam(nam: dict[str, Any], exposure: dict[str, Any]) -> dict[str, Any]:
+    exposure_value = exposure.get("normalized_value")
+    exposure_unit = exposure.get("normalized_unit")
+    pod_value = nam.get("ivive_pod_value", nam.get("normalized_pod_value"))
+    pod_unit = nam.get("ivive_pod_unit", nam.get("normalized_pod_unit"))
+
+    comparable = bool(pod_value is not None and exposure_value and pod_unit == exposure_unit)
+    if not comparable:
+        return {"comparable": False, "reason": "POD and exposure units are missing or not directly comparable."}
+
+    ber = pod_value / exposure_value
+    return {
+        "comparable": True,
+        "assay": nam.get("assay"),
+        "mapped_event_id": nam.get("mapped_event_id"),
+        "mapped_event_name": nam.get("mapped_event_name"),
+        "mapped_event_type": nam.get("mapped_event_type"),
+        "pod_type": nam.get("pod_type"),
+        "pod_value": pod_value,
+        "pod_unit": pod_unit,
+        "exposure_value": exposure_value,
+        "exposure_unit": exposure_unit,
+        "bioactivity_exposure_ratio": round(ber, 4),
+        "margin_of_exposure": round(ber, 4),
+        "hazard_quotient": round(1 / ber, 6) if ber else None,
+    }
+
+
+def _select_most_sensitive_ke(normalized_nams: list[dict[str, Any]]) -> dict[str, Any]:
+    comparable_nams = [n for n in normalized_nams if n.get("normalized_pod_value") is not None]
+    if not comparable_nams:
+        return {}
+    comparable_nams.sort(key=lambda n: (
+        n.get("normalized_pod_unit") or "",
+        n["normalized_pod_value"],
+        PREFERRED_POD_ORDER.get(str(n.get("pod_type", "")).lower(), 99),
+    ))
+    best = comparable_nams[0]
+    return {
+        "assay": best.get("assay"),
+        "mapped_event_id": best.get("mapped_event_id"),
+        "mapped_event_name": best.get("mapped_event_name"),
+        "mapped_event_type": best.get("mapped_event_type"),
+        "pod_type": best.get("pod_type"),
+        "pod_value": best.get("pod_value"),
+        "pod_unit": best.get("pod_unit"),
+        "normalized_pod_value": best.get("normalized_pod_value"),
+        "normalized_pod_unit": best.get("normalized_pod_unit"),
+    }
+
+
+def _quantitative_confidence(normalized_nams: list[dict[str, Any]], comparable_margins: list[dict[str, Any]], detail: dict) -> str:
+    mapped_event_ids = {n.get("mapped_event_id") for n in normalized_nams if n.get("mapped_event_id")}
+    has_mie = any(
+        ev.get("event_id") in mapped_event_ids and ev.get("event_type") == "MolecularInitiatingEvent"
+        for ev in detail.get("events", [])
+    )
+    has_downstream = len(mapped_event_ids) >= 2
+    if comparable_margins and has_mie and has_downstream:
+        return "quantitative screening with pathway support"
+    if comparable_margins:
+        return "screening only"
+    if normalized_nams:
+        return "qualitative AOP support only"
+    return "insufficient quantitative data"
+
+
+def build_quantitative_assessment(body: dict[str, Any]) -> dict[str, Any]:
+    chemical = str(body.get("chemical") or "").strip()
+    aop_id = _safe_int(body.get("aop_id"))
+    nam_results = body.get("nam_results") or []
+    exposure = body.get("exposure") or {}
+
+    if not chemical:
+        raise HTTPException(400, "chemical is required")
+    if not aop_id:
+        raise HTTPException(400, "aop_id is required")
+    if not isinstance(nam_results, list):
+        raise HTTPException(400, "nam_results must be a list")
+    if not isinstance(exposure, dict):
+        raise HTTPException(400, "exposure must be an object")
+
+    detail = get_aop_detail(aop_id)
+    if not detail:
+        raise HTTPException(404, f"AOP {aop_id} not found")
+
+    event_by_id = _event_lookup(detail)
+    normalized_nams = [_apply_ivive_if_available(_normalize_nam_result(r, event_by_id)) for r in nam_results if isinstance(r, dict)]
+    normalized_exposure = _normalize_exposure(exposure)
+    margins = [_margin_for_nam(nam, normalized_exposure) for nam in normalized_nams]
+    comparable_margins = [m for m in margins if m.get("comparable")]
+    most_sensitive_margin = min(comparable_margins, key=lambda m: m["bioactivity_exposure_ratio"], default=None)
+    most_sensitive_ke = (
+        {
+            "assay": most_sensitive_margin.get("assay"),
+            "mapped_event_id": most_sensitive_margin.get("mapped_event_id"),
+            "mapped_event_name": most_sensitive_margin.get("mapped_event_name"),
+            "mapped_event_type": most_sensitive_margin.get("mapped_event_type"),
+            "pod_type": most_sensitive_margin.get("pod_type"),
+            "normalized_pod_value": most_sensitive_margin.get("pod_value"),
+            "normalized_pod_unit": most_sensitive_margin.get("pod_unit"),
+        }
+        if most_sensitive_margin else _select_most_sensitive_ke(normalized_nams)
+    )
+
+    uncertainties = []
+    if normalized_exposure.get("normalized_value") is None:
+        uncertainties.append("Exposure value/unit could not be normalized; provide exposure in uM, nM, mg/kg/day, or compatible plasma-equivalent units.")
+    if any(n.get("normalized_pod_value") is None for n in normalized_nams):
+        uncertainties.append("One or more NAM PODs could not be normalized; those assays were not used in margin calculations.")
+    if not comparable_margins:
+        uncertainties.append("No NAM POD and exposure estimate shared comparable normalized units, so no screening margin could be calculated.")
+    if not any(n.get("mapped_event_name") for n in normalized_nams):
+        uncertainties.append("No NAM result mapped to a known key event in the selected AOP.")
+    if any(n.get("ivive") for n in normalized_nams) and not any(n.get("ivive_pod_value") for n in normalized_nams):
+        uncertainties.append("IVIVE metadata were provided but no simple conversion_factor/output_unit pair could be applied.")
+
+    ber = most_sensitive_margin.get("bioactivity_exposure_ratio") if most_sensitive_margin else None
+    hq = most_sensitive_margin.get("hazard_quotient") if most_sensitive_margin else None
+    if ber is None:
+        interpretation = "Quantitative readiness is limited to qualitative AOP support because comparable POD and exposure units were not available."
+    elif ber >= 100:
+        interpretation = "Screening margin is large (BER ≥ 100), suggesting lower near-term priority if exposure estimates are fit for purpose."
+    elif ber >= 10:
+        interpretation = "Screening margin is moderate (BER 10–100); retain for prioritization and refine exposure/IVIVE assumptions."
+    elif ber >= 1:
+        interpretation = "Screening margin is narrow (BER 1–10); prioritize for refined assessment or additional NAM confirmation."
+    else:
+        interpretation = "Exposure exceeds the most sensitive NAM POD (BER < 1); high priority for follow-up and uncertainty review."
+
+    return {
+        "chemical": chemical,
+        "aop_id": detail["id"],
+        "aop_title": detail.get("title"),
+        "most_sensitive_ke": most_sensitive_ke,
+        "bioactivity_exposure_ratio": ber,
+        "margin_of_exposure": ber,
+        "hazard_quotient": hq,
+        "quantitative_confidence": _quantitative_confidence(normalized_nams, comparable_margins, detail),
+        "interpretation": interpretation,
+        "uncertainties": uncertainties,
+        "normalized_exposure": normalized_exposure,
+        "normalized_nam_results": normalized_nams,
+        "margins": margins,
+    }
+
+
+# ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------
 
@@ -1496,6 +1762,17 @@ async def evidence_to_decision_assessment(body: dict):
     NAM/data-generation recommendations.
     """
     return build_evidence_to_decision_assessment(body)
+
+
+@app.post("/api/quantitative-assessment")
+async def quantitative_assessment(body: dict):
+    """Quantitative AOP / exposure-aware risk module.
+
+    Compares NAM concentration-response points of departure with exposure
+    estimates, applies simple user-supplied IVIVE factors when provided, and
+    returns screening margins plus quantitative-readiness interpretation.
+    """
+    return build_quantitative_assessment(body)
 
 
 @app.get("/api/woe")
