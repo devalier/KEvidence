@@ -11,7 +11,7 @@ import re
 import sqlite3
 import unicodedata
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -28,7 +28,7 @@ AOP_CACHE_DIR = DATA_DIR / "aops"
 DB_PATH = DATA_DIR / "kevidence.db"
 LLM_MODEL = "gpt-4o-mini"  # cheap, good enough for protoype
 
-app = FastAPI(title="kevidence — AOP Regulatory Chatbot")
+app = FastAPI(title="KEvidence — Risk Assessment Workbench")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -956,6 +956,657 @@ def _decompose_with_verification(query: str, aop_count: int) -> Optional[dict]:
     return None
 
 
+
+# ---------------------------------------------------------------------------
+# Evidence-to-decision assessment workspace
+# ---------------------------------------------------------------------------
+
+EVIDENCE_SCORE = {"High": 3, "Moderate": 2, "Low": 1, "Not Specified": 0, "Unknown": 0}
+
+
+def _safe_int(value) -> Optional[int]:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _confidence_from_score(score: float) -> str:
+    """Convert a numeric evidence score to a regulator-readable confidence label."""
+    if score >= 2.5:
+        return "high"
+    if score >= 1.6:
+        return "moderate"
+    if score >= 0.8:
+        return "low"
+    return "very low"
+
+
+def _overall_confidence(*labels: str) -> str:
+    """Conservative roll-up: overall confidence is constrained by weak evidence dimensions."""
+    order = {"very low": 0, "low": 1, "moderate": 2, "high": 3}
+    present = [order.get(label, 0) for label in labels if label]
+    if not present:
+        return "very low"
+    avg = sum(present) / len(present)
+    if min(present) == 0:
+        avg -= 0.4
+    return _confidence_from_score(avg)
+
+
+def _available_data_for_aop(available_data: list[dict[str, Any]], detail: dict) -> list[dict[str, Any]]:
+    """Return submitted data records that appear to map to this AOP's events or text."""
+    if not available_data:
+        return []
+
+    event_ids = {ev.get("event_id") for ev in detail.get("events", [])}
+    event_names = {str(ev.get("event_name", "")).lower() for ev in detail.get("events", [])}
+    components = " ".join(
+        " ".join(str(c.get(k, "")) for k in ("object_term", "process_term", "object_ontology_id", "process_ontology_id"))
+        for c in detail.get("components", [])
+    ).lower()
+
+    mapped = []
+    for record in available_data:
+        if not isinstance(record, dict):
+            continue
+        record_aop_id = _safe_int(record.get("aop_id"))
+        record_event_id = _safe_int(record.get("event_id"))
+        if record_aop_id and record_aop_id == int(detail["id"]):
+            mapped.append(record)
+            continue
+        if record_event_id in event_ids:
+            mapped.append(record)
+            continue
+        endpoint = str(record.get("endpoint") or record.get("assay") or "").lower()
+        if endpoint and (any(endpoint in name or name in endpoint for name in event_names) or endpoint in components):
+            mapped.append(record)
+    return mapped
+
+
+def _event_data_coverage(detail: dict, mapped_data: list[dict[str, Any]]) -> dict[str, Any]:
+    events = detail.get("events", [])
+    event_ids = {ev.get("event_id") for ev in events}
+    measured_ids = {_safe_int(r.get("event_id")) for r in mapped_data if _safe_int(r.get("event_id")) in event_ids}
+    return {
+        "measured_events": len(measured_ids),
+        "total_events": len(event_ids),
+        "coverage_fraction": round(len(measured_ids) / len(event_ids), 2) if event_ids else 0,
+        "measured_event_ids": sorted(measured_ids),
+    }
+
+
+def _assessment_evidence_summary(detail: dict) -> dict[str, Any]:
+    evidence_counts = {"High": 0, "Moderate": 0, "Low": 0, "Not Specified": 0, "Unknown": 0}
+    quantitative_counts = {"High": 0, "Moderate": 0, "Low": 0, "Not Specified": 0, "Unknown": 0}
+    kers = detail.get("kers", [])
+    ker_details = []
+
+    for ker in kers:
+        ev_label = evidence_label(ker.get("evidence"))
+        q_label = evidence_label(ker.get("quantitative"))
+        evidence_counts[ev_label] = evidence_counts.get(ev_label, 0) + 1
+        quantitative_counts[q_label] = quantitative_counts.get(q_label, 0) + 1
+        ker_details.append({
+            "upstream_event_id": ker.get("upstream_event_id"),
+            "downstream_event_id": ker.get("downstream_event_id"),
+            "relationship_type": ker.get("rel_type"),
+            "evidence": ev_label,
+            "quantitative_understanding": q_label,
+        })
+
+    evidence_score = (
+        sum(EVIDENCE_SCORE.get(label, 0) * count for label, count in evidence_counts.items()) / len(kers)
+        if kers else 0
+    )
+    quantitative_score = (
+        sum(EVIDENCE_SCORE.get(label, 0) * count for label, count in quantitative_counts.items()) / len(kers)
+        if kers else 0
+    )
+
+    return {
+        "evidence_counts": evidence_counts,
+        "quantitative_counts": quantitative_counts,
+        "pathway_confidence": _confidence_from_score(evidence_score),
+        "quantitative_confidence": _confidence_from_score(quantitative_score),
+        "ker_details": ker_details,
+        "total_kers": len(kers),
+    }
+
+
+def _infer_chemical_specific_confidence(mapped_data: list[dict[str, Any]], matched_by: str) -> str:
+    if not mapped_data:
+        return "moderate" if matched_by == "chemical/stressor index" else "low"
+    quality_scores = []
+    for record in mapped_data:
+        quality = str(record.get("quality") or record.get("confidence") or "").lower()
+        if quality in {"high", "validated", "guideline"}:
+            quality_scores.append(3)
+        elif quality in {"medium", "moderate", "acceptable"}:
+            quality_scores.append(2)
+        elif quality in {"low", "uncertain", "screening"}:
+            quality_scores.append(1)
+        else:
+            quality_scores.append(2)
+    return _confidence_from_score(sum(quality_scores) / len(quality_scores))
+
+
+def _exposure_context_confidence(context: dict[str, Any]) -> str:
+    if not context:
+        return "very low"
+    keys = {"route", "duration", "population", "species", "exposure", "use_case"}
+    present = sum(1 for k in keys if context.get(k))
+    if context.get("exposure"):
+        present += 1
+    return _confidence_from_score(min(3, present / 2))
+
+
+def _build_uncertainties_and_gaps(detail: dict, confidence: dict[str, str], coverage: dict[str, Any], context: dict[str, Any]) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    uncertainties = []
+    gaps = []
+
+    if confidence["chemical_specific"] in {"low", "very low"}:
+        uncertainties.append({
+            "type": "chemical-specific evidence",
+            "description": "The AOP is biologically relevant, but submitted or indexed chemical-specific NAM/stressor evidence is limited.",
+            "impact": "Limits confidence that this chemical perturbs the pathway under the assessment conditions.",
+        })
+        gaps.append({
+            "priority": "high",
+            "gap": "Add chemical-specific NAM or stressor evidence mapped to the MIE or earliest measurable KE.",
+        })
+
+    if confidence["quantitative"] in {"low", "very low"}:
+        uncertainties.append({
+            "type": "quantitative extrapolation",
+            "description": "KER quantitative understanding is weak or not specified for much of the pathway.",
+            "impact": "Supports qualitative hazard concern better than dose-response or point-of-departure derivation.",
+        })
+        gaps.append({
+            "priority": "high",
+            "gap": "Add concentration-response NAM data and, where possible, IVIVE or dosimetry to estimate a screening POD.",
+        })
+
+    if coverage["coverage_fraction"] < 0.5:
+        gaps.append({
+            "priority": "medium",
+            "gap": "Measure additional downstream key events to improve pathway coverage and temporal concordance.",
+        })
+
+    weak_kers = [ker for ker in detail.get("kers", []) if evidence_label(ker.get("evidence")) in {"Low", "Not Specified", "Unknown"}]
+    if weak_kers:
+        uncertainties.append({
+            "type": "KER support",
+            "description": f"{len(weak_kers)} KER(s) have low, unknown, or unspecified evidence support.",
+            "impact": "Weak KERs may limit confidence in progression from early perturbation to adverse outcome.",
+        })
+
+    if not context.get("exposure"):
+        gaps.append({
+            "priority": "medium",
+            "gap": "Add exposure or internal concentration estimates to compare bioactivity with realistic exposure.",
+        })
+
+    if not (context.get("species") or context.get("population")):
+        uncertainties.append({
+            "type": "human/ecological relevance",
+            "description": "The target species or population was not specified.",
+            "impact": "Species applicability and susceptible-population relevance remain uncertain.",
+        })
+
+    return uncertainties, gaps
+
+
+def _recommend_next_tests(detail: dict, coverage: dict[str, Any], gaps: list[dict[str, str]]) -> list[dict[str, str]]:
+    recommendations = []
+    measured = set(coverage.get("measured_event_ids", []))
+    events = detail.get("events", [])
+
+    mie = next((ev for ev in events if ev.get("event_type") == "MolecularInitiatingEvent"), None)
+    if mie and mie.get("event_id") not in measured:
+        recommendations.append({
+            "rank": "1",
+            "recommendation": f"Run or import a NAM that measures the MIE: {mie.get('event_name')}",
+            "reason": "MIE evidence anchors chemical-specific pathway activation and is usually the fastest first uncertainty reducer.",
+        })
+
+    for ker in detail.get("kers", []):
+        down_id = ker.get("downstream_event_id")
+        if down_id in measured:
+            continue
+        if evidence_label(ker.get("evidence")) in {"High", "Moderate"}:
+            ev = next((e for e in events if e.get("event_id") == down_id), None)
+            if ev:
+                recommendations.append({
+                    "rank": str(len(recommendations) + 1),
+                    "recommendation": f"Measure downstream KE {down_id}: {ev.get('event_name')}",
+                    "reason": "This fills the first unmeasured downstream event connected by a moderate/high-evidence KER.",
+                })
+                break
+
+    if any("exposure" in g.get("gap", "").lower() for g in gaps):
+        recommendations.append({
+            "rank": str(len(recommendations) + 1),
+            "recommendation": "Add exposure, toxicokinetic, or IVIVE information for bioactivity-exposure comparison.",
+            "reason": "Risk assessment decisions require context on whether pathway activity occurs near realistic exposure levels.",
+        })
+
+    return recommendations[:3]
+
+
+def _regulatory_conclusion(confidence: dict[str, str], gaps: list[dict[str, str]]) -> str:
+    high_priority_gaps = sum(1 for gap in gaps if gap.get("priority") == "high")
+    overall = confidence.get("overall", "very low")
+    if overall in {"high", "moderate"} and high_priority_gaps == 0:
+        return "Sufficient for screening/prioritization and may support a transparent regulatory hazard hypothesis."
+    if overall == "moderate":
+        return "Sufficient for screening/prioritization, but targeted NAM or exposure data should be added before higher-tier decisions."
+    if overall == "low":
+        return "Useful for hypothesis generation and data-gap planning; insufficient as a stand-alone regulatory conclusion."
+    return "Insufficient for regulatory decision-making beyond identifying data gaps and candidate follow-up NAMs."
+
+
+def _hazard_hypothesis(detail: dict, chemical: str, matched_by: str, confidence: dict[str, str]) -> dict[str, Any]:
+    chem_label = chemical or "The queried stressor/chemical"
+    mie = detail.get("mie") or "an unspecified molecular initiating event"
+    ao = detail.get("ao") or "an unspecified adverse outcome"
+    conclusion = (
+        f"{chem_label} has a plausible hazard hypothesis via AOP {detail['id']}: "
+        f"{mie} leading to {ao}. Overall confidence is {confidence['overall']}."
+    )
+    return {
+        "aop_id": detail["id"],
+        "title": detail.get("title", ""),
+        "matched_by": matched_by,
+        "molecular_initiating_event": mie,
+        "adverse_outcome": ao,
+        "oecd_status": detail.get("oecd_status", "Unknown"),
+        "conclusion": conclusion,
+    }
+
+
+def _candidate_assessment_aops(chemical: str, query: str, limit: int = 5) -> list[dict[str, Any]]:
+    candidates = []
+    seen = set()
+
+    if chemical:
+        for match in find_aops_by_chemical(chemical):
+            if match["aop_id"] in seen:
+                continue
+            seen.add(match["aop_id"])
+            candidates.append({"aop_id": match["aop_id"], "matched_by": "chemical/stressor index", "match": match})
+
+    search_query = query or chemical
+    if len(candidates) < limit and search_query:
+        for result in search_aops_text(search_query, limit=limit):
+            if result["id"] in seen:
+                continue
+            seen.add(result["id"])
+            candidates.append({"aop_id": result["id"], "matched_by": "AOP/event text search", "match": result})
+
+    return candidates[:limit]
+
+
+def build_evidence_to_decision_assessment(body: dict[str, Any]) -> dict[str, Any]:
+    """Build a deterministic evidence-to-decision assessment for regulatory triage."""
+    chemical = str(body.get("chemical") or body.get("stressor") or "").strip()
+    query = str(body.get("query") or chemical or "").strip()
+    context = body.get("context") or {}
+    available_data = body.get("available_data") or []
+
+    if not chemical and not query:
+        raise HTTPException(400, "chemical or query is required")
+    if not isinstance(context, dict):
+        raise HTTPException(400, "context must be an object")
+    if not isinstance(available_data, list):
+        raise HTTPException(400, "available_data must be a list")
+
+    candidate_refs = _candidate_assessment_aops(chemical, query)
+    if not candidate_refs:
+        return {
+            "chemical": chemical or query,
+            "hazard_hypotheses": [],
+            "confidence": {"overall": "very low"},
+            "uncertainties": [{
+                "type": "AOP coverage",
+                "description": "No candidate AOPs were found in the local AOP-Wiki-derived database.",
+                "impact": "The assessment cannot form an AOP-grounded hazard hypothesis for this query.",
+            }],
+            "critical_data_gaps": [{"priority": "high", "gap": "Identify relevant AOPs, key events, or NAM endpoints for the chemical/use scenario."}],
+            "recommended_next_tests": [],
+            "regulatory_summary": "No AOP-grounded regulatory conclusion can be made from the current database coverage.",
+            "candidate_aops": [],
+        }
+
+    assessments = []
+    for ref in candidate_refs:
+        detail = get_aop_detail(ref["aop_id"])
+        if not detail:
+            continue
+        mapped_data = _available_data_for_aop(available_data, detail)
+        coverage = _event_data_coverage(detail, mapped_data)
+        evidence_summary = _assessment_evidence_summary(detail)
+        confidence = {
+            "pathway": evidence_summary["pathway_confidence"],
+            "chemical_specific": _infer_chemical_specific_confidence(mapped_data, ref["matched_by"]),
+            "quantitative": evidence_summary["quantitative_confidence"],
+            "exposure_context": _exposure_context_confidence(context),
+        }
+        confidence["overall"] = _overall_confidence(
+            confidence["pathway"],
+            confidence["chemical_specific"],
+            confidence["quantitative"],
+            confidence["exposure_context"],
+        )
+        uncertainties, gaps = _build_uncertainties_and_gaps(detail, confidence, coverage, context)
+        recommendations = _recommend_next_tests(detail, coverage, gaps)
+        assessments.append({
+            "hazard_hypothesis": _hazard_hypothesis(detail, chemical or query, ref["matched_by"], confidence),
+            "confidence": confidence,
+            "evidence_summary": evidence_summary,
+            "nam_coverage": coverage,
+            "uncertainties": uncertainties,
+            "critical_data_gaps": gaps,
+            "recommended_next_tests": recommendations,
+            "regulatory_conclusion": _regulatory_conclusion(confidence, gaps),
+        })
+
+    assessments.sort(key=lambda item: (
+        {"high": 3, "moderate": 2, "low": 1, "very low": 0}.get(item["confidence"]["overall"], 0),
+        item["evidence_summary"]["total_kers"],
+    ), reverse=True)
+
+    best = assessments[0] if assessments else None
+    return {
+        "chemical": chemical or query,
+        "assessment_context": context,
+        "hazard_hypotheses": [a["hazard_hypothesis"] for a in assessments],
+        "confidence": best["confidence"] if best else {"overall": "very low"},
+        "uncertainties": best["uncertainties"] if best else [],
+        "critical_data_gaps": best["critical_data_gaps"] if best else [],
+        "recommended_next_tests": best["recommended_next_tests"] if best else [],
+        "regulatory_summary": best["regulatory_conclusion"] if best else "No assessment could be generated.",
+        "candidate_aops": assessments,
+    }
+
+
+
+# ---------------------------------------------------------------------------
+# Quantitative AOP / exposure-aware risk module
+# ---------------------------------------------------------------------------
+
+CONCENTRATION_FACTORS_TO_UM = {
+    "um": 1.0,
+    "µm": 1.0,
+    "μm": 1.0,
+    "micromolar": 1.0,
+    "nm": 0.001,
+    "nanomolar": 0.001,
+    "mm": 1000.0,
+    "millimolar": 1000.0,
+    "pm": 0.000001,
+    "picomolar": 0.000001,
+}
+
+DOSE_FACTORS_TO_MG_KG_DAY = {
+    "mg/kg/day": 1.0,
+    "mg/kg-d": 1.0,
+    "mg/kg bw/day": 1.0,
+    "ug/kg/day": 0.001,
+    "µg/kg/day": 0.001,
+    "μg/kg/day": 0.001,
+    "ng/kg/day": 0.000001,
+}
+
+PREFERRED_POD_ORDER = {"bmc": 0, "bmcl": 0, "lec": 1, "ac50": 2, "ec50": 2, "ic50": 2, "loaec": 3}
+
+
+def _normalize_unit(unit: Any) -> str:
+    return str(unit or "").strip().lower().replace(" ", " ")
+
+
+def _safe_float(value) -> Optional[float]:
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return None
+    if value < 0:
+        return None
+    return value
+
+
+def _convert_value(value: float, unit: str) -> tuple[Optional[float], Optional[str]]:
+    """Normalize common concentration or administered-dose units for margin calculations."""
+    normalized = _normalize_unit(unit).replace(" ", "")
+    normalized = normalized.replace("μ", "µ")
+    if normalized in CONCENTRATION_FACTORS_TO_UM:
+        return value * CONCENTRATION_FACTORS_TO_UM[normalized], "uM"
+    if normalized in DOSE_FACTORS_TO_MG_KG_DAY:
+        return value * DOSE_FACTORS_TO_MG_KG_DAY[normalized], "mg/kg/day"
+    if "plasmaequivalent" in normalized and normalized.startswith(("um", "µm")):
+        return value, "uM"
+    if "plasmaequivalent" in normalized and normalized.startswith("nm"):
+        return value * 0.001, "uM"
+    return None, None
+
+
+def _event_lookup(detail: dict) -> dict[int, dict[str, Any]]:
+    return {ev.get("event_id"): ev for ev in detail.get("events", []) if ev.get("event_id") is not None}
+
+
+def _normalize_nam_result(record: dict[str, Any], event_by_id: dict[int, dict[str, Any]]) -> dict[str, Any]:
+    pod_value = _safe_float(record.get("pod_value"))
+    pod_unit = record.get("pod_unit")
+    normalized_value, normalized_unit = (None, None)
+    if pod_value is not None:
+        normalized_value, normalized_unit = _convert_value(pod_value, pod_unit)
+
+    mapped_event_id = _safe_int(record.get("mapped_event_id") or record.get("event_id"))
+    event = event_by_id.get(mapped_event_id, {})
+    return {
+        "assay": record.get("assay") or record.get("endpoint") or "Unspecified NAM assay",
+        "mapped_event_id": mapped_event_id,
+        "mapped_event_name": event.get("event_name"),
+        "mapped_event_type": event.get("event_type"),
+        "pod_type": str(record.get("pod_type") or "POD").upper(),
+        "pod_value": pod_value,
+        "pod_unit": pod_unit,
+        "normalized_pod_value": normalized_value,
+        "normalized_pod_unit": normalized_unit,
+        "ivive": record.get("ivive") or {},
+        "raw": record,
+    }
+
+
+def _apply_ivive_if_available(nam: dict[str, Any]) -> dict[str, Any]:
+    """Apply a simple user-supplied IVIVE conversion factor when provided.
+
+    Expected shape: {"conversion_factor": 10, "output_unit": "mg/kg/day"}; the
+    converted POD equals normalized_pod_value * conversion_factor. More complex
+    toxicokinetic models should be run upstream and submitted as converted PODs.
+    """
+    ivive = nam.get("ivive") or {}
+    factor = _safe_float(ivive.get("conversion_factor"))
+    output_unit = ivive.get("output_unit")
+    if factor is None or not output_unit or nam.get("normalized_pod_value") is None:
+        return nam
+    nam = dict(nam)
+    nam["ivive_pod_value"] = nam["normalized_pod_value"] * factor
+    nam["ivive_pod_unit"] = output_unit
+    return nam
+
+
+def _normalize_exposure(exposure: dict[str, Any]) -> dict[str, Any]:
+    value = _safe_float(exposure.get("value")) if isinstance(exposure, dict) else None
+    unit = exposure.get("unit") if isinstance(exposure, dict) else None
+    normalized_value, normalized_unit = (None, None)
+    if value is not None:
+        normalized_value, normalized_unit = _convert_value(value, unit)
+    return {
+        "value": value,
+        "unit": unit,
+        "normalized_value": normalized_value,
+        "normalized_unit": normalized_unit,
+    }
+
+
+def _margin_for_nam(nam: dict[str, Any], exposure: dict[str, Any]) -> dict[str, Any]:
+    exposure_value = exposure.get("normalized_value")
+    exposure_unit = exposure.get("normalized_unit")
+    pod_value = nam.get("ivive_pod_value", nam.get("normalized_pod_value"))
+    pod_unit = nam.get("ivive_pod_unit", nam.get("normalized_pod_unit"))
+
+    comparable = bool(pod_value is not None and exposure_value and pod_unit == exposure_unit)
+    if not comparable:
+        return {"comparable": False, "reason": "POD and exposure units are missing or not directly comparable."}
+
+    ber = pod_value / exposure_value
+    return {
+        "comparable": True,
+        "assay": nam.get("assay"),
+        "mapped_event_id": nam.get("mapped_event_id"),
+        "mapped_event_name": nam.get("mapped_event_name"),
+        "mapped_event_type": nam.get("mapped_event_type"),
+        "pod_type": nam.get("pod_type"),
+        "pod_value": pod_value,
+        "pod_unit": pod_unit,
+        "exposure_value": exposure_value,
+        "exposure_unit": exposure_unit,
+        "bioactivity_exposure_ratio": round(ber, 4),
+        "margin_of_exposure": round(ber, 4),
+        "hazard_quotient": round(1 / ber, 6) if ber else None,
+    }
+
+
+def _select_most_sensitive_ke(normalized_nams: list[dict[str, Any]]) -> dict[str, Any]:
+    comparable_nams = [n for n in normalized_nams if n.get("normalized_pod_value") is not None]
+    if not comparable_nams:
+        return {}
+    comparable_nams.sort(key=lambda n: (
+        n.get("normalized_pod_unit") or "",
+        n["normalized_pod_value"],
+        PREFERRED_POD_ORDER.get(str(n.get("pod_type", "")).lower(), 99),
+    ))
+    best = comparable_nams[0]
+    return {
+        "assay": best.get("assay"),
+        "mapped_event_id": best.get("mapped_event_id"),
+        "mapped_event_name": best.get("mapped_event_name"),
+        "mapped_event_type": best.get("mapped_event_type"),
+        "pod_type": best.get("pod_type"),
+        "pod_value": best.get("pod_value"),
+        "pod_unit": best.get("pod_unit"),
+        "normalized_pod_value": best.get("normalized_pod_value"),
+        "normalized_pod_unit": best.get("normalized_pod_unit"),
+    }
+
+
+def _quantitative_confidence(normalized_nams: list[dict[str, Any]], comparable_margins: list[dict[str, Any]], detail: dict) -> str:
+    mapped_event_ids = {n.get("mapped_event_id") for n in normalized_nams if n.get("mapped_event_id")}
+    has_mie = any(
+        ev.get("event_id") in mapped_event_ids and ev.get("event_type") == "MolecularInitiatingEvent"
+        for ev in detail.get("events", [])
+    )
+    has_downstream = len(mapped_event_ids) >= 2
+    if comparable_margins and has_mie and has_downstream:
+        return "quantitative screening with pathway support"
+    if comparable_margins:
+        return "screening only"
+    if normalized_nams:
+        return "qualitative AOP support only"
+    return "insufficient quantitative data"
+
+
+def build_quantitative_assessment(body: dict[str, Any]) -> dict[str, Any]:
+    chemical = str(body.get("chemical") or "").strip()
+    aop_id = _safe_int(body.get("aop_id"))
+    nam_results = body.get("nam_results") or []
+    exposure = body.get("exposure") or {}
+
+    if not chemical:
+        raise HTTPException(400, "chemical is required")
+    if not aop_id:
+        raise HTTPException(400, "aop_id is required")
+    if not isinstance(nam_results, list):
+        raise HTTPException(400, "nam_results must be a list")
+    if not isinstance(exposure, dict):
+        raise HTTPException(400, "exposure must be an object")
+
+    detail = get_aop_detail(aop_id)
+    if not detail:
+        raise HTTPException(404, f"AOP {aop_id} not found")
+
+    event_by_id = _event_lookup(detail)
+    normalized_nams = [_apply_ivive_if_available(_normalize_nam_result(r, event_by_id)) for r in nam_results if isinstance(r, dict)]
+    normalized_exposure = _normalize_exposure(exposure)
+    margins = [_margin_for_nam(nam, normalized_exposure) for nam in normalized_nams]
+    comparable_margins = [m for m in margins if m.get("comparable")]
+    most_sensitive_margin = min(comparable_margins, key=lambda m: m["bioactivity_exposure_ratio"], default=None)
+    most_sensitive_ke = (
+        {
+            "assay": most_sensitive_margin.get("assay"),
+            "mapped_event_id": most_sensitive_margin.get("mapped_event_id"),
+            "mapped_event_name": most_sensitive_margin.get("mapped_event_name"),
+            "mapped_event_type": most_sensitive_margin.get("mapped_event_type"),
+            "pod_type": most_sensitive_margin.get("pod_type"),
+            "normalized_pod_value": most_sensitive_margin.get("pod_value"),
+            "normalized_pod_unit": most_sensitive_margin.get("pod_unit"),
+        }
+        if most_sensitive_margin else _select_most_sensitive_ke(normalized_nams)
+    )
+
+    uncertainties = []
+    if normalized_exposure.get("normalized_value") is None:
+        uncertainties.append("Exposure value/unit could not be normalized; provide exposure in uM, nM, mg/kg/day, or compatible plasma-equivalent units.")
+    if any(n.get("normalized_pod_value") is None for n in normalized_nams):
+        uncertainties.append("One or more NAM PODs could not be normalized; those assays were not used in margin calculations.")
+    if not comparable_margins:
+        uncertainties.append("No NAM POD and exposure estimate shared comparable normalized units, so no screening margin could be calculated.")
+    if not any(n.get("mapped_event_name") for n in normalized_nams):
+        uncertainties.append("No NAM result mapped to a known key event in the selected AOP.")
+    if any(n.get("ivive") for n in normalized_nams) and not any(n.get("ivive_pod_value") for n in normalized_nams):
+        uncertainties.append("IVIVE metadata were provided but no simple conversion_factor/output_unit pair could be applied.")
+
+    ber = most_sensitive_margin.get("bioactivity_exposure_ratio") if most_sensitive_margin else None
+    hq = most_sensitive_margin.get("hazard_quotient") if most_sensitive_margin else None
+    if ber is None:
+        interpretation = "Quantitative readiness is limited to qualitative AOP support because comparable POD and exposure units were not available."
+    elif ber >= 100:
+        interpretation = "Screening margin is large (BER ≥ 100), suggesting lower near-term priority if exposure estimates are fit for purpose."
+    elif ber >= 10:
+        interpretation = "Screening margin is moderate (BER 10–100); retain for prioritization and refine exposure/IVIVE assumptions."
+    elif ber >= 1:
+        interpretation = "Screening margin is narrow (BER 1–10); prioritize for refined assessment or additional NAM confirmation."
+    else:
+        interpretation = "Exposure exceeds the most sensitive NAM POD (BER < 1); high priority for follow-up and uncertainty review."
+
+    return {
+        "chemical": chemical,
+        "aop_id": detail["id"],
+        "aop_title": detail.get("title"),
+        "most_sensitive_ke": most_sensitive_ke,
+        "bioactivity_exposure_ratio": ber,
+        "margin_of_exposure": ber,
+        "hazard_quotient": hq,
+        "quantitative_confidence": _quantitative_confidence(normalized_nams, comparable_margins, detail),
+
+        "validation_status": "prototype_screening_calculator",
+        "regulatory_readiness": "screening/prioritization only; not a stand-alone regulatory conclusion",
+        "data_provenance": {
+            "aop_structure": "local AOP-Wiki-derived database",
+            "nam_pods": "user supplied unless connected to curated source",
+            "exposure": "user supplied unless connected to curated source",
+            "ivive": "user supplied simple conversion factor when provided",
+            "thresholds": "heuristic screening bands; not validated regulatory thresholds",
+        },
+        "interpretation": interpretation,
+        "uncertainties": uncertainties,
+        "normalized_exposure": normalized_exposure,
+        "normalized_nam_results": normalized_nams,
+        "margins": margins,
+    }
+
+
 # ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------
@@ -1111,6 +1762,28 @@ async def chat(body: dict):
             source_aops.append({"id": detail["id"], "title": detail["title"]})
 
     return {"answer": answer, "sources": source_aops}
+
+
+@app.post("/api/assess")
+async def evidence_to_decision_assessment(body: dict):
+    """Evidence-to-decision assessment workspace.
+
+    Builds structured regulatory risk-assessment outputs from AOP evidence:
+    hazard hypotheses, confidence, uncertainty, data gaps, and targeted next
+    NAM/data-generation recommendations.
+    """
+    return build_evidence_to_decision_assessment(body)
+
+
+@app.post("/api/quantitative-assessment")
+async def quantitative_assessment(body: dict):
+    """Quantitative AOP / exposure-aware risk module.
+
+    Compares NAM concentration-response points of departure with exposure
+    estimates, applies simple user-supplied IVIVE factors when provided, and
+    returns screening margins plus quantitative-readiness interpretation.
+    """
+    return build_quantitative_assessment(body)
 
 
 @app.get("/api/woe")
