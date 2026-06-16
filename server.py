@@ -28,7 +28,7 @@ AOP_CACHE_DIR = DATA_DIR / "aops"
 DB_PATH = DATA_DIR / "kevidence.db"
 LLM_MODEL = "gpt-4o-mini"  # cheap, good enough for protoype
 
-app = FastAPI(title="kevidence — AOP Regulatory Chatbot")
+app = FastAPI(title="KEvidence — Risk Assessment Workbench")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -1588,6 +1588,16 @@ def build_quantitative_assessment(body: dict[str, Any]) -> dict[str, Any]:
         "margin_of_exposure": ber,
         "hazard_quotient": hq,
         "quantitative_confidence": _quantitative_confidence(normalized_nams, comparable_margins, detail),
+
+        "validation_status": "prototype_screening_calculator",
+        "regulatory_readiness": "screening/prioritization only; not a stand-alone regulatory conclusion",
+        "data_provenance": {
+            "aop_structure": "local AOP-Wiki-derived database",
+            "nam_pods": "user supplied unless connected to curated source",
+            "exposure": "user supplied unless connected to curated source",
+            "ivive": "user supplied simple conversion factor when provided",
+            "thresholds": "heuristic screening bands; not validated regulatory thresholds",
+        },
         "interpretation": interpretation,
         "uncertainties": uncertainties,
         "normalized_exposure": normalized_exposure,

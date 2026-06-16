@@ -9,6 +9,7 @@
     --bg: #0f172a;
     --surface: #1e293b;
     --surface2: #334155;
+    --surface3: #475569;
     --accent: #38bdf8;
     --accent2: #818cf8;
     --text: #f1f5f9;
@@ -25,727 +26,468 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
   }
-
-  /* Header */
   header {
     background: var(--surface);
     border-bottom: 1px solid var(--surface2);
-    padding: 16px 24px;
+    padding: 14px 22px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: space-between;
+    gap: 16px;
   }
-  header .logo {
-    width: 36px; height: 36px;
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 38px; height: 38px;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 700;
+    font-size: 18px; font-weight: 800;
   }
-  header h1 { font-size: 18px; font-weight: 600; }
-  header .subtitle { font-size: 13px; color: var(--text2); }
-
-  /* Container */
-  .container {
-    flex: 1;
-    display: flex;
-    max-width: 1200px;
-    width: 100%;
-    margin: 0 auto;
+  h1 { font-size: 19px; font-weight: 700; }
+  .subtitle { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .status-pill {
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    color: var(--warning);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
   }
-
-  /* Sidebar */
-  .sidebar {
-    width: 300px;
+  .app-shell {
+    display: grid;
+    grid-template-columns: 230px minmax(0, 1fr) 340px;
+    min-height: calc(100vh - 67px);
+  }
+  nav {
     background: var(--surface);
     border-right: 1px solid var(--surface2);
     padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  }
+  .step {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text2);
+    border-radius: var(--radius);
+    padding: 11px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  .step span { display: block; color: var(--text); font-weight: 700; }
+  .step.active {
+    border-color: rgba(56, 189, 248, 0.55);
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--accent);
+  }
+  main {
+    padding: 22px;
     overflow-y: auto;
   }
-  .sidebar h2 { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
-  .sidebar p { font-size: 13px; color: var(--text2); line-height: 1.5; }
-
-  .suggestion-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .chip {
-    background: var(--surface2);
-    color: var(--text);
-    border: none;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .chip:hover { background: var(--accent); color: var(--bg); }
-
-  .aop-list { max-height: 300px; overflow-y: auto; }
-  .aop-item {
-    padding: 8px 10px;
-    border-radius: 8px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: background 0.2s;
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .aop-item:hover { background: var(--surface2); }
-  .aop-item .status {
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 10px;
-    background: var(--surface2);
-    white-space: nowrap;
-  }
-  .status-endorsed { border-left: 3px solid var(--success); }
-  .status-review { border-left: 3px solid var(--warning); }
-  .status-development { border-left: 3px solid var(--danger); }
-
-
-  /* Assessment workspace */
-  .assessment-panel {
-    background: rgba(56, 189, 248, 0.08);
-    border: 1px solid rgba(56, 189, 248, 0.22);
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--surface2);
     border-radius: var(--radius);
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    padding: 18px;
+    margin-bottom: 16px;
   }
-  .assessment-panel label {
-    color: var(--text2);
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .assessment-panel input, .assessment-panel select {
+  .panel h2 { font-size: 20px; margin-bottom: 8px; }
+  .panel h3 { font-size: 15px; margin: 14px 0 8px; color: var(--accent); }
+  .help { color: var(--text2); font-size: 14px; line-height: 1.55; margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  label { color: var(--text2); display: block; font-size: 12px; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  input, select, textarea {
     width: 100%;
     background: var(--bg);
     border: 1px solid var(--surface2);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 12px;
-    padding: 8px;
-  }
-  .assessment-panel button {
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border: none;
-    border-radius: 8px;
-    color: var(--bg);
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 9px 10px;
-  }
-  .assessment-panel button:disabled { opacity: 0.55; cursor: not-allowed; }
-  .assessment-result {
-    background: var(--bg);
-    border-radius: 8px;
-    color: var(--text2);
-    display: none;
-    font-size: 12px;
-    line-height: 1.45;
-    padding: 10px;
-  }
-  .assessment-result strong { color: var(--accent); }
-  .assessment-result ul { margin: 6px 0 0 16px; }
-  .confidence-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    margin: 8px 0;
-  }
-  .confidence-card {
-    background: var(--surface);
-    border-radius: 8px;
-    padding: 6px;
-  }
-  .confidence-card span {
-    color: var(--text);
-    display: block;
-    font-weight: 700;
-    text-transform: capitalize;
-  }
-
-
-  /* Main chat area */
-  .chat-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .msg {
-    display: flex;
-    gap: 10px;
-    max-width: 85%;
-    animation: fadeIn 0.3s;
-  }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
-  .msg.bot { align-self: flex-start; }
-
-  .msg-avatar {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 600; flex-shrink: 0;
-  }
-  .msg.user .msg-avatar { background: var(--accent2); }
-  .msg.bot .msg-avatar { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
-
-  .msg-bubble {
-    background: var(--surface);
-    border-radius: var(--radius);
-    padding: 12px 16px;
-    font-size: 14px;
-    line-height: 1.6;
-    position: relative;
-  }
-  .msg.user .msg-bubble { background: var(--accent2); color: var(--bg); }
-
-  .msg-bubble p { margin-bottom: 8px; }
-  .msg-bubble p:last-child { margin-bottom: 0; }
-  .msg-bubble ul, .msg-bubble ol { padding-left: 20px; margin-bottom: 8px; }
-  .msg-bubble li { margin-bottom: 4px; }
-  .msg-bubble strong { color: var(--accent); }
-  .msg.user .msg-bubble strong { color: var(--bg); }
-  .msg-bubble code {
-    background: var(--surface2);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 12px;
-  }
-
-  .sources {
-    margin-top: 8px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
-  .source-tag {
-    font-size: 11px;
-    background: var(--surface2);
-    padding: 2px 8px;
     border-radius: 10px;
-    color: var(--accent);
+    color: var(--text);
+    padding: 10px 11px;
+    font-size: 14px;
+    outline: none;
+  }
+  textarea { min-height: 90px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  button.primary, button.secondary, button.ghost {
+    border: none;
+    border-radius: 10px;
     cursor: pointer;
+    font-weight: 700;
+    padding: 10px 14px;
   }
-  .source-tag:hover { background: var(--accent); color: var(--bg); }
-
-  .typing-indicator {
-    display: flex;
-    gap: 4px;
-    padding: 4px 0;
-  }
-  .typing-indicator span {
-    width: 8px; height: 8px;
-    background: var(--text2);
-    border-radius: 50%;
-    animation: bounce 1.4s infinite ease-in-out;
-  }
-  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce {
-    0%, 80%, 100% { transform: scale(0); }
-    40% { transform: scale(1); }
-  }
-
-  /* Input */
-  .input-area {
-    padding: 16px 20px;
-    background: var(--surface);
-    border-top: 1px solid var(--surface2);
-  }
-  .input-row {
-    display: flex;
-    gap: 8px;
-  }
-  .input-row input {
-    flex: 1;
+  button.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: var(--bg); }
+  button.secondary { background: var(--surface2); color: var(--text); }
+  button.ghost { background: transparent; border: 1px solid var(--surface3); color: var(--text2); }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .cards { display: grid; gap: 10px; }
+  .card {
     background: var(--bg);
     border: 1px solid var(--surface2);
     border-radius: var(--radius);
-    padding: 12px 16px;
-    color: var(--text);
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s;
+    padding: 12px;
   }
-  .input-row input:focus { border-color: var(--accent); }
-  .input-row input::placeholder { color: var(--text2); }
-
-  .input-row button {
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border: none;
+  .card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(56,189,248,0.2); }
+  .card-title { font-weight: 800; margin-bottom: 5px; }
+  .muted { color: var(--text2); font-size: 13px; line-height: 1.45; }
+  .badge { display: inline-block; border-radius: 999px; padding: 3px 8px; margin: 2px 4px 2px 0; font-size: 11px; background: var(--surface2); color: var(--accent); }
+  .warning-box {
+    background: rgba(251, 191, 36, 0.09);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    color: var(--warning);
     border-radius: var(--radius);
-    padding: 12px 20px;
-    color: var(--bg);
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s;
+    padding: 11px;
+    font-size: 13px;
+    line-height: 1.45;
+    margin-top: 10px;
   }
-  .input-row button:hover { opacity: 0.9; }
-  .input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* Empty state */
-  .empty-state {
-    flex: 1;
+  .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+  .metric { background: var(--bg); border-radius: 10px; padding: 10px; border: 1px solid var(--surface2); }
+  .metric small { color: var(--text2); display: block; margin-bottom: 4px; }
+  .metric strong { color: var(--accent); font-size: 18px; }
+  .pathway { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+  .event-node { background: var(--bg); border: 1px solid var(--surface2); border-radius: 10px; padding: 10px; max-width: 230px; }
+  .event-node strong { display: block; color: var(--accent); font-size: 12px; margin-bottom: 4px; }
+  .arrow { color: var(--text2); align-self: center; }
+  .assistant {
+    background: var(--surface);
+    border-left: 1px solid var(--surface2);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 40px;
-    text-align: center;
+    min-height: calc(100vh - 67px);
   }
-  .empty-state .big-icon { font-size: 48px; }
-  .empty-state h2 { font-size: 20px; color: var(--text2); }
-  .empty-state p { font-size: 14px; color: var(--text2); max-width: 400px; line-height: 1.6; }
-
-  /* Welcome suggestions */
-  .welcome-suggestions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 8px;
+  .assistant-header { padding: 16px; border-bottom: 1px solid var(--surface2); }
+  .assistant-context { padding: 10px 16px; border-bottom: 1px solid var(--surface2); color: var(--text2); font-size: 12px; line-height: 1.5; }
+  .prompt-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .prompt-chip { background: var(--surface2); color: var(--text); border: none; border-radius: 999px; padding: 6px 9px; font-size: 11px; cursor: pointer; }
+  .messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { display: flex; gap: 8px; }
+  .msg.user { flex-direction: row-reverse; }
+  .msg-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent2); color: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; }
+  .msg.bot .msg-avatar { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+  .msg-bubble { background: var(--bg); border: 1px solid var(--surface2); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; line-height: 1.5; max-width: 260px; }
+  .msg.user .msg-bubble { background: var(--accent2); color: var(--bg); border-color: var(--accent2); }
+  .assistant-input { padding: 12px; border-top: 1px solid var(--surface2); display: flex; gap: 8px; }
+  .assistant-input input { font-size: 13px; }
+  .assistant-input button { padding: 0 12px; border-radius: 10px; border: none; background: var(--accent); color: var(--bg); font-weight: 800; cursor: pointer; }
+  ul.clean { padding-left: 18px; color: var(--text2); line-height: 1.55; font-size: 14px; }
+  @media (max-width: 1050px) {
+    .app-shell { grid-template-columns: 190px minmax(0, 1fr); }
+    .assistant { display: none; }
+    .metric-grid, .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
-
-  @media (max-width: 768px) {
-    .sidebar { display: none; }
-    .container { flex-direction: column; }
-    .msg { max-width: 95%; }
+  @media (max-width: 720px) {
+    header { align-items: flex-start; flex-direction: column; }
+    .app-shell { display: block; }
+    nav { display: flex; overflow-x: auto; gap: 8px; }
+    .step { min-width: 190px; }
+    .grid, .grid-3, .metric-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
-
 <header>
-  <div class="logo">⚡</div>
-  <div>
-    <h1>kevidence</h1>
-    <div class="subtitle">KEvidence — An AI assissted regulatory workbench</div>
+  <div class="brand">
+    <div class="logo">⚡</div>
+    <div>
+      <h1>KEvidence Risk Assessment Workbench</h1>
+      <div class="subtitle">AOP-guided hazard hypotheses, NAM mapping, quantitative screening, and assessment drafting</div>
+    </div>
   </div>
+  <div class="status-pill">Prototype • screening support, not a stand-alone regulatory conclusion</div>
 </header>
 
-<div class="container">
-  <aside class="sidebar">
-    <h2>About</h2>
-    <p>Ask regulatory science questions about chemicals, pathways, and adverse outcomes. KEvidence searches the OECD AOP-Wiki (536+ AOPs) and returns grounded answers with weight of evidence, OECD status, and source citations.</p>
+<div class="app-shell">
+  <nav aria-label="Risk assessment workflow">
+    <button class="step active" data-tab="problem"><span>1. Problem formulation</span>Chemical, context, use case</button>
+    <button class="step" data-tab="aops"><span>2. AOP discovery</span>Find and select pathways</button>
+    <button class="step" data-tab="evidence"><span>3. Evidence mapping</span>Events, KERs, NAM coverage</button>
+    <button class="step" data-tab="quant"><span>4. Quantitative screening</span>POD vs exposure margin</button>
+    <button class="step" data-tab="gaps"><span>5. Uncertainty & gaps</span>Confidence and next data</button>
+    <button class="step" data-tab="draft"><span>6. Assessment draft</span>Memo-ready summary</button>
+  </nav>
 
+  <main>
+    <section id="problem" class="tab-content active">
+      <div class="panel">
+        <h2>1. Problem formulation</h2>
+        <p class="help">Start with the assessment question. KEvidence uses this context to find AOPs, map evidence, calculate screening margins, and draft transparent summaries.</p>
+        <div class="grid">
+          <div><label for="chemicalInput">Chemical or stressor</label><input id="chemicalInput" placeholder="e.g., rotenone"></div>
+          <div><label for="useCaseInput">Use case</label><select id="useCaseInput"><option value="screening">Screening / prioritization</option><option value="read-across support">Read-across support</option><option value="data-gap analysis">Data-gap analysis</option><option value="regulatory memo">Regulatory memo</option></select></div>
+          <div><label for="routeInput">Route</label><input id="routeInput" placeholder="e.g., oral, dermal, inhalation"></div>
+          <div><label for="populationInput">Population/species</label><input id="populationInput" placeholder="e.g., human, fish, general population"></div>
+        </div>
+        <div class="actions"><button class="primary" id="startAssessmentBtn">Start assessment</button><button class="secondary" data-jump="aops">Go to AOP discovery</button></div>
+        <div class="warning-box">This workbench organizes evidence for expert review. AOP structure comes from the local AOP-Wiki-derived data; NAM PODs, exposure estimates, IVIVE factors, and thresholds are user-supplied or heuristic unless explicitly connected to curated sources.</div>
+      </div>
+    </section>
 
+    <section id="aops" class="tab-content">
+      <div class="panel">
+        <h2>2. AOP discovery</h2>
+        <p class="help">Find candidate pathways by chemical, key event, adverse outcome, or AOP ID. Select one AOP to carry forward into evidence mapping and quantitative screening.</p>
+        <div class="grid"><div><label for="aopSearchInput">Search AOPs</label><input id="aopSearchInput" placeholder="chemical, event, adverse outcome, or AOP ID"></div></div>
+        <div class="actions"><button class="primary" id="searchAopsBtn">Search candidate AOPs</button><button class="secondary" id="loadNotableBtn">Load first AOPs</button></div>
+      </div>
+      <div class="cards" id="aopResults"></div>
+    </section>
 
-    <h2>Assessment Workspace</h2>
-    <p>Generate a structured hazard hypothesis, confidence roll-up, uncertainty register, and data-gap plan.</p>
-    <div class="assessment-panel">
-      <label for="assessmentChemical">Chemical or stressor</label>
-      <input type="text" id="assessmentChemical" placeholder="e.g., rotenone">
-      <label for="assessmentUseCase">Use case</label>
-      <select id="assessmentUseCase">
-        <option value="screening">Screening / prioritization</option>
-        <option value="read-across support">Read-across support</option>
-        <option value="data-gap analysis">Data-gap analysis</option>
-      </select>
-      <button id="assessmentBtn" type="button">Build assessment</button>
-      <div class="assessment-result" id="assessmentResult"></div>
+    <section id="evidence" class="tab-content">
+      <div class="panel">
+        <h2>3. Evidence & NAM mapping</h2>
+        <p class="help">Review the selected AOP as a pathway, then inspect evidence and quantitative understanding across KERs. NAM coverage is shown when submitted through the assessment or quantitative workflow.</p>
+        <div id="selectedAopSummary" class="muted">No AOP selected yet. Select one in AOP Discovery.</div>
+        <h3>Pathway events</h3>
+        <div id="pathwayView" class="pathway"></div>
+        <h3>KER evidence</h3>
+        <div id="kerEvidence" class="cards"></div>
+      </div>
+    </section>
+
+    <section id="quant" class="tab-content">
+      <div class="panel">
+        <h2>4. Quantitative screening</h2>
+        <p class="help">Compare a NAM point of departure with an exposure estimate. This is a prototype screening calculator; it does not provide validated regulatory thresholds.</p>
+        <div class="grid-3">
+          <div><label for="quantAssay">NAM assay</label><input id="quantAssay" placeholder="e.g., complex I inhibition assay"></div>
+          <div><label for="quantEvent">Mapped KE/Event ID</label><input id="quantEvent" type="number" placeholder="e.g., 887"></div>
+          <div><label for="quantPodType">POD type</label><select id="quantPodType"><option>AC50</option><option>BMC</option><option>LEC</option><option>IC50</option><option>EC50</option><option>POD</option></select></div>
+          <div><label for="quantPod">POD value + unit</label><input id="quantPod" placeholder="0.3 uM"></div>
+          <div><label for="quantExposure">Exposure value + unit</label><input id="quantExposure" placeholder="0.01 uM plasma equivalent"></div>
+          <div><label for="quantIvive">Optional IVIVE factor</label><input id="quantIvive" placeholder="e.g., 4.1 mg/kg/day"></div>
+        </div>
+        <div class="actions"><button class="primary" id="runQuantBtn">Calculate screening margin</button></div>
+        <div class="warning-box">Quantitative outputs are only as reliable as the submitted POD, exposure, and IVIVE inputs. Use for prioritization and hypothesis refinement unless validated sources and program-specific thresholds are configured.</div>
+      </div>
+      <div class="panel" id="quantOutput"><div class="muted">No quantitative screen run yet.</div></div>
+    </section>
+
+    <section id="gaps" class="tab-content">
+      <div class="panel">
+        <h2>5. Uncertainty & data gaps</h2>
+        <p class="help">Run the evidence-to-decision engine to summarize hazard hypotheses, confidence, uncertainties, data gaps, and next recommended data collection.</p>
+        <div class="actions"><button class="primary" id="runAssessBtn">Run evidence-to-decision assessment</button></div>
+      </div>
+      <div class="panel" id="assessmentOutput"><div class="muted">No assessment run yet.</div></div>
+    </section>
+
+    <section id="draft" class="tab-content">
+      <div class="panel">
+        <h2>6. Assessment draft</h2>
+        <p class="help">Generate a structured draft from selected AOP evidence, quantitative results, uncertainties, and data gaps. Use the assistant to rewrite or explain sections.</p>
+        <div class="actions"><button class="primary" id="buildDraftBtn">Build draft summary</button><button class="secondary" data-assistant-prompt="Draft this as a concise regulatory memo with caveats.">Ask assistant to refine</button></div>
+        <textarea id="draftText" placeholder="Draft assessment text will appear here..."></textarea>
+      </div>
+    </section>
+  </main>
+
+  <aside class="assistant">
+    <div class="assistant-header"><h2>Evidence Assistant</h2><p class="muted">Use this to explain selected evidence, compare AOPs, or draft memo language.</p></div>
+    <div class="assistant-context" id="assistantContext">Context: no chemical selected.</div>
+    <div class="assistant-context">
+      <strong>Suggested prompts</strong>
+      <div class="prompt-row">
+        <button class="prompt-chip" data-assistant-prompt="Find AOPs for the current chemical and explain why they matter.">Find AOPs</button>
+        <button class="prompt-chip" data-assistant-prompt="Explain the selected AOP in risk-assessment terms.">Explain AOP</button>
+        <button class="prompt-chip" data-assistant-prompt="Summarize weight of evidence and data gaps for the selected AOP.">Summarize evidence</button>
+        <button class="prompt-chip" data-assistant-prompt="Explain the quantitative screening result and its limitations.">Explain BER</button>
+      </div>
     </div>
-
-
-
-    <h2>Quantitative Risk</h2>
-    <p>Compare a NAM point of departure with exposure to calculate a screening bioactivity-exposure ratio.</p>
-    <div class="assessment-panel">
-      <label for="quantChemical">Chemical</label>
-      <input type="text" id="quantChemical" placeholder="e.g., rotenone">
-      <label for="quantAop">AOP ID</label>
-      <input type="number" id="quantAop" placeholder="e.g., 3">
-      <label for="quantEvent">Mapped KE/Event ID</label>
-      <input type="number" id="quantEvent" placeholder="e.g., 887">
-      <label for="quantPod">NAM POD</label>
-      <input type="text" id="quantPod" placeholder="AC50 value, e.g., 0.3 uM">
-      <label for="quantExposure">Exposure</label>
-      <input type="text" id="quantExposure" placeholder="value and unit, e.g., 0.01 uM">
-      <button id="quantBtn" type="button">Calculate margin</button>
-      <div class="assessment-result" id="quantResult"></div>
-    </div>
-
-
-    <h2>Quick questions</h2>
-    <div class="suggestion-chips" id="chips"></div>
-
-    <h2>Notable AOPs</h2>
-    <div class="aop-list" id="aopList"></div>
+    <div class="messages" id="messages"><div class="msg bot"><div class="msg-avatar">⚡</div><div class="msg-bubble">I am now a contextual assistant. Start with problem formulation, then ask me to explain selected AOPs, evidence, uncertainty, or draft text.</div></div></div>
+    <div class="assistant-input"><input id="assistantInput" placeholder="Ask about the current assessment..."><button id="assistantSend">Send</button></div>
   </aside>
-
-  <div class="chat-area">
-    <div class="messages" id="messages">
-      <div class="empty-state" id="emptyState">
-        <div class="big-icon">🧬</div>
-        <h2>Ask about Adverse Outcome Pathways</h2>
-        <p>Regulatory science questions about AOPs, weight of evidence, chemical pathways, and OECD review status — answered with grounded AOP-Wiki data.</p>
-        <div class="welcome-suggestions" id="welcomeChips"></div>
-      </div>
-    </div>
-
-    <div class="input-area">
-      <div class="input-row">
-        <input type="text" id="input" placeholder="Ask about an AOP, chemical, or regulatory pathway..." autofocus>
-        <button id="sendBtn">Send</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
-const input = document.getElementById('input');
-const sendBtn = document.getElementById('sendBtn');
-const messagesEl = document.getElementById('messages');
-const emptyState = document.getElementById('emptyState');
-const chipsEl = document.getElementById('chips');
-const welcomeChips = document.getElementById('welcomeChips');
-const aopListEl = document.getElementById('aopList');
-const assessmentChemical = document.getElementById('assessmentChemical');
-const assessmentUseCase = document.getElementById('assessmentUseCase');
-const assessmentBtn = document.getElementById('assessmentBtn');
-const assessmentResult = document.getElementById('assessmentResult');
-
-const quantChemical = document.getElementById('quantChemical');
-const quantAop = document.getElementById('quantAop');
-const quantEvent = document.getElementById('quantEvent');
-const quantPod = document.getElementById('quantPod');
-const quantExposure = document.getElementById('quantExposure');
-const quantBtn = document.getElementById('quantBtn');
-const quantResult = document.getElementById('quantResult');
-
 const API_BASE = window.location.pathname.startsWith('/kevidence') ? '/kevidence/api' : '/api';
+const state = { chemical: '', context: {}, candidateAops: [], selectedAop: null, selectedAopDetail: null, assessment: null, quantitative: null };
 
-const SUGGESTIONS = [
-  'Which AOPs involve mitochondrial dysfunction?',
-  'What is the weight of evidence for AOP 3?',
-  'How do I submit an AOP for OECD review?',
-  'Find AOPs related to liver steatosis',
-  'What chemicals inhibit complex I?',
-  'Explain the AOP framework for risk assessment',
-  'Which AOPs are WPHA/WNT endorsed?',
-  'Show me AOP 42 (thyroid peroxidase)',
-];
-
-// Populate suggestion chips
-SUGGESTIONS.forEach(s => {
-  const chip = document.createElement('button');
-  chip.className = 'chip';
-  chip.textContent = s;
-  chip.onclick = () => sendMessage(s);
-  chipsEl.appendChild(chip);
-
-  // Also add 4 to welcome screen
-  if (SUGGESTIONS.indexOf(s) < 4) {
-    const wc = chip.cloneNode(true);
-    wc.onclick = () => sendMessage(s);
-    welcomeChips.appendChild(wc);
-  }
-});
-
-// Load AOP list
-async function loadAopList() {
-  try {
-    const res = await fetch(API_BASE + '/aops?limit=20');
-    const data = await res.json();
-    aopListEl.innerHTML = data.results.slice(0, 15).map(a => {
-      const statusClass = 'status-development';
-      const statusText = a.oecd_status || 'Active';
-      return `<div class="aop-item ${statusClass}" onclick="sendMessage('Tell me about AOP ${a.id}')">
-        <span><strong>AOP ${a.id}</strong>: ${a.title?.substring(0, 50) || ''}...</span>
-      </div>`;
-    }).join('');
-  } catch(e) {}
-}
-loadAopList();
-
-let isLoading = false;
-
-input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
-sendBtn.addEventListener('click', send);
-assessmentBtn.addEventListener('click', buildAssessment);
-
-quantBtn.addEventListener('click', buildQuantitativeAssessment);
-
-function send() {
-  const msg = input.value.trim();
-  if (!msg || isLoading) return;
-  sendMessage(msg);
-  input.value = '';
-}
-
-async function sendMessage(text) {
-  if (isLoading) return;
-  isLoading = true;
-  sendBtn.disabled = true;
-
-  // Hide empty state
-  emptyState.style.display = 'none';
-
-  // Add user message
-  addMessage(text, 'user');
-  scrollToBottom();
-
-  // Show typing
-  const typingId = showTyping();
-
-  try {
-    const res = await fetch(API_BASE + '/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text }),
-    });
-    const data = await res.json();
-
-    // Remove typing
-    removeTyping(typingId);
-
-    // Add bot message — show no-data state differently
-    if (data.no_data) {
-      addNoDataMessage(data.answer);
-    } else {
-      addMessage(data.answer, 'bot', data.sources);
-    }
-  } catch(e) {
-    removeTyping(typingId);
-    addMessage('Sorry, I encountered an error. Please try again.', 'bot');
-  }
-
-  isLoading = false;
-  sendBtn.disabled = false;
-  scrollToBottom();
-}
-
-
-async function buildAssessment() {
-  const chemical = assessmentChemical.value.trim();
-  if (!chemical) {
-    assessmentResult.style.display = 'block';
-    assessmentResult.innerHTML = 'Enter a chemical or stressor first.';
-    return;
-  }
-  assessmentBtn.disabled = true;
-  assessmentResult.style.display = 'block';
-  assessmentResult.innerHTML = 'Building evidence-to-decision assessment…';
-
-  try {
-    const res = await fetch(API_BASE + '/assess', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chemical,
-        context: { use_case: assessmentUseCase.value },
-        available_data: []
-      }),
-    });
-    const data = await res.json();
-    assessmentResult.innerHTML = renderAssessment(data);
-  } catch(e) {
-    assessmentResult.innerHTML = 'Assessment failed. Please try again.';
-  }
-
-  assessmentBtn.disabled = false;
-}
-
+const $ = id => document.getElementById(id);
+const steps = document.querySelectorAll('.step');
+const tabs = document.querySelectorAll('.tab-content');
+const messagesEl = $('messages');
 
 function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-
-function renderAssessment(data) {
-  const first = data.hazard_hypotheses && data.hazard_hypotheses[0];
-  const confidence = data.confidence || {};
-  const gaps = data.critical_data_gaps || [];
-  const uncertainties = data.uncertainties || [];
-  if (!first) {
-    return `<strong>No AOP-grounded hypothesis found.</strong><p>${escapeHtml(data.regulatory_summary || '')}</p>`;
-  }
-  return `
-    <strong>${escapeHtml(first.conclusion)}</strong>
-    <div class="confidence-grid">
-      ${Object.entries(confidence).map(([k, v]) => `<div class="confidence-card">${escapeHtml(k.replace('_', ' '))}<span>${escapeHtml(v)}</span></div>`).join('')}
-    </div>
-    <p><strong>Regulatory summary:</strong> ${escapeHtml(data.regulatory_summary || '')}</p>
-    <p><strong>Top data gaps</strong></p>
-    <ul>${gaps.slice(0, 3).map(g => `<li>${escapeHtml(g.priority)}: ${escapeHtml(g.gap)}</li>`).join('') || '<li>No critical gaps identified.</li>'}</ul>
-    <p><strong>Uncertainties</strong></p>
-    <ul>${uncertainties.slice(0, 3).map(u => `<li>${escapeHtml(u.type)}: ${escapeHtml(u.description)}</li>`).join('') || '<li>No major uncertainties identified.</li>'}</ul>
-  `;
-}
-
-
-
 function parseValueUnit(text) {
   const match = String(text || '').trim().match(/^([0-9.eE+-]+)\s*(.+)$/);
   if (!match) return { value: null, unit: '' };
   return { value: Number(match[1]), unit: match[2].trim() };
 }
+function showTab(tabId) {
+  steps.forEach(s => s.classList.toggle('active', s.dataset.tab === tabId));
+  tabs.forEach(t => t.classList.toggle('active', t.id === tabId));
+}
+function updateContext() {
+  $('assistantContext').innerHTML = `Context: <strong>${escapeHtml(state.chemical || 'no chemical')}</strong>${state.selectedAop ? ` • AOP ${state.selectedAop.id}` : ''}${state.context.use_case ? ` • ${escapeHtml(state.context.use_case)}` : ''}`;
+}
+function captureProblem() {
+  state.chemical = $('chemicalInput').value.trim();
+  state.context = { use_case: $('useCaseInput').value, route: $('routeInput').value.trim(), population: $('populationInput').value.trim() };
+  if (state.chemical && !$('aopSearchInput').value.trim()) $('aopSearchInput').value = state.chemical;
+  updateContext();
+}
+steps.forEach(step => step.addEventListener('click', () => showTab(step.dataset.tab)));
+document.querySelectorAll('[data-jump]').forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.jump)));
+$('startAssessmentBtn').addEventListener('click', () => { captureProblem(); showTab('aops'); searchAops(); });
+$('searchAopsBtn').addEventListener('click', searchAops);
+$('loadNotableBtn').addEventListener('click', () => loadAops(''));
+$('runAssessBtn').addEventListener('click', runAssessment);
+$('runQuantBtn').addEventListener('click', runQuantitative);
+$('buildDraftBtn').addEventListener('click', buildDraft);
+$('assistantSend').addEventListener('click', sendAssistant);
+$('assistantInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendAssistant(); });
+document.querySelectorAll('[data-assistant-prompt]').forEach(btn => btn.addEventListener('click', () => sendAssistant(btn.dataset.assistantPrompt)));
 
-async function buildQuantitativeAssessment() {
-  const chemical = quantChemical.value.trim();
-  const aopId = Number(quantAop.value);
-  const eventId = Number(quantEvent.value);
-  const pod = parseValueUnit(quantPod.value);
-  const exposure = parseValueUnit(quantExposure.value);
-  if (!chemical || !aopId || !eventId || pod.value === null || exposure.value === null) {
-    quantResult.style.display = 'block';
-    quantResult.innerHTML = 'Enter chemical, AOP ID, event ID, NAM POD, and exposure first.';
+async function searchAops() {
+  captureProblem();
+  const q = $('aopSearchInput').value.trim() || state.chemical;
+  await loadAops(q);
+}
+async function loadAops(query) {
+  $('aopResults').innerHTML = '<div class="card muted">Loading candidate AOPs…</div>';
+  const url = query ? `${API_BASE}/aops?search=${encodeURIComponent(query)}&limit=12` : `${API_BASE}/aops?limit=12`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    state.candidateAops = data.results || [];
+    renderAopResults();
+  } catch (e) {
+    $('aopResults').innerHTML = '<div class="card muted">Unable to load AOPs.</div>';
+  }
+}
+function renderAopResults() {
+  if (!state.candidateAops.length) { $('aopResults').innerHTML = '<div class="card muted">No AOPs found. Try a chemical, event, adverse outcome, or AOP ID.</div>'; return; }
+  $('aopResults').innerHTML = state.candidateAops.map(a => `<div class="card ${state.selectedAop?.id === a.id ? 'selected' : ''}">
+    <div class="card-title">AOP ${a.id}: ${escapeHtml(a.title || '')}</div>
+    <div class="muted"><span class="badge">MIE</span>${escapeHtml(a.mie || 'Unknown')}<br><span class="badge">AO</span>${escapeHtml(a.ao || 'Unknown')}</div>
+    <div class="actions"><button class="secondary" onclick="selectAop(${a.id})">Use this AOP</button><button class="ghost" onclick="askAboutAop(${a.id})">Ask assistant</button></div>
+  </div>`).join('');
+}
+async function selectAop(aopId) {
+  state.selectedAop = state.candidateAops.find(a => a.id === aopId) || { id: aopId };
+  updateContext();
+  renderAopResults();
+  await loadAopDetail(aopId);
+  showTab('evidence');
+}
+async function loadAopDetail(aopId) {
+  $('selectedAopSummary').textContent = 'Loading selected AOP…';
+  try {
+    const res = await fetch(`${API_BASE}/aops/${aopId}`);
+    state.selectedAopDetail = await res.json();
+    renderEvidence();
+  } catch (e) {
+    $('selectedAopSummary').textContent = 'Unable to load AOP details.';
+  }
+}
+function renderEvidence() {
+  const d = state.selectedAopDetail;
+  if (!d) return;
+  $('selectedAopSummary').innerHTML = `<strong>AOP ${d.id}: ${escapeHtml(d.title)}</strong><br><span class="badge">MIE</span>${escapeHtml(d.mie || 'Unknown')} <span class="badge">AO</span>${escapeHtml(d.ao || 'Unknown')}`;
+  const events = d.events || [];
+  $('pathwayView').innerHTML = events.map((ev, i) => `<div class="event-node"><strong>${escapeHtml(ev.event_type)} • Event ${ev.event_id}</strong>${escapeHtml(ev.event_name)}</div>${i < events.length - 1 ? '<div class="arrow">→</div>' : ''}`).join('');
+  const kers = d.kers || [];
+  $('kerEvidence').innerHTML = kers.length ? kers.map(k => `<div class="card"><div class="card-title">KER ${k.upstream_event_id} → ${k.downstream_event_id}</div><span class="badge">${escapeHtml(k.rel_type)}</span><span class="badge">Evidence code: ${escapeHtml(k.evidence ?? 'n/a')}</span><span class="badge">Quant code: ${escapeHtml(k.quantitative ?? 'n/a')}</span></div>`).join('') : '<div class="muted">No KERs available.</div>';
+}
+async function runAssessment() {
+  captureProblem();
+  $('assessmentOutput').innerHTML = '<div class="muted">Running evidence-to-decision assessment…</div>';
+  try {
+    const res = await fetch(`${API_BASE}/assess`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chemical: state.chemical, context: state.context, available_data: [] }) });
+    state.assessment = await res.json();
+    renderAssessment();
+  } catch (e) {
+    $('assessmentOutput').innerHTML = '<div class="muted">Assessment failed.</div>';
+  }
+}
+function renderAssessment() {
+  const a = state.assessment || {};
+  const first = (a.hazard_hypotheses || [])[0];
+  $('assessmentOutput').innerHTML = `<h3>Assessment summary</h3>${first ? `<p>${escapeHtml(first.conclusion)}</p>` : '<p class="muted">No AOP-grounded hypothesis found.</p>'}
+    <div class="metric-grid">${Object.entries(a.confidence || {}).map(([k,v]) => `<div class="metric"><small>${escapeHtml(k.replace('_',' '))}</small><strong>${escapeHtml(v)}</strong></div>`).join('')}</div>
+    <h3>Critical data gaps</h3><ul class="clean">${(a.critical_data_gaps || []).map(g => `<li>${escapeHtml(g.priority)}: ${escapeHtml(g.gap)}</li>`).join('') || '<li>No critical gaps identified.</li>'}</ul>
+    <h3>Uncertainties</h3><ul class="clean">${(a.uncertainties || []).map(u => `<li>${escapeHtml(u.type)}: ${escapeHtml(u.description)}</li>`).join('') || '<li>No major uncertainties identified.</li>'}</ul>`;
+}
+async function runQuantitative() {
+  captureProblem();
+  const selectedId = state.selectedAop?.id || Number(($('aopSearchInput').value.match(/\d+/) || [])[0]);
+  const pod = parseValueUnit($('quantPod').value);
+  const exposure = parseValueUnit($('quantExposure').value);
+  const ivive = parseValueUnit($('quantIvive').value);
+  if (!state.chemical || !selectedId || !Number($('quantEvent').value) || pod.value === null || exposure.value === null) {
+    $('quantOutput').innerHTML = '<div class="muted">Enter chemical, selected AOP, mapped event ID, POD, and exposure first.</div>';
     return;
   }
-  quantBtn.disabled = true;
-  quantResult.style.display = 'block';
-  quantResult.innerHTML = 'Calculating screening margin…';
-
+  $('quantOutput').innerHTML = '<div class="muted">Calculating quantitative screen…</div>';
+  const nam = { assay: $('quantAssay').value.trim() || 'User-entered NAM result', mapped_event_id: Number($('quantEvent').value), pod_type: $('quantPodType').value, pod_value: pod.value, pod_unit: pod.unit };
+  if (ivive.value !== null) nam.ivive = { conversion_factor: ivive.value, output_unit: ivive.unit };
   try {
-    const res = await fetch(API_BASE + '/quantitative-assessment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chemical,
-        aop_id: aopId,
-        nam_results: [{
-          assay: 'User-entered NAM result',
-          mapped_event_id: eventId,
-          pod_type: 'POD',
-          pod_value: pod.value,
-          pod_unit: pod.unit
-        }],
-        exposure
-      }),
-    });
-    const data = await res.json();
-    quantResult.innerHTML = renderQuantitativeAssessment(data);
-  } catch(e) {
-    quantResult.innerHTML = 'Quantitative assessment failed. Please try again.';
+    const res = await fetch(`${API_BASE}/quantitative-assessment`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chemical: state.chemical, aop_id: selectedId, nam_results: [nam], exposure }) });
+    state.quantitative = await res.json();
+    renderQuantitative();
+  } catch (e) {
+    $('quantOutput').innerHTML = '<div class="muted">Quantitative assessment failed.</div>';
   }
-
-  quantBtn.disabled = false;
 }
-
-function renderQuantitativeAssessment(data) {
-  if (data.detail) return `<strong>Assessment error:</strong> ${escapeHtml(data.detail)}`;
-  const ke = data.most_sensitive_ke || {};
-  const ber = data.bioactivity_exposure_ratio;
-  return `
-    <strong>${escapeHtml(data.chemical)} AOP ${escapeHtml(data.aop_id)} quantitative screen</strong>
-    <div class="confidence-grid">
-      <div class="confidence-card">BER<span>${escapeHtml(ber ?? 'not calculated')}</span></div>
-      <div class="confidence-card">Confidence<span>${escapeHtml(data.quantitative_confidence || '')}</span></div>
-      <div class="confidence-card">Hazard quotient<span>${escapeHtml(data.hazard_quotient ?? 'not calculated')}</span></div>
-      <div class="confidence-card">Most sensitive KE<span>${escapeHtml(ke.mapped_event_id || 'n/a')}</span></div>
-    </div>
-    <p><strong>Interpretation:</strong> ${escapeHtml(data.interpretation || '')}</p>
-    <p><strong>Most sensitive event:</strong> ${escapeHtml(ke.mapped_event_name || 'No mapped event')}</p>
-    <p><strong>Uncertainties</strong></p>
-    <ul>${(data.uncertainties || []).map(u => `<li>${escapeHtml(u)}</li>`).join('') || '<li>No major quantitative uncertainties identified.</li>'}</ul>
-  `;
+function renderQuantitative() {
+  const q = state.quantitative || {};
+  const ke = q.most_sensitive_ke || {};
+  $('quantOutput').innerHTML = `<h3>Quantitative screening result</h3>
+    <div class="metric-grid"><div class="metric"><small>BER</small><strong>${escapeHtml(q.bioactivity_exposure_ratio ?? 'n/a')}</strong></div><div class="metric"><small>MOE</small><strong>${escapeHtml(q.margin_of_exposure ?? 'n/a')}</strong></div><div class="metric"><small>Hazard quotient</small><strong>${escapeHtml(q.hazard_quotient ?? 'n/a')}</strong></div><div class="metric"><small>Confidence</small><strong>${escapeHtml(q.quantitative_confidence || 'n/a')}</strong></div></div>
+    <p>${escapeHtml(q.interpretation || '')}</p><p class="muted">Most sensitive KE: ${escapeHtml(ke.mapped_event_id || 'n/a')} ${escapeHtml(ke.mapped_event_name || '')}</p>
+    <h3>Uncertainties</h3><ul class="clean">${(q.uncertainties || []).map(u => `<li>${escapeHtml(u)}</li>`).join('') || '<li>No major quantitative uncertainties identified.</li>'}</ul>`;
 }
-function addMessage(text, role, sources) {
+function buildDraft() {
+  const a = state.assessment || {};
+  const q = state.quantitative || {};
+  const first = (a.hazard_hypotheses || [])[0];
+  $('draftText').value = `Problem formulation: ${state.chemical || '[chemical not specified]'}; use case ${state.context.use_case || '[not specified]'}; route ${state.context.route || '[not specified]'}; population/species ${state.context.population || '[not specified]'}.
+
+AOP hypothesis: ${first ? first.conclusion : 'No AOP-grounded hypothesis has been selected or generated yet.'}
+
+Quantitative screen: BER ${q.bioactivity_exposure_ratio ?? 'not calculated'}; confidence ${q.quantitative_confidence || 'not calculated'}. ${q.interpretation || ''}
+
+Key uncertainties/data gaps: ${(a.critical_data_gaps || []).map(g => `${g.priority}: ${g.gap}`).join('; ') || 'Not yet assessed.'}
+
+Regulatory caveat: This is a prototype screening support summary. Values and thresholds require source validation before regulatory use.`;
+}
+function askAboutAop(aopId) { sendAssistant(`Explain AOP ${aopId} in risk-assessment terms and identify why it may matter for ${state.chemical || 'the current chemical'}.`); }
+async function sendAssistant(prompt) {
+  const msg = prompt || $('assistantInput').value.trim();
+  if (!msg) return;
+  $('assistantInput').value = '';
+  addMessage(msg, 'user');
+  addMessage('Thinking…', 'bot', 'typing');
+  const contextMsg = `Current assessment context: chemical=${state.chemical || 'not specified'}, use_case=${state.context.use_case || 'not specified'}, selected_aop=${state.selectedAop?.id || 'none'}. User request: ${msg}`;
+  try {
+    const res = await fetch(`${API_BASE}/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: contextMsg }) });
+    const data = await res.json();
+    removeTyping();
+    addMessage(data.answer || 'No answer returned.', 'bot');
+  } catch (e) {
+    removeTyping();
+    addMessage('Assistant request failed.', 'bot');
+  }
+}
+function addMessage(text, role, id) {
   const div = document.createElement('div');
   div.className = `msg ${role}`;
-  div.innerHTML = `
-    <div class="msg-avatar">${role === 'user' ? 'P' : '⚡'}</div>
-    <div class="msg-bubble">
-      ${renderMarkdown(text)}
-      ${sources && sources.length ? renderSources(sources) : ''}
-    </div>`;
+  if (id) div.id = id;
+  div.innerHTML = `<div class="msg-avatar">${role === 'user' ? 'P' : '⚡'}</div><div class="msg-bubble">${escapeHtml(text).replace(/\n/g, '<br>')}</div>`;
   messagesEl.appendChild(div);
-  scrollToBottom();
+  messagesEl.scrollTop = messagesEl.scrollHeight;
 }
-
-function addNoDataMessage(text) {
-  const div = document.createElement('div');
-  div.className = 'msg bot';
-  div.innerHTML = `
-    <div class="msg-avatar">⚡</div>
-    <div class="msg-bubble" style="border-left: 3px solid var(--warning);">
-      <p>🔍 <strong>No AOP data found</strong></p>
-      ${renderMarkdown(text)}
-    </div>`;
-  messagesEl.appendChild(div);
-  scrollToBottom();
-}
-
-function renderMarkdown(text) {
-  // Simple markdown: paragraphs, bold, lists, code
-  let html = text
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`(.*?)`/g, '<code>$1</code>');
-
-  // Handle lists
-  html = html.replace(/^- (.*?)(?:\n|$)/gm, '<li>$1</li>');
-  html = html.replace(/(<li>.*?<\/li>)/s, '<ul>$1</ul>');
-
-  // Handle paragraphs
-  const paragraphs = html.split(/\n\n+/);
-  return paragraphs.map(p => {
-    if (p.startsWith('<ul>')) return `<ul>${p.replace('<ul>', '').replace('</ul>', '')}</ul>`;
-    return `<p>${p.replace(/\n/g, '<br>')}</p>`;
-  }).join('');
-}
-
-function renderSources(sources) {
-  return `<div class="sources">${sources.map(s => 
-    `<span class="source-tag" onclick="sendMessage('Show me AOP ${s.id}')">AOP ${s.id}</span>`
-  ).join('')}</div>`;
-}
-
-function showTyping() {
-  const id = 'typing-' + Date.now();
-  const div = document.createElement('div');
-  div.className = 'msg bot';
-  div.id = id;
-  div.innerHTML = `
-    <div class="msg-avatar">⚡</div>
-    <div class="msg-bubble">
-      <div class="typing-indicator">
-        <span></span><span></span><span></span>
-      </div>
-    </div>`;
-  messagesEl.appendChild(div);
-  scrollToBottom();
-  return id;
-}
-
-function removeTyping(id) {
-  const el = document.getElementById(id);
-  if (el) el.remove();
-}
-
-function scrollToBottom() {
-  setTimeout(() => {
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }, 50);
-}
+function removeTyping() { const el = $('typing'); if (el) el.remove(); }
+updateContext();
 </script>
 </body>
 </html>
