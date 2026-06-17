@@ -256,13 +256,13 @@
     <section id="openfoodtox" class="tab-content">
       <div class="panel">
         <h2>4. OpenFoodTox query</h2>
-        <p class="help">Question EFSA OpenFoodTox records after the official i6z dossiers have been imported into a local IUCLID 6 instance. Use this step to look for toxicant identity records, toxicological values/study documents, and publication links that can contextualize the selected AOP evidence.</p>
+        <p class="help">Question EFSA OpenFoodTox records from either a local SQLite index built from the official Excel export or, for institutions, a local IUCLID 6 import. Use this step to look for toxicant identity records, toxicological values/study documents, and publication links that can contextualize the selected AOP evidence.</p>
         <div class="grid">
           <div><label for="oftQuery">Toxicant search</label><input id="oftQuery" placeholder="name, CAS, EC number, or synonym"></div>
           <div><label for="oftLimit">Result limit</label><select id="oftLimit"><option>10</option><option>5</option><option>25</option></select></div>
         </div>
         <div class="actions"><button class="primary" id="runOftBtn">Query OpenFoodTox</button><button class="secondary" id="copyChemicalToOftBtn">Use current chemical</button></div>
-        <div class="warning-box">OpenFoodTox is not queried from a public EFSA API. KEvidence expects the organisation to import EFSA OpenFoodTox IUCLID 6 i6z dossiers into a local IUCLID instance and configure this service with the local IUCLID REST API URL.</div>
+        <div class="warning-box">OpenFoodTox is not queried from a public EFSA API. Regular clients can run scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db to download and index the official Excel export automatically. Institutions can alternatively import i6z dossiers into IUCLID 6 and configure the local IUCLID REST API URL.</div>
       </div>
       <div class="panel" id="oftOutput"><div class="muted">No OpenFoodTox query run yet.</div></div>
     </section>
@@ -460,11 +460,11 @@ function renderOpenFoodTox() {
   if (!o.configured) {
     $('oftOutput').innerHTML = `<h3>OpenFoodTox integration not configured</h3><p class="muted">${escapeHtml(o.summary || '')}</p>
       <h3>Setup checklist</h3><ul class="clean">${(status.setup_steps || []).map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ul>
-      <p class="muted">Expected mode: ${escapeHtml(status.mode || 'local IUCLID Public REST API')}. Substances path: ${escapeHtml(status.substances_path || '')}. Dossiers path: ${escapeHtml(status.dossiers_path || '')}.</p>`;
+      <p class="muted">Expected mode: ${escapeHtml(status.mode || 'local SQLite export or IUCLID Public REST API')}. SQLite path: ${escapeHtml(status.sqlite_path || 'data/openfoodtox.db')}. IUCLID substances path: ${escapeHtml(status.substances_path || '')}.</p>`;
     return;
   }
   $('oftOutput').innerHTML = `<h3>OpenFoodTox result</h3><p class="muted">${escapeHtml(o.summary || '')}</p>
-    <div class="metric-grid"><div class="metric"><small>Substances</small><strong>${substances.length}</strong></div><div class="metric"><small>Tox/study records</small><strong>${tox.length}</strong></div><div class="metric"><small>Publication links</small><strong>${pubs.length}</strong></div><div class="metric"><small>Source</small><strong>IUCLID</strong></div></div>
+    <div class="metric-grid"><div class="metric"><small>Substances</small><strong>${substances.length}</strong></div><div class="metric"><small>Tox/study records</small><strong>${tox.length}</strong></div><div class="metric"><small>Publication links</small><strong>${pubs.length}</strong></div><div class="metric"><small>Source</small><strong>${escapeHtml(o.source_mode || o.status?.mode || 'OpenFoodTox')}</strong></div></div>
     <h3>Candidate substances</h3><div class="cards">${substances.map(s => `<div class="card"><div class="card-title">${escapeHtml(s.name || s.uuid || 'Substance')}</div><span class="badge">UUID ${escapeHtml(s.uuid || 'n/a')}</span><span class="badge">CAS ${escapeHtml(s.cas || 'n/a')}</span><span class="badge">EC ${escapeHtml(s.ec || 'n/a')}</span></div>`).join('') || '<div class="muted">No substances returned.</div>'}</div>
     <h3>Toxicological values / study documents</h3><ul class="clean">${tox.slice(0, 10).map(t => `<li>${escapeHtml(t.title || t.section || t.uuid || 'Record')}${t.value ? ` — ${escapeHtml(t.value)} ${escapeHtml(t.unit || '')}` : ''}</li>`).join('') || '<li>No toxicological records returned by the configured IUCLID query.</li>'}</ul>
     <h3>Publication/source links</h3><ul class="clean">${pubs.slice(0, 10).map(p => `<li>${p.url ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.title || p.url)}</a>` : escapeHtml(p.title || p.uuid || 'Publication/source record')}</li>`).join('') || '<li>No publication links returned by the configured IUCLID query.</li>'}</ul>`;

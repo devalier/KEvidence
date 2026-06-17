@@ -1617,29 +1617,39 @@ OPENFOODTOX_IUCLID_PASSWORD = os.getenv("OPENFOODTOX_IUCLID_PASSWORD", "")
 OPENFOODTOX_SUBSTANCES_PATH = os.getenv("OPENFOODTOX_SUBSTANCES_PATH", "/api/substances")
 OPENFOODTOX_DOSSIERS_PATH = os.getenv("OPENFOODTOX_DOSSIERS_PATH", "/api/dossiers")
 OPENFOODTOX_DOCUMENTS_PATH_TEMPLATE = os.getenv("OPENFOODTOX_DOCUMENTS_PATH_TEMPLATE", "/api/dossiers/{dossier_uuid}/documents")
+OPENFOODTOX_SQLITE_PATH = Path(os.getenv("OPENFOODTOX_SQLITE_PATH", str(DATA_DIR / "openfoodtox.db")))
 
 
 def _openfoodtox_configured() -> bool:
     return bool(OPENFOODTOX_IUCLID_BASE_URL)
 
 
+def _openfoodtox_sqlite_available() -> bool:
+    return OPENFOODTOX_SQLITE_PATH.exists()
+
+
 def openfoodtox_status() -> dict[str, Any]:
     """Return integration status without exposing credentials."""
+    sqlite_available = _openfoodtox_sqlite_available()
+    configured = _openfoodtox_configured() or sqlite_available
+    mode = "local_iuclid_public_rest_api" if _openfoodtox_configured() else ("local_sqlite_export" if sqlite_available else "not_configured")
     return {
-        "configured": _openfoodtox_configured(),
-        "mode": "local_iuclid_public_rest_api" if _openfoodtox_configured() else "not_configured",
+        "configured": configured,
+        "mode": mode,
         "base_url_configured": bool(OPENFOODTOX_IUCLID_BASE_URL),
         "auth_configured": bool(OPENFOODTOX_IUCLID_USERNAME or OPENFOODTOX_IUCLID_PASSWORD),
+        "sqlite_path": str(OPENFOODTOX_SQLITE_PATH),
+        "sqlite_available": sqlite_available,
         "substances_path": OPENFOODTOX_SUBSTANCES_PATH,
         "dossiers_path": OPENFOODTOX_DOSSIERS_PATH,
         "documents_path_template": OPENFOODTOX_DOCUMENTS_PATH_TEMPLATE,
-        "source_note": "OpenFoodTox 3.0 is EFSA chemical hazards data distributed as Excel and IUCLID 6 i6z dossier archives; KEvidence queries a ministry/local IUCLID instance after those dossiers are imported.",
+        "source_note": "OpenFoodTox 3.0 is EFSA chemical hazards data distributed as Excel and IUCLID 6 i6z dossier archives; KEvidence can query either a local IUCLID import or a local SQLite index built from the Excel/CSV export.",
         "license_note": "EFSA/Zenodo metadata should be retained with attribution; do not imply EFSA endorsement of KEvidence outputs.",
         "setup_steps": [
-            "Download official EFSA OpenFoodTox 3.0 IUCLID 6 .i6z archives.",
-            "Import the .i6z dossiers into the organisation's IUCLID 6 instance.",
-            "Create/read-only API credentials with access to the imported OpenFoodTox dossiers.",
-            "Set OPENFOODTOX_IUCLID_BASE_URL and optional path/auth environment variables for this service.",
+            "Regular client path: download the official EFSA/Zenodo OpenFoodTox Excel export.",
+            "Run: python scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db",
+            "Restart KEvidence; the OpenFoodTox tab will use local SQLite mode automatically.",
+            "Institutional path: alternatively import official .i6z dossiers into IUCLID 6 and set OPENFOODTOX_IUCLID_BASE_URL.",
         ],
     }
 
@@ -1718,6 +1728,91 @@ async def _iuclid_get(client: httpx.AsyncClient, path: str, params: dict[str, An
     return response.json()
 
 
+def _row_has_any(row: dict[str, Any], needles: tuple[str, ...]) -> bool:
+    haystack = " ".join([str(k) for k in row.keys()] + [str(v) for v in row.values()]).lower()
+    return any(needle in haystack for needle in needles)
+
+
+def _row_value_for(row: dict[str, Any], needles: tuple[str, ...]) -> Any:
+    for key, value in row.items():
+        key_l = str(key).lower()
+        if any(needle in key_l for needle in needles) and value not in (None, ""):
+            return value
+    return None
+
+
+def _normalize_local_openfoodtox_row(table_name: str, row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "uuid": _row_value_for(row, ("uuid", "iuclid", "id")),
+        "name": _row_value_for(row, ("substance name", "substance", "name", "compound")),
+        "cas": _row_value_for(row, ("cas",)),
+        "ec": _row_value_for(row, ("ec number", "einecs", "ec no", "ec")),
+        "title": _row_value_for(row, ("title", "efsa output", "opinion", "endpoint", "reference value")),
+        "section": table_name,
+        "value": _row_value_for(row, ("reference value", "value", "noael", "loael", "bmd", "adi", "tdi", "arfd")),
+        "unit": _row_value_for(row, ("unit",)),
+        "url": _row_value_for(row, ("url", "doi", "link")),
+        "raw": row,
+    }
+
+
+def query_openfoodtox_sqlite(query: str, limit: int) -> dict[str, Any]:
+    pattern = f"%{query.lower()}%"
+    conn = sqlite3.connect(str(OPENFOODTOX_SQLITE_PATH))
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT table_name, row_json FROM oft_rows WHERE row_text LIKE ? LIMIT ?",
+        (pattern, max(limit * 20, 100)),
+    )
+    rows = cur.fetchall()
+    metadata = {}
+    try:
+        cur.execute("SELECT key, value FROM oft_metadata")
+        metadata = {r["key"]: r["value"] for r in cur.fetchall()}
+    except sqlite3.Error:
+        metadata = {}
+    conn.close()
+
+    substances = []
+    toxicological_values = []
+    publications = []
+    seen_substances = set()
+    tox_needles = ("toxic", "reference value", "reference point", "endpoint", "study", "noael", "loael", "bmd", "adi", "tdi", "arfd", "dose")
+    publication_needles = ("publication", "efsa output", "opinion", "journal", "doi", "url", "link", "reference")
+
+    for db_row in rows:
+        row = json.loads(db_row["row_json"])
+        table_name = db_row["table_name"]
+        normalized = _normalize_local_openfoodtox_row(table_name, row)
+        normalized["source_table"] = table_name
+        normalized["source_mode"] = "local_sqlite_export"
+
+        substance_key = (normalized.get("name"), normalized.get("cas"), normalized.get("ec"))
+        if _row_has_any(row, ("substance", "cas", "ec number", "compound")) and substance_key not in seen_substances:
+            substances.append(normalized)
+            seen_substances.add(substance_key)
+
+        if _row_has_any(row, tox_needles) or _row_has_any({"table": table_name}, tox_needles):
+            toxicological_values.append(normalized)
+
+        if _row_has_any(row, publication_needles) or _row_has_any({"table": table_name}, publication_needles):
+            publications.append(normalized)
+
+    return {
+        "query": query,
+        "configured": True,
+        "status": openfoodtox_status(),
+        "source_mode": "local_sqlite_export",
+        "metadata": metadata,
+        "substances": substances[:limit],
+        "dossiers": [],
+        "toxicological_values": toxicological_values[:limit],
+        "publications": publications[:limit],
+        "summary": f"Found {len(substances[:limit])} candidate substance record(s), {len(toxicological_values[:limit])} toxicological value/study record(s), and {len(publications[:limit])} publication/link record(s) in the local OpenFoodTox SQLite index.",
+    }
+
+
 async def query_openfoodtox(body: dict[str, Any]) -> dict[str, Any]:
     """Query EFSA OpenFoodTox dossiers imported into a local IUCLID 6 instance.
 
@@ -1735,6 +1830,8 @@ async def query_openfoodtox(body: dict[str, Any]) -> dict[str, Any]:
         raise HTTPException(400, "query is required")
 
     status = openfoodtox_status()
+    if not _openfoodtox_configured() and _openfoodtox_sqlite_available():
+        return query_openfoodtox_sqlite(query, limit)
     if not status["configured"]:
         return {
             "query": query,
@@ -1743,7 +1840,7 @@ async def query_openfoodtox(body: dict[str, Any]) -> dict[str, Any]:
             "substances": [],
             "toxicological_values": [],
             "publications": [],
-            "summary": "OpenFoodTox querying is not configured. Import EFSA OpenFoodTox i6z dossiers into a local IUCLID 6 instance and set OPENFOODTOX_IUCLID_BASE_URL to enable live queries.",
+            "summary": "OpenFoodTox querying is not configured. For a regular client, run scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db to download/index the EFSA/Zenodo Excel export. For an institution, import i6z dossiers into IUCLID and set OPENFOODTOX_IUCLID_BASE_URL.",
         }
 
     params = {"q": query, "search": query, "limit": limit, "include": "identifiers,synonyms,dossiers"}
