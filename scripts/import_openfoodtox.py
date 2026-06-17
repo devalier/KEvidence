@@ -4,7 +4,7 @@
 This is the non-IUCLID path for regular KEvidence installations. Download the
 OpenFoodTox Excel export from EFSA/Zenodo, then run for example:
 
-    python scripts/import_openfoodtox.py --input OpenFoodTox_3.xlsx --db data/openfoodtox.db
+    python scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db
 
 The importer intentionally stores source rows generically because OpenFoodTox
 sheet names and column names may evolve. The application classifies matching
@@ -18,8 +18,10 @@ import argparse
 import csv
 import json
 import sqlite3
+import urllib.error
+import urllib.request
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Any
 
 
 def clean_cell(value):
@@ -74,6 +76,43 @@ def iter_input_rows(path: Path) -> Iterable[tuple[str, dict[str, str]]]:
         raise SystemExit(f"Unsupported input format: {path}")
 
 
+ZENODO_RECORD_ID = "19388272"
+ZENODO_API_URL = f"https://zenodo.org/api/records/{ZENODO_RECORD_ID}"
+
+
+def download_latest_openfoodtox_excel(cache_dir: Path) -> Path:
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        with urllib.request.urlopen(ZENODO_API_URL, timeout=60) as response:
+            record: dict[str, Any] = json.loads(response.read().decode("utf-8"))
+    except urllib.error.URLError as exc:
+        raise SystemExit(f"Could not reach Zenodo to download OpenFoodTox: {exc}. If this server has restricted outbound access, download the Excel file manually and rerun with --input /path/to/file.xlsx.") from exc
+
+    files = record.get("files") or []
+    xlsx_file = next((f for f in files if str(f.get("key", "")).lower().endswith(".xlsx")), None)
+    if not xlsx_file:
+        raise SystemExit("No .xlsx file found in the OpenFoodTox Zenodo record.")
+
+    filename = Path(xlsx_file["key"]).name
+    output_path = cache_dir / filename
+    links = xlsx_file.get("links") or {}
+    download_url = links.get("self") or links.get("download")
+    if not download_url:
+        raise SystemExit("The OpenFoodTox Zenodo record did not include a download URL for the Excel file.")
+
+    print(f"Downloading {filename} from Zenodo record {ZENODO_RECORD_ID}...")
+    try:
+        with urllib.request.urlopen(download_url, timeout=300) as response, output_path.open("wb") as out:
+            while True:
+                chunk = response.read(1024 * 1024)
+                if not chunk:
+                    break
+                out.write(chunk)
+    except urllib.error.URLError as exc:
+        raise SystemExit(f"Could not download {filename} from Zenodo: {exc}. If this server has restricted outbound access, download the Excel file manually and rerun with --input /path/to/file.xlsx.") from exc
+    return output_path
+
+
 def build_index(input_path: Path, db_path: Path) -> int:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(db_path))
@@ -105,11 +144,20 @@ def build_index(input_path: Path, db_path: Path) -> int:
 
 def main():
     parser = argparse.ArgumentParser(description="Import EFSA OpenFoodTox Excel/CSV exports into a KEvidence SQLite index.")
-    parser.add_argument("--input", required=True, help="OpenFoodTox .xlsx file, .csv/.tsv file, or directory of exported sheets")
+    parser.add_argument("--input", help="OpenFoodTox .xlsx file, .csv/.tsv file, or directory of exported sheets")
+    parser.add_argument("--download-latest", action="store_true", help="Download the latest OpenFoodTox Excel export from the official Zenodo record before importing")
+    parser.add_argument("--cache-dir", default="data/openfoodtox_downloads", help="Where to store the downloaded Excel file")
     parser.add_argument("--db", default="data/openfoodtox.db", help="Output SQLite DB path")
     args = parser.parse_args()
 
-    count = build_index(Path(args.input), Path(args.db))
+    if args.download_latest:
+        input_path = download_latest_openfoodtox_excel(Path(args.cache_dir))
+    elif args.input:
+        input_path = Path(args.input)
+    else:
+        raise SystemExit("Provide --input /path/to/export.xlsx or use --download-latest")
+
+    count = build_index(input_path, Path(args.db))
     print(f"Imported {count} OpenFoodTox rows into {args.db}")
 
 

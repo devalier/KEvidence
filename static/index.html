@@ -262,7 +262,7 @@
           <div><label for="oftLimit">Result limit</label><select id="oftLimit"><option>10</option><option>5</option><option>25</option></select></div>
         </div>
         <div class="actions"><button class="primary" id="runOftBtn">Query OpenFoodTox</button><button class="secondary" id="copyChemicalToOftBtn">Use current chemical</button></div>
-        <div class="warning-box">OpenFoodTox is not queried from a public EFSA API. Regular clients can download the official Excel export and run scripts/import_openfoodtox.py to create data/openfoodtox.db. Institutions can alternatively import i6z dossiers into IUCLID 6 and configure the local IUCLID REST API URL.</div>
+        <div class="warning-box">OpenFoodTox is not queried from a public EFSA API. Regular clients can run scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db to download and index the official Excel export automatically. Institutions can alternatively import i6z dossiers into IUCLID 6 and configure the local IUCLID REST API URL.</div>
       </div>
       <div class="panel" id="oftOutput"><div class="muted">No OpenFoodTox query run yet.</div></div>
     </section>

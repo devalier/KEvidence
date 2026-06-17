@@ -1647,7 +1647,7 @@ def openfoodtox_status() -> dict[str, Any]:
         "license_note": "EFSA/Zenodo metadata should be retained with attribution; do not imply EFSA endorsement of KEvidence outputs.",
         "setup_steps": [
             "Regular client path: download the official EFSA/Zenodo OpenFoodTox Excel export.",
-            "Run: python scripts/import_openfoodtox.py --input /path/to/OpenFoodTox.xlsx --db data/openfoodtox.db",
+            "Run: python scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db",
             "Restart KEvidence; the OpenFoodTox tab will use local SQLite mode automatically.",
             "Institutional path: alternatively import official .i6z dossiers into IUCLID 6 and set OPENFOODTOX_IUCLID_BASE_URL.",
         ],
@@ -1840,7 +1840,7 @@ async def query_openfoodtox(body: dict[str, Any]) -> dict[str, Any]:
             "substances": [],
             "toxicological_values": [],
             "publications": [],
-            "summary": "OpenFoodTox querying is not configured. For a regular client, download the EFSA/Zenodo Excel export and run scripts/import_openfoodtox.py to build data/openfoodtox.db. For an institution, import i6z dossiers into IUCLID and set OPENFOODTOX_IUCLID_BASE_URL.",
+            "summary": "OpenFoodTox querying is not configured. For a regular client, run scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db to download/index the EFSA/Zenodo Excel export. For an institution, import i6z dossiers into IUCLID and set OPENFOODTOX_IUCLID_BASE_URL.",
         }
 
     params = {"q": query, "search": query, "limit": limit, "include": "identifiers,synonyms,dossiers"}
