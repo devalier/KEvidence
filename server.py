@@ -1618,8 +1618,38 @@ async def health():
 @app.get("/api/aops")
 async def list_aops(search: Optional[str] = None, limit: int = 100):
     if search:
-        results = search_aops_text(search, limit)
-        return {"results": results, "count": len(results)}
+        # AOP discovery needs chemical/stressor lookup as well as title/event text
+        # search. Chemicals such as rotenone may appear as prototypical stressors
+        # rather than in an AOP title or key-event name, so text-only search can
+        # incorrectly return no results.
+        results = []
+        seen_ids = set()
+
+        for match in find_aops_by_chemical(search):
+            detail = get_aop_detail(match["aop_id"])
+            if not detail or detail["id"] in seen_ids:
+                continue
+            seen_ids.add(detail["id"])
+            results.append({
+                "id": detail["id"],
+                "title": detail.get("title", match.get("aop_title", "")),
+                "mie": detail.get("mie"),
+                "ao": detail.get("ao"),
+                "match_basis": "chemical/stressor index",
+                "matched_stressor": match.get("stressor"),
+            })
+
+        for result in search_aops_text(search, limit):
+            if result["id"] in seen_ids:
+                continue
+            result = dict(result)
+            result["match_basis"] = "AOP/event text search"
+            seen_ids.add(result["id"])
+            results.append(result)
+            if len(results) >= limit:
+                break
+
+        return {"results": results[:limit], "count": len(results[:limit])}
     aops = get_all_aops()
     return {"results": aops[:limit], "count": len(aops)}
 
