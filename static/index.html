@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KEvidence — Risk Assessment Workbench</title>
+<title></title>
 <style>
   :root {
     --bg: #0f172a;
@@ -368,7 +368,7 @@ function renderAopResults() {
   if (!state.candidateAops.length) { $('aopResults').innerHTML = '<div class="card muted">No AOPs found. Try a chemical, event, adverse outcome, or AOP ID.</div>'; return; }
   $('aopResults').innerHTML = state.candidateAops.map(a => `<div class="card ${state.selectedAop?.id === a.id ? 'selected' : ''}">
     <div class="card-title">AOP ${a.id}: ${escapeHtml(a.title || '')}</div>
-    <div class="muted"><span class="badge">${escapeHtml(a.match_basis || 'AOP list')}</span>${a.matched_stressor ? `<span class="badge">Stressor: ${escapeHtml(a.matched_stressor)}</span>` : ''}<br><span class="badge">MIE</span>${escapeHtml(a.mie || 'Unknown')}<br><span class="badge">AO</span>${escapeHtml(a.ao || 'Unknown')}</div>
+    <div class="muted"><span class="badge">MIE</span>${escapeHtml(a.mie || 'Unknown')}<br><span class="badge">AO</span>${escapeHtml(a.ao || 'Unknown')}</div>
     <div class="actions"><button class="secondary" onclick="selectAop(${a.id})">Use this AOP</button><button class="ghost" onclick="askAboutAop(${a.id})">Ask assistant</button></div>
   </div>`).join('');
 }

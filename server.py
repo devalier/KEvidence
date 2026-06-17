@@ -1330,7 +1330,6 @@ def build_evidence_to_decision_assessment(body: dict[str, Any]) -> dict[str, Any
     }
 
 
-
 # ---------------------------------------------------------------------------
 # Quantitative AOP / exposure-aware risk module
 # ---------------------------------------------------------------------------
