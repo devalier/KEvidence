@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title></title>
+<title>KEvidence — Risk Assessment Workbench</title>
 <style>
   :root {
     --bg: #0f172a;
@@ -197,7 +197,7 @@
     <div class="logo">⚡</div>
     <div>
       <h1>KEvidence Risk Assessment Workbench</h1>
-      <div class="subtitle">AOP-guided hazard hypotheses, NAM mapping, quantitative screening, and assessment drafting</div>
+      <div class="subtitle">AOP-guided hazard hypotheses, OpenFoodTox querying, NAM mapping, quantitative screening, and assessment drafting</div>
     </div>
   </div>
   <div class="status-pill">Prototype • screening support, not a stand-alone regulatory conclusion</div>
@@ -208,9 +208,10 @@
     <button class="step active" data-tab="problem"><span>1. Problem formulation</span>Chemical, context, use case</button>
     <button class="step" data-tab="aops"><span>2. AOP discovery</span>Find and select pathways</button>
     <button class="step" data-tab="evidence"><span>3. Evidence mapping</span>Events, KERs, NAM coverage</button>
-    <button class="step" data-tab="quant"><span>4. Quantitative screening</span>POD vs exposure margin</button>
-    <button class="step" data-tab="gaps"><span>5. Uncertainty & gaps</span>Confidence and next data</button>
-    <button class="step" data-tab="draft"><span>6. Assessment draft</span>Memo-ready summary</button>
+    <button class="step" data-tab="openfoodtox"><span>4. OpenFoodTox</span>IUCLID toxicology records</button>
+    <button class="step" data-tab="quant"><span>5. Quantitative screening</span>POD vs exposure margin</button>
+    <button class="step" data-tab="gaps"><span>6. Uncertainty & gaps</span>Confidence and next data</button>
+    <button class="step" data-tab="draft"><span>7. Assessment draft</span>Memo-ready summary</button>
   </nav>
 
   <main>
@@ -251,9 +252,24 @@
       </div>
     </section>
 
+
+    <section id="openfoodtox" class="tab-content">
+      <div class="panel">
+        <h2>4. OpenFoodTox query</h2>
+        <p class="help">Question EFSA OpenFoodTox records after the official i6z dossiers have been imported into a local IUCLID 6 instance. Use this step to look for toxicant identity records, toxicological values/study documents, and publication links that can contextualize the selected AOP evidence.</p>
+        <div class="grid">
+          <div><label for="oftQuery">Toxicant search</label><input id="oftQuery" placeholder="name, CAS, EC number, or synonym"></div>
+          <div><label for="oftLimit">Result limit</label><select id="oftLimit"><option>10</option><option>5</option><option>25</option></select></div>
+        </div>
+        <div class="actions"><button class="primary" id="runOftBtn">Query OpenFoodTox</button><button class="secondary" id="copyChemicalToOftBtn">Use current chemical</button></div>
+        <div class="warning-box">OpenFoodTox is not queried from a public EFSA API. KEvidence expects the organisation to import EFSA OpenFoodTox IUCLID 6 i6z dossiers into a local IUCLID instance and configure this service with the local IUCLID REST API URL.</div>
+      </div>
+      <div class="panel" id="oftOutput"><div class="muted">No OpenFoodTox query run yet.</div></div>
+    </section>
+
     <section id="quant" class="tab-content">
       <div class="panel">
-        <h2>4. Quantitative screening</h2>
+        <h2>5. Quantitative screening</h2>
         <p class="help">Compare a NAM point of departure with an exposure estimate. This is a prototype screening calculator; it does not provide validated regulatory thresholds.</p>
         <div class="grid-3">
           <div><label for="quantAssay">NAM assay</label><input id="quantAssay" placeholder="e.g., complex I inhibition assay"></div>
@@ -271,7 +287,7 @@
 
     <section id="gaps" class="tab-content">
       <div class="panel">
-        <h2>5. Uncertainty & data gaps</h2>
+        <h2>6. Uncertainty & data gaps</h2>
         <p class="help">Run the evidence-to-decision engine to summarize hazard hypotheses, confidence, uncertainties, data gaps, and next recommended data collection.</p>
         <div class="actions"><button class="primary" id="runAssessBtn">Run evidence-to-decision assessment</button></div>
       </div>
@@ -280,7 +296,7 @@
 
     <section id="draft" class="tab-content">
       <div class="panel">
-        <h2>6. Assessment draft</h2>
+        <h2>7. Assessment draft</h2>
         <p class="help">Generate a structured draft from selected AOP evidence, quantitative results, uncertainties, and data gaps. Use the assistant to rewrite or explain sections.</p>
         <div class="actions"><button class="primary" id="buildDraftBtn">Build draft summary</button><button class="secondary" data-assistant-prompt="Draft this as a concise regulatory memo with caveats.">Ask assistant to refine</button></div>
         <textarea id="draftText" placeholder="Draft assessment text will appear here..."></textarea>
@@ -297,6 +313,7 @@
         <button class="prompt-chip" data-assistant-prompt="Find AOPs for the current chemical and explain why they matter.">Find AOPs</button>
         <button class="prompt-chip" data-assistant-prompt="Explain the selected AOP in risk-assessment terms.">Explain AOP</button>
         <button class="prompt-chip" data-assistant-prompt="Summarize weight of evidence and data gaps for the selected AOP.">Summarize evidence</button>
+        <button class="prompt-chip" data-assistant-prompt="Explain how OpenFoodTox records should be used alongside this AOP assessment.">Use OpenFoodTox</button>
         <button class="prompt-chip" data-assistant-prompt="Explain the quantitative screening result and its limitations.">Explain BER</button>
       </div>
     </div>
@@ -307,7 +324,7 @@
 
 <script>
 const API_BASE = window.location.pathname.startsWith('/kevidence') ? '/kevidence/api' : '/api';
-const state = { chemical: '', context: {}, candidateAops: [], selectedAop: null, selectedAopDetail: null, assessment: null, quantitative: null };
+const state = { chemical: '', context: {}, candidateAops: [], selectedAop: null, selectedAopDetail: null, assessment: null, quantitative: null, openfoodtox: null };
 
 const $ = id => document.getElementById(id);
 const steps = document.querySelectorAll('.step');
@@ -333,6 +350,7 @@ function captureProblem() {
   state.chemical = $('chemicalInput').value.trim();
   state.context = { use_case: $('useCaseInput').value, route: $('routeInput').value.trim(), population: $('populationInput').value.trim() };
   if (state.chemical && !$('aopSearchInput').value.trim()) $('aopSearchInput').value = state.chemical;
+  if (state.chemical && $('oftQuery') && !$('oftQuery').value.trim()) $('oftQuery').value = state.chemical;
   updateContext();
 }
 steps.forEach(step => step.addEventListener('click', () => showTab(step.dataset.tab)));
@@ -342,6 +360,8 @@ $('searchAopsBtn').addEventListener('click', searchAops);
 $('loadNotableBtn').addEventListener('click', () => loadAops(''));
 $('runAssessBtn').addEventListener('click', runAssessment);
 $('runQuantBtn').addEventListener('click', runQuantitative);
+$('runOftBtn').addEventListener('click', runOpenFoodTox);
+$('copyChemicalToOftBtn').addEventListener('click', () => { captureProblem(); $('oftQuery').value = state.chemical; });
 $('buildDraftBtn').addEventListener('click', buildDraft);
 $('assistantSend').addEventListener('click', sendAssistant);
 $('assistantInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendAssistant(); });
@@ -368,7 +388,7 @@ function renderAopResults() {
   if (!state.candidateAops.length) { $('aopResults').innerHTML = '<div class="card muted">No AOPs found. Try a chemical, event, adverse outcome, or AOP ID.</div>'; return; }
   $('aopResults').innerHTML = state.candidateAops.map(a => `<div class="card ${state.selectedAop?.id === a.id ? 'selected' : ''}">
     <div class="card-title">AOP ${a.id}: ${escapeHtml(a.title || '')}</div>
-    <div class="muted"><span class="badge">MIE</span>${escapeHtml(a.mie || 'Unknown')}<br><span class="badge">AO</span>${escapeHtml(a.ao || 'Unknown')}</div>
+    <div class="muted"><span class="badge">${escapeHtml(a.match_basis || 'AOP list')}</span>${a.matched_stressor ? `<span class="badge">Stressor: ${escapeHtml(a.matched_stressor)}</span>` : ''}<br><span class="badge">MIE</span>${escapeHtml(a.mie || 'Unknown')}<br><span class="badge">AO</span>${escapeHtml(a.ao || 'Unknown')}</div>
     <div class="actions"><button class="secondary" onclick="selectAop(${a.id})">Use this AOP</button><button class="ghost" onclick="askAboutAop(${a.id})">Ask assistant</button></div>
   </div>`).join('');
 }
@@ -417,6 +437,39 @@ function renderAssessment() {
     <h3>Critical data gaps</h3><ul class="clean">${(a.critical_data_gaps || []).map(g => `<li>${escapeHtml(g.priority)}: ${escapeHtml(g.gap)}</li>`).join('') || '<li>No critical gaps identified.</li>'}</ul>
     <h3>Uncertainties</h3><ul class="clean">${(a.uncertainties || []).map(u => `<li>${escapeHtml(u.type)}: ${escapeHtml(u.description)}</li>`).join('') || '<li>No major uncertainties identified.</li>'}</ul>`;
 }
+
+async function runOpenFoodTox() {
+  captureProblem();
+  const query = $('oftQuery').value.trim() || state.chemical;
+  if (!query) { $('oftOutput').innerHTML = '<div class="muted">Enter a toxicant name, CAS number, EC number, synonym, or chemical in problem formulation first.</div>'; return; }
+  $('oftOutput').innerHTML = '<div class="muted">Querying OpenFoodTox / local IUCLID integration…</div>';
+  try {
+    const res = await fetch(`${API_BASE}/openfoodtox/query`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query, limit: Number($('oftLimit').value), include_documents: true, include_dossiers: true }) });
+    state.openfoodtox = await res.json();
+    renderOpenFoodTox();
+  } catch (e) {
+    $('oftOutput').innerHTML = '<div class="muted">OpenFoodTox query failed.</div>';
+  }
+}
+function renderOpenFoodTox() {
+  const o = state.openfoodtox || {};
+  const substances = o.substances || [];
+  const tox = o.toxicological_values || [];
+  const pubs = o.publications || [];
+  const status = o.status || {};
+  if (!o.configured) {
+    $('oftOutput').innerHTML = `<h3>OpenFoodTox integration not configured</h3><p class="muted">${escapeHtml(o.summary || '')}</p>
+      <h3>Setup checklist</h3><ul class="clean">${(status.setup_steps || []).map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ul>
+      <p class="muted">Expected mode: ${escapeHtml(status.mode || 'local IUCLID Public REST API')}. Substances path: ${escapeHtml(status.substances_path || '')}. Dossiers path: ${escapeHtml(status.dossiers_path || '')}.</p>`;
+    return;
+  }
+  $('oftOutput').innerHTML = `<h3>OpenFoodTox result</h3><p class="muted">${escapeHtml(o.summary || '')}</p>
+    <div class="metric-grid"><div class="metric"><small>Substances</small><strong>${substances.length}</strong></div><div class="metric"><small>Tox/study records</small><strong>${tox.length}</strong></div><div class="metric"><small>Publication links</small><strong>${pubs.length}</strong></div><div class="metric"><small>Source</small><strong>IUCLID</strong></div></div>
+    <h3>Candidate substances</h3><div class="cards">${substances.map(s => `<div class="card"><div class="card-title">${escapeHtml(s.name || s.uuid || 'Substance')}</div><span class="badge">UUID ${escapeHtml(s.uuid || 'n/a')}</span><span class="badge">CAS ${escapeHtml(s.cas || 'n/a')}</span><span class="badge">EC ${escapeHtml(s.ec || 'n/a')}</span></div>`).join('') || '<div class="muted">No substances returned.</div>'}</div>
+    <h3>Toxicological values / study documents</h3><ul class="clean">${tox.slice(0, 10).map(t => `<li>${escapeHtml(t.title || t.section || t.uuid || 'Record')}${t.value ? ` — ${escapeHtml(t.value)} ${escapeHtml(t.unit || '')}` : ''}</li>`).join('') || '<li>No toxicological records returned by the configured IUCLID query.</li>'}</ul>
+    <h3>Publication/source links</h3><ul class="clean">${pubs.slice(0, 10).map(p => `<li>${p.url ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.title || p.url)}</a>` : escapeHtml(p.title || p.uuid || 'Publication/source record')}</li>`).join('') || '<li>No publication links returned by the configured IUCLID query.</li>'}</ul>`;
+}
+
 async function runQuantitative() {
   captureProblem();
   const selectedId = state.selectedAop?.id || Number(($('aopSearchInput').value.match(/\d+/) || [])[0]);
@@ -454,6 +507,8 @@ function buildDraft() {
 
 AOP hypothesis: ${first ? first.conclusion : 'No AOP-grounded hypothesis has been selected or generated yet.'}
 
+OpenFoodTox query: ${(state.openfoodtox && state.openfoodtox.summary) || 'Not queried or not configured.'}
+
 Quantitative screen: BER ${q.bioactivity_exposure_ratio ?? 'not calculated'}; confidence ${q.quantitative_confidence || 'not calculated'}. ${q.interpretation || ''}
 
 Key uncertainties/data gaps: ${(a.critical_data_gaps || []).map(g => `${g.priority}: ${g.gap}`).join('; ') || 'Not yet assessed.'}
@@ -467,7 +522,7 @@ async function sendAssistant(prompt) {
   $('assistantInput').value = '';
   addMessage(msg, 'user');
   addMessage('Thinking…', 'bot', 'typing');
-  const contextMsg = `Current assessment context: chemical=${state.chemical || 'not specified'}, use_case=${state.context.use_case || 'not specified'}, selected_aop=${state.selectedAop?.id || 'none'}. User request: ${msg}`;
+  const contextMsg = `Current assessment context: chemical=${state.chemical || 'not specified'}, use_case=${state.context.use_case || 'not specified'}, selected_aop=${state.selectedAop?.id || 'none'}, openfoodtox_summary=${state.openfoodtox?.summary || 'not queried'}. User request: ${msg}`;
   try {
     const res = await fetch(`${API_BASE}/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: contextMsg }) });
     const data = await res.json();

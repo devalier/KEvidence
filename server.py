@@ -1330,6 +1330,7 @@ def build_evidence_to_decision_assessment(body: dict[str, Any]) -> dict[str, Any
     }
 
 
+
 # ---------------------------------------------------------------------------
 # Quantitative AOP / exposure-aware risk module
 # ---------------------------------------------------------------------------
@@ -1607,6 +1608,205 @@ def build_quantitative_assessment(body: dict[str, Any]) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# OpenFoodTox / IUCLID integration
+# ---------------------------------------------------------------------------
+
+OPENFOODTOX_IUCLID_BASE_URL = os.getenv("OPENFOODTOX_IUCLID_BASE_URL", "").rstrip("/")
+OPENFOODTOX_IUCLID_USERNAME = os.getenv("OPENFOODTOX_IUCLID_USERNAME", "")
+OPENFOODTOX_IUCLID_PASSWORD = os.getenv("OPENFOODTOX_IUCLID_PASSWORD", "")
+OPENFOODTOX_SUBSTANCES_PATH = os.getenv("OPENFOODTOX_SUBSTANCES_PATH", "/api/substances")
+OPENFOODTOX_DOSSIERS_PATH = os.getenv("OPENFOODTOX_DOSSIERS_PATH", "/api/dossiers")
+OPENFOODTOX_DOCUMENTS_PATH_TEMPLATE = os.getenv("OPENFOODTOX_DOCUMENTS_PATH_TEMPLATE", "/api/dossiers/{dossier_uuid}/documents")
+
+
+def _openfoodtox_configured() -> bool:
+    return bool(OPENFOODTOX_IUCLID_BASE_URL)
+
+
+def openfoodtox_status() -> dict[str, Any]:
+    """Return integration status without exposing credentials."""
+    return {
+        "configured": _openfoodtox_configured(),
+        "mode": "local_iuclid_public_rest_api" if _openfoodtox_configured() else "not_configured",
+        "base_url_configured": bool(OPENFOODTOX_IUCLID_BASE_URL),
+        "auth_configured": bool(OPENFOODTOX_IUCLID_USERNAME or OPENFOODTOX_IUCLID_PASSWORD),
+        "substances_path": OPENFOODTOX_SUBSTANCES_PATH,
+        "dossiers_path": OPENFOODTOX_DOSSIERS_PATH,
+        "documents_path_template": OPENFOODTOX_DOCUMENTS_PATH_TEMPLATE,
+        "source_note": "OpenFoodTox 3.0 is EFSA chemical hazards data distributed as Excel and IUCLID 6 i6z dossier archives; KEvidence queries a ministry/local IUCLID instance after those dossiers are imported.",
+        "license_note": "EFSA/Zenodo metadata should be retained with attribution; do not imply EFSA endorsement of KEvidence outputs.",
+        "setup_steps": [
+            "Download official EFSA OpenFoodTox 3.0 IUCLID 6 .i6z archives.",
+            "Import the .i6z dossiers into the organisation's IUCLID 6 instance.",
+            "Create/read-only API credentials with access to the imported OpenFoodTox dossiers.",
+            "Set OPENFOODTOX_IUCLID_BASE_URL and optional path/auth environment variables for this service.",
+        ],
+    }
+
+
+def _openfoodtox_auth() -> tuple[str, str] | None:
+    if OPENFOODTOX_IUCLID_USERNAME or OPENFOODTOX_IUCLID_PASSWORD:
+        return (OPENFOODTOX_IUCLID_USERNAME, OPENFOODTOX_IUCLID_PASSWORD)
+    return None
+
+
+def _join_iuclid_url(path: str) -> str:
+    path = path if path.startswith("/") else f"/{path}"
+    return f"{OPENFOODTOX_IUCLID_BASE_URL}{path}"
+
+
+def _items_from_payload(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if not isinstance(payload, dict):
+        return []
+    for key in ("results", "items", "content", "data", "substances", "dossiers", "documents"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            return [item for item in value if isinstance(item, dict)]
+    embedded = payload.get("_embedded")
+    if isinstance(embedded, dict):
+        for value in embedded.values():
+            if isinstance(value, list):
+                return [item for item in value if isinstance(item, dict)]
+    return [payload]
+
+
+def _first_present(item: dict[str, Any], keys: list[str]) -> Any:
+    for key in keys:
+        if key in item and item.get(key) not in (None, ""):
+            return item.get(key)
+    return None
+
+
+def _normalize_iuclid_substance(item: dict[str, Any]) -> dict[str, Any]:
+    identifiers = item.get("identifiers") if isinstance(item.get("identifiers"), dict) else {}
+    return {
+        "uuid": _first_present(item, ["uuid", "id", "key", "documentKey"]),
+        "name": _first_present(item, ["name", "substanceName", "iupacName", "title", "publicName"]),
+        "cas": _first_present(item, ["cas", "casNumber", "CAS number"]) or identifiers.get("cas") or identifiers.get("casNumber"),
+        "ec": _first_present(item, ["ec", "ecNumber", "EC number"]) or identifiers.get("ec") or identifiers.get("ecNumber"),
+        "synonyms": item.get("synonyms") if isinstance(item.get("synonyms"), list) else [],
+        "raw": item,
+    }
+
+
+def _normalize_iuclid_record(item: dict[str, Any]) -> dict[str, Any]:
+    title = _first_present(item, ["title", "name", "endpoint", "section", "documentType", "template", "uuid"])
+    url = _first_present(item, ["url", "sourceUrl", "href"])
+    links = item.get("links") or item.get("_links")
+    if not url and isinstance(links, dict):
+        self_link = links.get("self")
+        if isinstance(self_link, dict):
+            url = self_link.get("href")
+        elif isinstance(self_link, str):
+            url = self_link
+    return {
+        "uuid": _first_present(item, ["uuid", "id", "key", "documentKey"]),
+        "title": title,
+        "section": _first_present(item, ["section", "sectionName", "endpoint", "documentType", "template"]),
+        "value": _first_present(item, ["value", "result", "referenceValue", "doseDescriptor", "effectLevel"]),
+        "unit": _first_present(item, ["unit", "valueUnit", "doseUnit"]),
+        "url": url,
+        "raw": item,
+    }
+
+
+async def _iuclid_get(client: httpx.AsyncClient, path: str, params: dict[str, Any] | None = None) -> Any:
+    response = await client.get(_join_iuclid_url(path), params=params or {})
+    response.raise_for_status()
+    return response.json()
+
+
+async def query_openfoodtox(body: dict[str, Any]) -> dict[str, Any]:
+    """Query EFSA OpenFoodTox dossiers imported into a local IUCLID 6 instance.
+
+    The exact IUCLID endpoint paths can vary by deployment/version, so paths are
+    configurable with environment variables. When the integration is not
+    configured, return actionable setup guidance rather than pretending data were
+    queried.
+    """
+    query = str(body.get("query") or body.get("q") or "").strip()
+    limit = min(max(_safe_int(body.get("limit")) or 10, 1), 25)
+    include_documents = bool(body.get("include_documents", True))
+    include_dossiers = bool(body.get("include_dossiers", True))
+
+    if not query:
+        raise HTTPException(400, "query is required")
+
+    status = openfoodtox_status()
+    if not status["configured"]:
+        return {
+            "query": query,
+            "configured": False,
+            "status": status,
+            "substances": [],
+            "toxicological_values": [],
+            "publications": [],
+            "summary": "OpenFoodTox querying is not configured. Import EFSA OpenFoodTox i6z dossiers into a local IUCLID 6 instance and set OPENFOODTOX_IUCLID_BASE_URL to enable live queries.",
+        }
+
+    params = {"q": query, "search": query, "limit": limit, "include": "identifiers,synonyms,dossiers"}
+    auth = _openfoodtox_auth()
+    timeout = httpx.Timeout(30.0, connect=10.0)
+    async with httpx.AsyncClient(auth=auth, timeout=timeout) as client:
+        try:
+            substance_payload = await _iuclid_get(client, OPENFOODTOX_SUBSTANCES_PATH, params=params)
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(exc.response.status_code, f"IUCLID substance query failed: {exc.response.text[:300]}") from exc
+        except httpx.HTTPError as exc:
+            raise HTTPException(502, f"IUCLID substance query failed: {exc}") from exc
+
+        substances = [_normalize_iuclid_substance(item) for item in _items_from_payload(substance_payload)[:limit]]
+        dossiers: list[dict[str, Any]] = []
+        documents: list[dict[str, Any]] = []
+
+        if include_dossiers:
+            for substance in substances[:5]:
+                uuid = substance.get("uuid")
+                if not uuid:
+                    continue
+                try:
+                    dossier_payload = await _iuclid_get(client, OPENFOODTOX_DOSSIERS_PATH, params={"substance": uuid, "q": query, "limit": 10})
+                    for item in _items_from_payload(dossier_payload)[:10]:
+                        record = _normalize_iuclid_record(item)
+                        record["substance_uuid"] = uuid
+                        dossiers.append(record)
+                except httpx.HTTPError:
+                    continue
+
+        if include_documents:
+            for dossier in dossiers[:5]:
+                dossier_uuid = dossier.get("uuid")
+                if not dossier_uuid:
+                    continue
+                path = OPENFOODTOX_DOCUMENTS_PATH_TEMPLATE.format(dossier_uuid=dossier_uuid)
+                for section, bucket in (("toxicological_information", "tox"), ("literature_references", "pub")):
+                    try:
+                        doc_payload = await _iuclid_get(client, path, params={"section": section, "q": query, "limit": 25})
+                    except httpx.HTTPError:
+                        continue
+                    for item in _items_from_payload(doc_payload)[:25]:
+                        record = _normalize_iuclid_record(item)
+                        record["dossier_uuid"] = dossier_uuid
+                        record["record_group"] = bucket
+                        documents.append(record)
+
+    toxicological_values = [d for d in documents if d.get("record_group") == "tox"]
+    publications = [d for d in documents if d.get("record_group") == "pub" or d.get("url")]
+    return {
+        "query": query,
+        "configured": True,
+        "status": status,
+        "substances": substances,
+        "dossiers": dossiers,
+        "toxicological_values": toxicological_values,
+        "publications": publications,
+        "summary": f"Found {len(substances)} candidate substance record(s), {len(toxicological_values)} toxicological value/study record(s), and {len(publications)} publication/link record(s) from the configured local IUCLID integration.",
+    }
+
+
+# ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------
 
@@ -1791,6 +1991,16 @@ async def chat(body: dict):
             source_aops.append({"id": detail["id"], "title": detail["title"]})
 
     return {"answer": answer, "sources": source_aops}
+
+
+@app.get("/api/openfoodtox/status")
+async def api_openfoodtox_status():
+    return openfoodtox_status()
+
+
+@app.post("/api/openfoodtox/query")
+async def api_openfoodtox_query(body: dict):
+    return await query_openfoodtox(body)
 
 
 @app.post("/api/assess")
