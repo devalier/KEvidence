@@ -262,7 +262,7 @@
           <div><label for="oftLimit">Result limit</label><select id="oftLimit"><option>10</option><option>5</option><option>25</option></select></div>
         </div>
         <div class="actions"><button class="primary" id="runOftBtn">Query OpenFoodTox</button><button class="secondary" id="copyChemicalToOftBtn">Use current chemical</button></div>
-        <div class="warning-box">OpenFoodTox is not queried from a public EFSA API. Regular clients can run scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db to download and index the official Excel export automatically. Institutions can alternatively import i6z dossiers into IUCLID 6 and configure the local IUCLID REST API URL.</div>
+        <div class="warning-box">Zenodo REST API can retrieve/download OpenFoodTox files, but KEvidence still indexes the downloaded Excel locally for toxicant-level search. Run scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db to download and index automatically. Institutions can alternatively import i6z dossiers into IUCLID 6 and configure the local IUCLID REST API URL.</div>
       </div>
       <div class="panel" id="oftOutput"><div class="muted">No OpenFoodTox query run yet.</div></div>
     </section>
@@ -460,14 +460,20 @@ function renderOpenFoodTox() {
   if (!o.configured) {
     $('oftOutput').innerHTML = `<h3>OpenFoodTox integration not configured</h3><p class="muted">${escapeHtml(o.summary || '')}</p>
       <h3>Setup checklist</h3><ul class="clean">${(status.setup_steps || []).map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ul>
-      <p class="muted">Expected mode: ${escapeHtml(status.mode || 'local SQLite export or IUCLID Public REST API')}. SQLite path: ${escapeHtml(status.sqlite_path || 'data/openfoodtox.db')}. IUCLID substances path: ${escapeHtml(status.substances_path || '')}.</p>`;
+      <p class="muted">Expected mode: ${escapeHtml(status.mode || 'local SQLite export or IUCLID Public REST API')}. SQLite path: ${escapeHtml(status.sqlite_path || 'data/openfoodtox.db')}. IUCLID substances path: ${escapeHtml(status.substances_path || '')}.</p>
+      ${renderRelatedAops(o.related_aops || [])}`;
     return;
   }
   $('oftOutput').innerHTML = `<h3>OpenFoodTox result</h3><p class="muted">${escapeHtml(o.summary || '')}</p>
     <div class="metric-grid"><div class="metric"><small>Substances</small><strong>${substances.length}</strong></div><div class="metric"><small>Tox/study records</small><strong>${tox.length}</strong></div><div class="metric"><small>Publication links</small><strong>${pubs.length}</strong></div><div class="metric"><small>Source</small><strong>${escapeHtml(o.source_mode || o.status?.mode || 'OpenFoodTox')}</strong></div></div>
     <h3>Candidate substances</h3><div class="cards">${substances.map(s => `<div class="card"><div class="card-title">${escapeHtml(s.name || s.uuid || 'Substance')}</div><span class="badge">UUID ${escapeHtml(s.uuid || 'n/a')}</span><span class="badge">CAS ${escapeHtml(s.cas || 'n/a')}</span><span class="badge">EC ${escapeHtml(s.ec || 'n/a')}</span></div>`).join('') || '<div class="muted">No substances returned.</div>'}</div>
     <h3>Toxicological values / study documents</h3><ul class="clean">${tox.slice(0, 10).map(t => `<li>${escapeHtml(t.title || t.section || t.uuid || 'Record')}${t.value ? ` — ${escapeHtml(t.value)} ${escapeHtml(t.unit || '')}` : ''}</li>`).join('') || '<li>No toxicological records returned by the configured IUCLID query.</li>'}</ul>
-    <h3>Publication/source links</h3><ul class="clean">${pubs.slice(0, 10).map(p => `<li>${p.url ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.title || p.url)}</a>` : escapeHtml(p.title || p.uuid || 'Publication/source record')}</li>`).join('') || '<li>No publication links returned by the configured IUCLID query.</li>'}</ul>`;
+    <h3>Publication/source links</h3><ul class="clean">${pubs.slice(0, 10).map(p => `<li>${p.url ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.title || p.url)}</a>` : escapeHtml(p.title || p.uuid || 'Publication/source record')}</li>`).join('') || '<li>No publication links returned by the configured OpenFoodTox query.</li>'}</ul>
+    ${renderRelatedAops(o.related_aops || [])}`;
+}
+function renderRelatedAops(aops) {
+  if (!aops.length) return '';
+  return `<h3>AOP-Wiki semantic fallback</h3><div class="cards">${aops.map(a => `<div class="card"><div class="card-title">AOP ${escapeHtml(a.id)}: ${escapeHtml(a.title || '')}</div><div class="muted"><span class="badge">${escapeHtml(a.match_basis || 'AOP match')}</span>${a.matched_stressor ? `<span class="badge">Stressor: ${escapeHtml(a.matched_stressor)}</span>` : ''}<br><span class="badge">MIE</span>${escapeHtml(a.mie || 'Unknown')}<br><span class="badge">AO</span>${escapeHtml(a.ao || 'Unknown')}</div><div class="actions"><button class="secondary" onclick="selectAop(${Number(a.id)})">Use this AOP</button></div></div>`).join('')}</div>`;
 }
 
 async function runQuantitative() {

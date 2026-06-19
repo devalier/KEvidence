@@ -1225,6 +1225,46 @@ def _hazard_hypothesis(detail: dict, chemical: str, matched_by: str, confidence:
     }
 
 
+def semantic_aop_context(query: str, limit: int = 5) -> list[dict[str, Any]]:
+    """Search AOP-Wiki-derived content as a semantic fallback for chemical queries.
+
+    This is intentionally deterministic rather than embedding-based: it combines
+    the curated chemical/stressor index with title/event/component text search so
+    a known stressor such as rotenone does not produce an empty result just
+    because OpenFoodTox has not been indexed yet.
+    """
+    results: list[dict[str, Any]] = []
+    seen: set[int] = set()
+
+    for match in find_aops_by_chemical(query):
+        detail = get_aop_detail(match["aop_id"])
+        if not detail or detail["id"] in seen:
+            continue
+        seen.add(detail["id"])
+        results.append({
+            "id": detail["id"],
+            "title": detail.get("title"),
+            "mie": detail.get("mie"),
+            "ao": detail.get("ao"),
+            "match_basis": "AOP-Wiki chemical/stressor index",
+            "matched_stressor": match.get("stressor"),
+        })
+        if len(results) >= limit:
+            return results
+
+    for result in search_aops_text(query, limit=limit):
+        if result["id"] in seen:
+            continue
+        seen.add(result["id"])
+        item = dict(result)
+        item["match_basis"] = "AOP-Wiki title/event/component semantic text search"
+        results.append(item)
+        if len(results) >= limit:
+            break
+
+    return results
+
+
 def _candidate_assessment_aops(chemical: str, query: str, limit: int = 5) -> list[dict[str, Any]]:
     candidates = []
     seen = set()
@@ -1799,6 +1839,10 @@ def query_openfoodtox_sqlite(query: str, limit: int) -> dict[str, Any]:
         if _row_has_any(row, publication_needles) or _row_has_any({"table": table_name}, publication_needles):
             publications.append(normalized)
 
+    related_aops = semantic_aop_context(query, limit=5)
+    summary = f"Found {len(substances[:limit])} candidate substance record(s), {len(toxicological_values[:limit])} toxicological value/study record(s), and {len(publications[:limit])} publication/link record(s) in the local OpenFoodTox SQLite index."
+    if not rows and related_aops:
+        summary += f" No local OpenFoodTox rows matched, but KEvidence found {len(related_aops)} related AOP-Wiki pathway(s) for this query."
     return {
         "query": query,
         "configured": True,
@@ -1809,7 +1853,8 @@ def query_openfoodtox_sqlite(query: str, limit: int) -> dict[str, Any]:
         "dossiers": [],
         "toxicological_values": toxicological_values[:limit],
         "publications": publications[:limit],
-        "summary": f"Found {len(substances[:limit])} candidate substance record(s), {len(toxicological_values[:limit])} toxicological value/study record(s), and {len(publications[:limit])} publication/link record(s) in the local OpenFoodTox SQLite index.",
+        "related_aops": related_aops,
+        "summary": summary,
     }
 
 
@@ -1833,6 +1878,10 @@ async def query_openfoodtox(body: dict[str, Any]) -> dict[str, Any]:
     if not _openfoodtox_configured() and _openfoodtox_sqlite_available():
         return query_openfoodtox_sqlite(query, limit)
     if not status["configured"]:
+        related_aops = semantic_aop_context(query, limit=5)
+        summary = "OpenFoodTox content is not indexed yet. Zenodo provides a REST API to retrieve/download the OpenFoodTox files, and KEvidence can use scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db to download and index them locally."
+        if related_aops:
+            summary += f" Meanwhile, KEvidence found {len(related_aops)} related AOP-Wiki pathway(s) for this query, so the chemical does not lead to an empty result."
         return {
             "query": query,
             "configured": False,
@@ -1840,7 +1889,8 @@ async def query_openfoodtox(body: dict[str, Any]) -> dict[str, Any]:
             "substances": [],
             "toxicological_values": [],
             "publications": [],
-            "summary": "OpenFoodTox querying is not configured. For a regular client, run scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db to download/index the EFSA/Zenodo Excel export. For an institution, import i6z dossiers into IUCLID and set OPENFOODTOX_IUCLID_BASE_URL.",
+            "related_aops": related_aops,
+            "summary": summary,
         }
 
     params = {"q": query, "search": query, "limit": limit, "include": "identifiers,synonyms,dossiers"}
@@ -1891,14 +1941,17 @@ async def query_openfoodtox(body: dict[str, Any]) -> dict[str, Any]:
 
     toxicological_values = [d for d in documents if d.get("record_group") == "tox"]
     publications = [d for d in documents if d.get("record_group") == "pub" or d.get("url")]
+    related_aops = semantic_aop_context(query, limit=5)
     return {
         "query": query,
         "configured": True,
         "status": status,
+        "source_mode": "local_iuclid_public_rest_api",
         "substances": substances,
         "dossiers": dossiers,
         "toxicological_values": toxicological_values,
         "publications": publications,
+        "related_aops": related_aops,
         "summary": f"Found {len(substances)} candidate substance record(s), {len(toxicological_values)} toxicological value/study record(s), and {len(publications)} publication/link record(s) from the configured local IUCLID integration.",
     }
 
