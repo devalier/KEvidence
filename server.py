@@ -2026,12 +2026,51 @@ async def chat(body: dict):
     if not query:
         raise HTTPException(400, "message is required")
 
-    # HARD FUNNEL step 1: Build context from the query
-    context = build_context_for_query(query)
+    workbench_context = body.get("context") if isinstance(body.get("context"), dict) else {}
+    selected_aop_id = _safe_int(
+        workbench_context.get("selected_aop_id")
+        or workbench_context.get("aop_id")
+        or body.get("selected_aop_id")
+        or body.get("aop_id")
+    )
+    context_lines = []
+    chemical_context = str(workbench_context.get("chemical") or "").strip()
+    if chemical_context:
+        context_lines.append(f"Current chemical/stressor: {chemical_context}")
+    if workbench_context.get("use_case"):
+        context_lines.append(f"Assessment use case: {workbench_context.get('use_case')}")
+    if workbench_context.get("route"):
+        context_lines.append(f"Exposure route/context: {workbench_context.get('route')}")
+    if workbench_context.get("population"):
+        context_lines.append(f"Population/species: {workbench_context.get('population')}")
+
+    # HARD FUNNEL step 1: Build context from the explicit workbench selection first.
+    # The workflow UI may ask short prompts such as "Explain AOP". Those prompts
+    # are only meaningful together with the selected chemical/AOP state, so use the
+    # structured state rather than relying on the free-text prompt to rediscover it.
+    context = ""
+    selected_detail = get_aop_detail(selected_aop_id) if selected_aop_id else None
+    if selected_detail:
+        context = _format_aop_detail(selected_detail, include_all_kers=True, include_all_events=True)
+        context_lines.append(f"Selected AOP: AOP {selected_detail['id']} - {selected_detail.get('title', '')}")
+    else:
+        # If the workbench has a chemical but no selected AOP yet, search the
+        # chemical/stressor directly before blending it with the user's prompt.
+        # This preserves cases such as rotenone, where the useful lookup term is
+        # the workflow chemical rather than the short assistant prompt text.
+        if chemical_context:
+            context = build_context_for_query(chemical_context)
+        if not context:
+            context_query_parts = [query, chemical_context]
+            if selected_aop_id:
+                context_query_parts.append(f"AOP {selected_aop_id}")
+            # HARD FUNNEL step 1 fallback: Build context from the query plus any
+            # chemical context available from the workbench.
+            context = build_context_for_query(" ".join(part for part in context_query_parts if part))
     aop_count = len(get_all_aops())
 
     # HARD FUNNEL step 2: Extract meaningful search terms from user query
-    search_terms = set(re.findall(r"[a-zA-Z]{4,}", query.lower()))
+    search_terms = set(re.findall(r"[a-zA-Z]{4,}", f"{query} {chemical_context}".lower()))
     stopwords_chat = {"what", "does", "that", "this", "with", "have", "from", "they", "them",
                       "when", "where", "will", "would", "could", "should", "about", "there",
                       "their", "your", "which", "peach", "bits", "apple", "seed", "food",
@@ -2055,7 +2094,7 @@ async def chat(body: dict):
 
     # HARD FUNNEL step 4: RELEVANCE CHECK — verify found AOP data actually
     # relates to what the user asked about
-    if context and meaningful_terms:
+    if context and meaningful_terms and not selected_detail and not chemical_context:
         # Extract AOP IDs from the context
         found_aop_ids = set(re.findall(r"AOP (\d+)", context))
         if found_aop_ids:
@@ -2117,7 +2156,7 @@ async def chat(body: dict):
         {"role": "system", "content": system},
         {
             "role": "user",
-            "content": f"Here is relevant AOP data from the database:\n\n{context}\n\n---\n\nUser question: {query}",
+            "content": f"Here is relevant AOP data from the database:\n\n{context}\n\n---\n\nCurrent workbench context:\n{chr(10).join(context_lines) if context_lines else 'No structured workbench context supplied.'}\n\n---\n\nUser question: {query}",
         },
     ]
 

@@ -523,14 +523,24 @@ Regulatory caveat: This is a prototype screening support summary. Values and thr
 }
 function askAboutAop(aopId) { sendAssistant(`Explain AOP ${aopId} in risk-assessment terms and identify why it may matter for ${state.chemical || 'the current chemical'}.`); }
 async function sendAssistant(prompt) {
+  captureProblem();
   const msg = prompt || $('assistantInput').value.trim();
   if (!msg) return;
   $('assistantInput').value = '';
   addMessage(msg, 'user');
   addMessage('Thinking…', 'bot', 'typing');
-  const contextMsg = `Current assessment context: chemical=${state.chemical || 'not specified'}, use_case=${state.context.use_case || 'not specified'}, selected_aop=${state.selectedAop?.id || 'none'}, openfoodtox_summary=${state.openfoodtox?.summary || 'not queried'}. User request: ${msg}`;
+  const assistantContext = {
+    chemical: state.chemical || '',
+    use_case: state.context.use_case || '',
+    route: state.context.route || '',
+    population: state.context.population || '',
+    selected_aop_id: state.selectedAop?.id || state.selectedAopDetail?.id || null,
+    selected_aop_title: state.selectedAopDetail?.title || state.selectedAop?.title || '',
+    openfoodtox_summary: state.openfoodtox?.summary || '',
+    quantitative_summary: state.quantitative ? `BER ${state.quantitative.bioactivity_exposure_ratio ?? 'n/a'}; confidence ${state.quantitative.quantitative_confidence || 'n/a'}` : ''
+  };
   try {
-    const res = await fetch(`${API_BASE}/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: contextMsg }) });
+    const res = await fetch(`${API_BASE}/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, context: assistantContext }) });
     const data = await res.json();
     removeTyping();
     addMessage(data.answer || 'No answer returned.', 'bot');
