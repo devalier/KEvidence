@@ -589,6 +589,19 @@ function clearFeatureRequest() {
   ['featureName', 'featureEmail', 'featureTitle', 'featureDescription'].forEach(id => { $(id).value = ''; });
   $('featureType').selectedIndex = 0;
 }
+function renderQuantitative() {
+  const q = state.quantitative || {};
+  const ke = q.most_sensitive_ke || {};
+  $('quantOutput').innerHTML = `<h3>Quantitative screening result</h3>
+    <div class="metric-grid"><div class="metric"><small>BER</small><strong>${escapeHtml(q.bioactivity_exposure_ratio ?? 'n/a')}</strong></div><div class="metric"><small>MOE</small><strong>${escapeHtml(q.margin_of_exposure ?? 'n/a')}</strong></div><div class="metric"><small>Hazard quotient</small><strong>${escapeHtml(q.hazard_quotient ?? 'n/a')}</strong></div><div class="metric"><small>Confidence</small><strong>${escapeHtml(q.quantitative_confidence || 'n/a')}</strong></div></div>
+    <p>${escapeHtml(q.interpretation || '')}</p><p class="muted">Most sensitive KE: ${escapeHtml(ke.mapped_event_id || 'n/a')} ${escapeHtml(ke.mapped_event_name || '')}</p>
+    <h3>Uncertainties</h3><ul class="clean">${(q.uncertainties || []).map(u => `<li>${escapeHtml(u)}</li>`).join('') || '<li>No major quantitative uncertainties identified.</li>'}</ul>`;
+}
+function buildDraft() {
+  const a = state.assessment || {};
+  const q = state.quantitative || {};
+  const first = (a.hazard_hypotheses || [])[0];
+  $('draftText').value = `Problem formulation: ${state.chemical || '[chemical not specified]'}; use case ${state.context.use_case || '[not specified]'}; route ${state.context.route || '[not specified]'}; population/species ${state.context.population || '[not specified]'}.
 
 function buildDraft() {
   const a = state.assessment || {};
