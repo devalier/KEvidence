@@ -1647,6 +1647,164 @@ def build_quantitative_assessment(body: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+BIOACTIVITY_SQLITE_PATH = Path(os.getenv("BIOACTIVITY_SQLITE_PATH", str(DATA_DIR / "bioactivity.db")))
+
+# ---------------------------------------------------------------------------
+# EPA ToxCast/Tox21/ToxRefDB local bioactivity browser
+# ---------------------------------------------------------------------------
+
+BIOACTIVITY_CHEMICAL_KEYS = ["chemical", "chemical name", "preferred name", "chnm", "substance", "name"]
+BIOACTIVITY_ID_KEYS = ["dtxsid", "dsstox_substance_id", "dsstox id", "casrn", "cas", "cas number"]
+BIOACTIVITY_ASSAY_KEYS = ["assay", "assay name", "assay_component_name", "assay_component_endpoint_name", "aeid", "endpoint", "target"]
+BIOACTIVITY_POD_KEYS = ["ac50", "ac50_um", "modl_acc", "bmd", "bmdl", "pod", "hitcall", "activity_concentration"]
+BIOACTIVITY_UNIT_KEYS = ["unit", "units", "ac50_unit", "concentration_unit"]
+
+
+def bioactivity_status() -> dict[str, Any]:
+    configured = BIOACTIVITY_SQLITE_PATH.exists()
+    return {
+        "configured": configured,
+        "mode": "local_epa_bioactivity_sqlite" if configured else "not_configured",
+        "sqlite_path": str(BIOACTIVITY_SQLITE_PATH),
+        "source_note": "EPA ToxCast/Tox21 bioactivity data are public HTS/qHTS data, and ToxRefDB contains curated in vivo toxicity study data. KEvidence expects exported CompTox/ToxCast/Tox21/ToxRefDB files to be indexed locally for screening/POD selection.",
+        "setup_steps": [
+            "Export ToxCast Assays: AC50 / Tox21 / ToxRefDB details from EPA CompTox or download EPA public release files.",
+            "Run: python scripts/import_epa_bioactivity.py --input /path/to/export.csv --db data/bioactivity.db",
+            "Restart KEvidence; Step 5 will use local EPA bioactivity browser mode automatically.",
+        ],
+    }
+
+
+def _normalized_row_lookup(row: dict[str, Any]) -> dict[str, Any]:
+    return {str(k).strip().lower(): v for k, v in row.items()}
+
+
+def _first_by_keys(row: dict[str, Any], keys: list[str]) -> Any:
+    lookup = _normalized_row_lookup(row)
+    for key in keys:
+        if key in lookup and lookup[key] not in (None, ""):
+            return lookup[key]
+    for key, value in lookup.items():
+        if value in (None, ""):
+            continue
+        for needle in keys:
+            if needle in key:
+                return value
+    return None
+
+
+def _safe_float(value: Any) -> float | None:
+    if value in (None, ""):
+        return None
+    try:
+        return float(str(value).strip())
+    except ValueError:
+        match = re.search(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", str(value))
+        return float(match.group(0)) if match else None
+
+
+def _normalize_bioactivity_record(source_table: str, row: dict[str, Any]) -> dict[str, Any]:
+    pod_value = _safe_float(_first_by_keys(row, BIOACTIVITY_POD_KEYS))
+    unit = _first_by_keys(row, BIOACTIVITY_UNIT_KEYS) or "uM"
+    return {
+        "source_table": source_table,
+        "chemical": _first_by_keys(row, BIOACTIVITY_CHEMICAL_KEYS),
+        "identifier": _first_by_keys(row, BIOACTIVITY_ID_KEYS),
+        "assay": _first_by_keys(row, BIOACTIVITY_ASSAY_KEYS),
+        "endpoint": _first_by_keys(row, ["endpoint", "assay endpoint", "biological process", "target family"]),
+        "pod_type": "AC50" if pod_value is not None else "POD",
+        "pod_value": pod_value,
+        "pod_unit": str(unit),
+        "hitcall": _first_by_keys(row, ["hitcall", "hit", "active", "activity"]),
+        "source": "EPA ToxCast/Tox21/ToxRefDB local export",
+        "raw": row,
+    }
+
+
+def _event_relevance_terms(detail: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not detail:
+        return []
+    terms = []
+    for ev in detail.get("events", []):
+        text = f"{ev.get('event_name', '')} {ev.get('event_type', '')}".lower()
+        tokens = {t for t in re.findall(r"[a-zA-Z][a-zA-Z0-9-]{3,}", text) if t not in {"event", "increase", "decrease", "binding"}}
+        terms.append({"event_id": ev.get("event_id"), "event_name": ev.get("event_name"), "tokens": tokens})
+    return terms
+
+
+def _score_bioactivity_record(record: dict[str, Any], event_terms: list[dict[str, Any]]) -> dict[str, Any]:
+    record_text = " ".join(str(v) for v in [record.get("assay"), record.get("endpoint"), record.get("source_table")] if v).lower()
+    best_event = None
+    best_score = 0
+    for ev in event_terms:
+        overlap = len([token for token in ev["tokens"] if token in record_text])
+        if overlap > best_score:
+            best_score = overlap
+            best_event = ev
+    record["relevance_score"] = best_score + (2 if record.get("pod_value") is not None else 0)
+    if best_event:
+        record["suggested_event_id"] = best_event.get("event_id")
+        record["suggested_event_name"] = best_event.get("event_name")
+        record["mapping_basis"] = "assay/endpoint text overlap with selected AOP event"
+    else:
+        record["mapping_basis"] = "chemical match; manual KE mapping recommended"
+    return record
+
+
+def query_bioactivity(body: dict[str, Any]) -> dict[str, Any]:
+    chemical = str(body.get("chemical") or body.get("query") or body.get("q") or "").strip()
+    aop_id = _safe_int(body.get("aop_id"))
+    limit = min(max(_safe_int(body.get("limit")) or 25, 1), 100)
+    if not chemical:
+        raise HTTPException(400, "chemical is required")
+
+    status = bioactivity_status()
+    if not status["configured"]:
+        return {
+            "configured": False,
+            "status": status,
+            "chemical": chemical,
+            "aop_id": aop_id,
+            "records": [],
+            "summary": "EPA bioactivity browser is not configured yet. Index a ToxCast/Tox21 AC50 export or ToxRefDB file with scripts/import_epa_bioactivity.py to enable AC50/POD selection.",
+        }
+
+    conn = sqlite3.connect(str(BIOACTIVITY_SQLITE_PATH))
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            "SELECT source_table, row_json FROM bioactivity_rows WHERE row_text LIKE ? LIMIT ?",
+            (f"%{chemical.lower()}%", limit * 4),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    detail = get_aop_detail(aop_id) if aop_id else None
+    event_terms = _event_relevance_terms(detail)
+    records = []
+    seen = set()
+    for db_row in rows:
+        row = json.loads(db_row["row_json"])
+        record = _normalize_bioactivity_record(db_row["source_table"], row)
+        record = _score_bioactivity_record(record, event_terms)
+        key = (record.get("assay"), record.get("pod_value"), record.get("chemical"), record.get("identifier"))
+        if key in seen:
+            continue
+        seen.add(key)
+        records.append(record)
+    records.sort(key=lambda r: (-(r.get("relevance_score") or 0), r.get("pod_value") is None, str(r.get("assay") or "")))
+    records = records[:limit]
+    return {
+        "configured": True,
+        "status": status,
+        "chemical": chemical,
+        "aop_id": aop_id,
+        "records": records,
+        "summary": f"Found {len(records)} candidate EPA bioactivity/toxicity record(s) for {chemical}. Records with AC50/POD values and assay text overlapping selected AOP events are ranked first.",
+        "data_provenance": "Local export/index from EPA CompTox/ToxCast/Tox21/ToxRefDB; verify assay suitability, curve quality, hit call, units, and regulatory use before relying on the selected POD.",
+    }
+
+
 # ---------------------------------------------------------------------------
 # OpenFoodTox / IUCLID integration
 # ---------------------------------------------------------------------------
@@ -2201,6 +2359,16 @@ async def evidence_to_decision_assessment(body: dict):
     NAM/data-generation recommendations.
     """
     return build_evidence_to_decision_assessment(body)
+
+
+@app.get("/api/bioactivity/status")
+async def api_bioactivity_status():
+    return bioactivity_status()
+
+
+@app.post("/api/bioactivity/search")
+async def api_bioactivity_search(body: dict):
+    return query_bioactivity(body)
 
 
 @app.post("/api/quantitative-assessment")

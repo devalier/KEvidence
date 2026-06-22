@@ -212,6 +212,7 @@
     <button class="step" data-tab="quant"><span>5. Quantitative screening</span>POD vs exposure margin</button>
     <button class="step" data-tab="gaps"><span>6. Uncertainty & gaps</span>Confidence and next data</button>
     <button class="step" data-tab="draft"><span>7. Assessment draft</span>Memo-ready summary</button>
+    <button class="step" data-tab="questions"><span>8. Questions?</span>Feature requests & GitHub</button>
   </nav>
 
   <main>
@@ -282,6 +283,12 @@
         <div class="actions"><button class="primary" id="runQuantBtn">Calculate screening margin</button></div>
         <div class="warning-box">Quantitative outputs are only as reliable as the submitted POD, exposure, and IVIVE inputs. Use for prioritization and hypothesis refinement unless validated sources and program-specific thresholds are configured.</div>
       </div>
+      <div class="panel">
+        <h3>Browse EPA ToxCast/Tox21/ToxRefDB PODs</h3>
+        <p class="help">Search a locally indexed EPA bioactivity/toxicity export for AC50 or POD candidates for the current chemical. Records are ranked higher when assay or endpoint text overlaps the selected AOP events.</p>
+        <div class="actions"><button class="secondary" id="runBioBtn">Find candidate AC50/POD values</button></div>
+        <div id="bioactivityOutput"><div class="muted">No EPA bioactivity search run yet.</div></div>
+      </div>
       <div class="panel" id="quantOutput"><div class="muted">No quantitative screen run yet.</div></div>
     </section>
 
@@ -300,6 +307,24 @@
         <p class="help">Generate a structured draft from selected AOP evidence, quantitative results, uncertainties, and data gaps. Use the assistant to rewrite or explain sections.</p>
         <div class="actions"><button class="primary" id="buildDraftBtn">Build draft summary</button><button class="secondary" data-assistant-prompt="Draft this as a concise regulatory memo with caveats.">Ask assistant to refine</button></div>
         <textarea id="draftText" placeholder="Draft assessment text will appear here..."></textarea>
+      </div>
+    </section>
+
+    <section id="questions" class="tab-content">
+      <div class="panel">
+        <h2>8. Questions?</h2>
+        <p class="help">Suggest improvements, report missing data sources, or propose new risk-assessment workflow features. You can open the GitHub repository directly or send a feature request by email.</p>
+        <div class="actions"><a class="secondary" id="githubRepoLink" href="https://github.com/LyzDevalier/KEvidence" target="_blank" rel="noopener">Open GitHub repository</a></div>
+        <div class="grid">
+          <div><label for="featureName">Your name</label><input id="featureName" placeholder="Optional"></div>
+          <div><label for="featureEmail">Your email</label><input id="featureEmail" type="email" placeholder="Optional reply address"></div>
+          <div><label for="featureType">Request type</label><select id="featureType"><option>Feature request</option><option>Bug report</option><option>Data source suggestion</option><option>NAM/AOP mapping suggestion</option><option>Documentation question</option></select></div>
+          <div><label for="featureTitle">Short title</label><input id="featureTitle" placeholder="e.g., Add HTTK IVIVE integration"></div>
+        </div>
+        <label for="featureDescription">Request details</label>
+        <textarea id="featureDescription" placeholder="Describe the use case, data source, endpoint, or workflow problem you want KEvidence to support."></textarea>
+        <div class="actions"><button class="primary" id="sendFeatureBtn">Send feature request email</button><button class="secondary" id="clearFeatureBtn">Clear form</button></div>
+        <div class="warning-box">This form opens your email client and sends to kevidence@devalier.com. No request is stored by KEvidence unless you send the email.</div>
       </div>
     </section>
   </main>
@@ -360,9 +385,12 @@ $('searchAopsBtn').addEventListener('click', searchAops);
 $('loadNotableBtn').addEventListener('click', () => loadAops(''));
 $('runAssessBtn').addEventListener('click', runAssessment);
 $('runQuantBtn').addEventListener('click', runQuantitative);
+$('runBioBtn').addEventListener('click', runBioactivitySearch);
 $('runOftBtn').addEventListener('click', runOpenFoodTox);
 $('copyChemicalToOftBtn').addEventListener('click', () => { captureProblem(); $('oftQuery').value = state.chemical; });
 $('buildDraftBtn').addEventListener('click', buildDraft);
+$('sendFeatureBtn').addEventListener('click', sendFeatureRequest);
+$('clearFeatureBtn').addEventListener('click', clearFeatureRequest);
 $('assistantSend').addEventListener('click', sendAssistant);
 $('assistantInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendAssistant(); });
 document.querySelectorAll('[data-assistant-prompt]').forEach(btn => btn.addEventListener('click', () => sendAssistant(btn.dataset.assistantPrompt)));
@@ -476,6 +504,39 @@ function renderRelatedAops(aops) {
   return `<h3>AOP-Wiki semantic fallback</h3><div class="cards">${aops.map(a => `<div class="card"><div class="card-title">AOP ${escapeHtml(a.id)}: ${escapeHtml(a.title || '')}</div><div class="muted"><span class="badge">${escapeHtml(a.match_basis || 'AOP match')}</span>${a.matched_stressor ? `<span class="badge">Stressor: ${escapeHtml(a.matched_stressor)}</span>` : ''}<br><span class="badge">MIE</span>${escapeHtml(a.mie || 'Unknown')}<br><span class="badge">AO</span>${escapeHtml(a.ao || 'Unknown')}</div><div class="actions"><button class="secondary" onclick="selectAop(${Number(a.id)})">Use this AOP</button></div></div>`).join('')}</div>`;
 }
 
+
+async function runBioactivitySearch() {
+  captureProblem();
+  const selectedId = state.selectedAop?.id || state.selectedAopDetail?.id || Number(($('aopSearchInput').value.match(/\d+/) || [])[0]);
+  if (!state.chemical) { $('bioactivityOutput').innerHTML = '<div class="muted">Enter a chemical in problem formulation first.</div>'; return; }
+  $('bioactivityOutput').innerHTML = '<div class="muted">Searching EPA bioactivity/toxicity index…</div>';
+  try {
+    const res = await fetch(`${API_BASE}/bioactivity/search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chemical: state.chemical, aop_id: selectedId || null, limit: 20 }) });
+    state.bioactivity = await res.json();
+    renderBioactivity();
+  } catch (e) {
+    $('bioactivityOutput').innerHTML = '<div class="muted">EPA bioactivity search failed.</div>';
+  }
+}
+function renderBioactivity() {
+  const b = state.bioactivity || {};
+  const records = b.records || [];
+  if (!b.configured) {
+    $('bioactivityOutput').innerHTML = `<h3>EPA bioactivity browser not configured</h3><p class="muted">${escapeHtml(b.summary || '')}</p><h3>Setup checklist</h3><ul class="clean">${(b.status?.setup_steps || []).map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ul><p class="muted">Expected SQLite path: ${escapeHtml(b.status?.sqlite_path || 'data/bioactivity.db')}</p>`;
+    return;
+  }
+  $('bioactivityOutput').innerHTML = `<h3>Candidate AC50/POD records</h3><p class="muted">${escapeHtml(b.summary || '')}</p><div class="cards">${records.map((r, i) => `<div class="card"><div class="card-title">${escapeHtml(r.assay || r.endpoint || 'Bioactivity record')}</div><div class="muted"><span class="badge">${escapeHtml(r.pod_type || 'POD')}</span> ${escapeHtml(r.pod_value ?? 'n/a')} ${escapeHtml(r.pod_unit || '')}<br><span class="badge">Mapping</span>${escapeHtml(r.mapping_basis || '')}${r.suggested_event_id ? `<br><span class="badge">Suggested KE</span>Event ${escapeHtml(r.suggested_event_id)} — ${escapeHtml(r.suggested_event_name || '')}` : ''}<br><span class="badge">Source</span>${escapeHtml(r.source_table || r.source || '')}</div><div class="actions"><button class="secondary" onclick="useBioactivityRecord(${i})">Use this POD</button></div></div>`).join('') || '<div class="muted">No candidate records found for this chemical.</div>'}</div><p class="muted">${escapeHtml(b.data_provenance || '')}</p>`;
+}
+function useBioactivityRecord(index) {
+  const r = (state.bioactivity?.records || [])[index];
+  if (!r) return;
+  if (r.assay || r.endpoint) $('quantAssay').value = r.assay || r.endpoint;
+  if (r.suggested_event_id) $('quantEvent').value = r.suggested_event_id;
+  $('quantPodType').value = r.pod_type || 'AC50';
+  if (r.pod_value !== null && r.pod_value !== undefined) $('quantPod').value = `${r.pod_value} ${r.pod_unit || 'uM'}`;
+  $('bioactivityOutput').insertAdjacentHTML('afterbegin', '<div class="warning-box">Selected POD copied into the quantitative screening form. Confirm KE mapping, assay quality, hit call, and units before calculating BER/MOE.</div>');
+}
+
 async function runQuantitative() {
   captureProblem();
   const selectedId = state.selectedAop?.id || Number(($('aopSearchInput').value.match(/\d+/) || [])[0]);
@@ -505,6 +566,43 @@ function renderQuantitative() {
     <p>${escapeHtml(q.interpretation || '')}</p><p class="muted">Most sensitive KE: ${escapeHtml(ke.mapped_event_id || 'n/a')} ${escapeHtml(ke.mapped_event_name || '')}</p>
     <h3>Uncertainties</h3><ul class="clean">${(q.uncertainties || []).map(u => `<li>${escapeHtml(u)}</li>`).join('') || '<li>No major quantitative uncertainties identified.</li>'}</ul>`;
 }
+
+function sendFeatureRequest() {
+  const subject = `[KEvidence] ${$('featureType').value}: ${$('featureTitle').value.trim() || 'New request'}`;
+  const body = [
+    `Request type: ${$('featureType').value}`,
+    `Title: ${$('featureTitle').value.trim() || 'Not provided'}`,
+    `Name: ${$('featureName').value.trim() || 'Not provided'}`,
+    `Email: ${$('featureEmail').value.trim() || 'Not provided'}`,
+    '',
+    'Details:',
+    $('featureDescription').value.trim() || 'Not provided',
+    '',
+    'Workflow context:',
+    `Chemical/stressor: ${state.chemical || 'not specified'}`,
+    `Selected AOP: ${state.selectedAop?.id || state.selectedAopDetail?.id || 'not selected'}`,
+    `Use case: ${state.context.use_case || 'not specified'}`
+  ].join('\n');
+  window.location.href = `mailto:kevidence@devalier.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+function clearFeatureRequest() {
+  ['featureName', 'featureEmail', 'featureTitle', 'featureDescription'].forEach(id => { $(id).value = ''; });
+  $('featureType').selectedIndex = 0;
+}
+function renderQuantitative() {
+  const q = state.quantitative || {};
+  const ke = q.most_sensitive_ke || {};
+  $('quantOutput').innerHTML = `<h3>Quantitative screening result</h3>
+    <div class="metric-grid"><div class="metric"><small>BER</small><strong>${escapeHtml(q.bioactivity_exposure_ratio ?? 'n/a')}</strong></div><div class="metric"><small>MOE</small><strong>${escapeHtml(q.margin_of_exposure ?? 'n/a')}</strong></div><div class="metric"><small>Hazard quotient</small><strong>${escapeHtml(q.hazard_quotient ?? 'n/a')}</strong></div><div class="metric"><small>Confidence</small><strong>${escapeHtml(q.quantitative_confidence || 'n/a')}</strong></div></div>
+    <p>${escapeHtml(q.interpretation || '')}</p><p class="muted">Most sensitive KE: ${escapeHtml(ke.mapped_event_id || 'n/a')} ${escapeHtml(ke.mapped_event_name || '')}</p>
+    <h3>Uncertainties</h3><ul class="clean">${(q.uncertainties || []).map(u => `<li>${escapeHtml(u)}</li>`).join('') || '<li>No major quantitative uncertainties identified.</li>'}</ul>`;
+}
+function buildDraft() {
+  const a = state.assessment || {};
+  const q = state.quantitative || {};
+  const first = (a.hazard_hypotheses || [])[0];
+  $('draftText').value = `Problem formulation: ${state.chemical || '[chemical not specified]'}; use case ${state.context.use_case || '[not specified]'}; route ${state.context.route || '[not specified]'}; population/species ${state.context.population || '[not specified]'}.
+
 function buildDraft() {
   const a = state.assessment || {};
   const q = state.quantitative || {};
