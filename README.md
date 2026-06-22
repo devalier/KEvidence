@@ -349,6 +349,8 @@ Contributions are welcome. Useful contributions include:
 
 Before contributing, please open an issue or discussion describing the proposed change, especially for scientific scoring, regulatory interpretation, or data-source integrations.
 
+Feature requests can also be submitted from the in-app **Questions?** tab, by opening the GitHub repository at <https://github.com/LyzDevalier/KEvidence>, or by emailing <kevidence@devalier.com>.
+
 ---
 
 ## License

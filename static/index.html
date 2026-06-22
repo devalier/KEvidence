@@ -212,6 +212,7 @@
     <button class="step" data-tab="quant"><span>5. Quantitative screening</span>POD vs exposure margin</button>
     <button class="step" data-tab="gaps"><span>6. Uncertainty & gaps</span>Confidence and next data</button>
     <button class="step" data-tab="draft"><span>7. Assessment draft</span>Memo-ready summary</button>
+    <button class="step" data-tab="questions"><span>8. Questions?</span>Feature requests & GitHub</button>
   </nav>
 
   <main>
@@ -308,6 +309,24 @@
         <textarea id="draftText" placeholder="Draft assessment text will appear here..."></textarea>
       </div>
     </section>
+
+    <section id="questions" class="tab-content">
+      <div class="panel">
+        <h2>8. Questions?</h2>
+        <p class="help">Suggest improvements, report missing data sources, or propose new risk-assessment workflow features. You can open the GitHub repository directly or send a feature request by email.</p>
+        <div class="actions"><a class="secondary" id="githubRepoLink" href="https://github.com/LyzDevalier/KEvidence" target="_blank" rel="noopener">Open GitHub repository</a></div>
+        <div class="grid">
+          <div><label for="featureName">Your name</label><input id="featureName" placeholder="Optional"></div>
+          <div><label for="featureEmail">Your email</label><input id="featureEmail" type="email" placeholder="Optional reply address"></div>
+          <div><label for="featureType">Request type</label><select id="featureType"><option>Feature request</option><option>Bug report</option><option>Data source suggestion</option><option>NAM/AOP mapping suggestion</option><option>Documentation question</option></select></div>
+          <div><label for="featureTitle">Short title</label><input id="featureTitle" placeholder="e.g., Add HTTK IVIVE integration"></div>
+        </div>
+        <label for="featureDescription">Request details</label>
+        <textarea id="featureDescription" placeholder="Describe the use case, data source, endpoint, or workflow problem you want KEvidence to support."></textarea>
+        <div class="actions"><button class="primary" id="sendFeatureBtn">Send feature request email</button><button class="secondary" id="clearFeatureBtn">Clear form</button></div>
+        <div class="warning-box">This form opens your email client and sends to kevidence@devalier.com. No request is stored by KEvidence unless you send the email.</div>
+      </div>
+    </section>
   </main>
 
   <aside class="assistant">
@@ -370,6 +389,8 @@ $('runBioBtn').addEventListener('click', runBioactivitySearch);
 $('runOftBtn').addEventListener('click', runOpenFoodTox);
 $('copyChemicalToOftBtn').addEventListener('click', () => { captureProblem(); $('oftQuery').value = state.chemical; });
 $('buildDraftBtn').addEventListener('click', buildDraft);
+$('sendFeatureBtn').addEventListener('click', sendFeatureRequest);
+$('clearFeatureBtn').addEventListener('click', clearFeatureRequest);
 $('assistantSend').addEventListener('click', sendAssistant);
 $('assistantInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendAssistant(); });
 document.querySelectorAll('[data-assistant-prompt]').forEach(btn => btn.addEventListener('click', () => sendAssistant(btn.dataset.assistantPrompt)));
@@ -545,6 +566,30 @@ function renderQuantitative() {
     <p>${escapeHtml(q.interpretation || '')}</p><p class="muted">Most sensitive KE: ${escapeHtml(ke.mapped_event_id || 'n/a')} ${escapeHtml(ke.mapped_event_name || '')}</p>
     <h3>Uncertainties</h3><ul class="clean">${(q.uncertainties || []).map(u => `<li>${escapeHtml(u)}</li>`).join('') || '<li>No major quantitative uncertainties identified.</li>'}</ul>`;
 }
+
+function sendFeatureRequest() {
+  const subject = `[KEvidence] ${$('featureType').value}: ${$('featureTitle').value.trim() || 'New request'}`;
+  const body = [
+    `Request type: ${$('featureType').value}`,
+    `Title: ${$('featureTitle').value.trim() || 'Not provided'}`,
+    `Name: ${$('featureName').value.trim() || 'Not provided'}`,
+    `Email: ${$('featureEmail').value.trim() || 'Not provided'}`,
+    '',
+    'Details:',
+    $('featureDescription').value.trim() || 'Not provided',
+    '',
+    'Workflow context:',
+    `Chemical/stressor: ${state.chemical || 'not specified'}`,
+    `Selected AOP: ${state.selectedAop?.id || state.selectedAopDetail?.id || 'not selected'}`,
+    `Use case: ${state.context.use_case || 'not specified'}`
+  ].join('\n');
+  window.location.href = `mailto:kevidence@devalier.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+function clearFeatureRequest() {
+  ['featureName', 'featureEmail', 'featureTitle', 'featureDescription'].forEach(id => { $(id).value = ''; });
+  $('featureType').selectedIndex = 0;
+}
+
 function buildDraft() {
   const a = state.assessment || {};
   const q = state.quantitative || {};
