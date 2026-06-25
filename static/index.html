@@ -177,6 +177,24 @@
   .assistant-input input { font-size: 13px; }
   .assistant-input button { padding: 0 12px; border-radius: 10px; border: none; background: var(--accent); color: var(--bg); font-weight: 800; cursor: pointer; }
   ul.clean { padding-left: 18px; color: var(--text2); line-height: 1.55; font-size: 14px; }
+
+  .manual-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr); gap: 14px; align-items: start; }
+  .manual-steps { counter-reset: manual-step; display: grid; gap: 8px; }
+  .manual-step { background: var(--bg); border: 1px solid var(--surface2); border-radius: 10px; padding: 10px 10px 10px 42px; position: relative; }
+  .manual-step::before { counter-increment: manual-step; content: counter(manual-step); position: absolute; left: 10px; top: 10px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--bg); font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .manual-step strong { display: block; margin-bottom: 3px; }
+  .app-screenshot { background: #0b1220; border: 1px solid var(--surface3); border-radius: 12px; padding: 10px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03); }
+  .shot-header { height: 24px; border-radius: 7px; background: linear-gradient(90deg, var(--surface2), var(--surface)); margin-bottom: 8px; }
+  .shot-body { display: grid; grid-template-columns: 82px 1fr; gap: 8px; min-height: 230px; }
+  .shot-nav, .shot-main { background: var(--surface); border-radius: 8px; padding: 7px; }
+  .shot-tab { height: 18px; border-radius: 5px; background: var(--surface2); margin-bottom: 6px; }
+  .shot-tab.active { background: rgba(56, 189, 248, 0.45); }
+  .shot-field { height: 30px; border-radius: 7px; background: var(--bg); border: 1px solid var(--surface2); margin-bottom: 8px; }
+  .sample-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sample-table th, .sample-table td { border-bottom: 1px solid var(--surface2); padding: 9px 7px; text-align: left; vertical-align: top; }
+  .sample-table th { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .sample-table a { color: var(--accent); font-weight: 700; }
+  @media (max-width: 900px) { .manual-grid { grid-template-columns: 1fr; } }
   @media (max-width: 1050px) {
     .app-shell { grid-template-columns: 190px minmax(0, 1fr); }
     .assistant { display: none; }
@@ -311,6 +329,42 @@
     </section>
 
     <section id="questions" class="tab-content">
+      <div class="panel">
+        <h2>8. Quick user manual</h2>
+        <p class="help">A one-page workflow guide for regulatory risk assessors. Work left-to-right through the numbered tabs, keeping every generated statement traceable to source data and expert judgement.</p>
+        <div class="manual-grid">
+          <div class="manual-steps">
+            <div class="manual-step"><strong>Define the assessment question.</strong><span class="muted">Enter the chemical/stressor, use case, route, and population/species. This frames every AOP search, evidence summary, and memo caveat.</span></div>
+            <div class="manual-step"><strong>Select a plausible AOP.</strong><span class="muted">Search by chemical, key event, adverse outcome, or AOP ID. Choose one candidate pathway before mapping evidence.</span></div>
+            <div class="manual-step"><strong>Check pathway evidence.</strong><span class="muted">Review MIE, key events, adverse outcome, KER evidence codes, and whether your NAM assay can be mapped to a specific event ID.</span></div>
+            <div class="manual-step"><strong>Query toxicology context.</strong><span class="muted">Use OpenFoodTox for substance identity, EFSA outputs, reference points, reference values, and genotoxicity context when the local index is configured.</span></div>
+            <div class="manual-step"><strong>Calculate only a screening margin.</strong><span class="muted">Provide NAM assay, mapped KE/Event ID, POD type and value, exposure value, and optional IVIVE factor. Interpret BER/MOE as prioritisation support, not a final regulatory conclusion.</span></div>
+            <div class="manual-step"><strong>Document uncertainty and draft.</strong><span class="muted">Run the evidence-to-decision step, then build a draft that clearly separates curated evidence, user-entered data, assumptions, and data gaps.</span></div>
+          </div>
+          <div class="app-screenshot" aria-label="Annotated KEvidence workflow screenshot mock-up">
+            <div class="shot-header"></div>
+            <div class="shot-body">
+              <div class="shot-nav"><div class="shot-tab active"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab active"></div></div>
+              <div class="shot-main"><div class="shot-field"></div><div class="shot-field"></div><div class="shot-field"></div><div class="shot-field" style="width:65%"></div><div class="warning-box">Tip: required fields are the values needed to make the next tab meaningful. If uncertain, record assumptions in the draft caveat.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Sample data for testing</h2>
+        <p class="help">Use these starter files and public repositories to test the workflow before you have project-specific data. Confirm licenses, versions, units, and applicability before using any value in a regulatory submission.</p>
+        <table class="sample-table">
+          <thead><tr><th>Need</th><th>Use this</th><th>What to do in KEvidence</th></tr></thead>
+          <tbody>
+            <tr><td>NAM POD / AC50 example</td><td><a href="samples/nam_pod_examples.csv" download>Download local CSV template</a><br><a href="https://www.epa.gov/comptox-tools/exploring-toxcast-data" target="_blank" rel="noopener">EPA ToxCast/Tox21 data portal</a><br><a href="https://epa.figshare.com/articles/dataset/ToxCast_Database_invitroDB_/6062623" target="_blank" rel="noopener">EPA invitroDB on Figshare</a></td><td>Copy assay, POD type, POD value/unit, and mapped event ID into tab 5. Use the EPA bioactivity import script for larger local searches.</td></tr>
+            <tr><td>OpenFoodTox reference points</td><td><a href="https://zenodo.org/records/19388272" target="_blank" rel="noopener">OpenFoodTox 3.0 on Zenodo</a><br><a href="https://zenodo.org/records/8120114" target="_blank" rel="noopener">Earlier OpenFoodTox Zenodo record</a></td><td>Download the Excel export, build the local SQLite index, then query tab 4 by substance name, CAS, EC number, or synonym.</td></tr>
+            <tr><td>AOP structure and event IDs</td><td><a href="https://aopwiki.org/downloads" target="_blank" rel="noopener">AOP-Wiki quarterly downloads</a><br><a href="https://zenodo.org/records/17499488" target="_blank" rel="noopener">AOP-Wiki RDF on Zenodo</a></td><td>Use event IDs to map NAM assays to MIE/KE/AO records in tabs 3 and 5.</td></tr>
+            <tr><td>Exposure / IVIVE test values</td><td><a href="samples/exposure_ivive_examples.csv" download>Download local CSV template</a></td><td>Paste exposure value/unit and optional IVIVE conversion factor into tab 5, documenting assumptions in tab 7.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <div class="panel">
         <h2>8. Questions?</h2>
         <p class="help">Suggest improvements, report missing data sources, or propose new risk-assessment workflow features. You can open the GitHub repository directly or send a feature request by email.</p>

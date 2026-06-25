@@ -1,0 +1,4 @@
+chemical,scenario,exposure_value,exposure_unit,ivive_factor,ivive_output_unit,note
+Rotenone,screening plasma equivalent,0.001,uM,4.1,mg/kg/day,Example only; replace with programme-specific exposure model output
+Bisphenol A,dietary biomonitoring equivalent,0.05,uM,0.8,mg/kg/day,Example only; document population and route assumptions
+Permethrin,oral exposure estimate,0.02,uM,2.5,mg/kg/day,Example only; verify unit consistency before BER/MOE calculation

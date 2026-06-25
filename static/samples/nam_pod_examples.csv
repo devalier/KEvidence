@@ -1,0 +1,4 @@
+chemical,casrn,assay,mapped_event_id,pod_type,pod_value,pod_unit,source,note
+Rotenone,83-79-4,mitochondrial complex I inhibition,887,IC50,0.03,uM,Example placeholder for KEvidence testing,Verify against primary assay record before regulatory use
+Bisphenol A,80-05-7,estrogen receptor activation,18,AC50,1.2,uM,Example placeholder for KEvidence testing,Use EPA invitroDB/ToxCast for real AC50 records
+Permethrin,52645-53-1,neuronal excitability assay,1525,AC50,3.5,uM,Example placeholder for KEvidence testing,Map event ID to selected AOP before calculating margin
