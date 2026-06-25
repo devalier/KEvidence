@@ -603,12 +603,6 @@ function buildDraft() {
   const first = (a.hazard_hypotheses || [])[0];
   $('draftText').value = `Problem formulation: ${state.chemical || '[chemical not specified]'}; use case ${state.context.use_case || '[not specified]'}; route ${state.context.route || '[not specified]'}; population/species ${state.context.population || '[not specified]'}.
 
-function buildDraft() {
-  const a = state.assessment || {};
-  const q = state.quantitative || {};
-  const first = (a.hazard_hypotheses || [])[0];
-  $('draftText').value = `Problem formulation: ${state.chemical || '[chemical not specified]'}; use case ${state.context.use_case || '[not specified]'}; route ${state.context.route || '[not specified]'}; population/species ${state.context.population || '[not specified]'}.
-
 AOP hypothesis: ${first ? first.conclusion : 'No AOP-grounded hypothesis has been selected or generated yet.'}
 
 OpenFoodTox query: ${(state.openfoodtox && state.openfoodtox.summary) || 'Not queried or not configured.'}
