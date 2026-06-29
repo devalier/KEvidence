@@ -1094,11 +1094,11 @@ def _infer_chemical_specific_confidence(mapped_data: list[dict[str, Any]], match
 def _exposure_context_confidence(context: dict[str, Any]) -> str:
     if not context:
         return "very low"
-    keys = {"route", "duration", "population", "species", "exposure", "use_case"}
+    keys = {"route", "duration", "population", "species", "exposure", "use_case", "product_domain", "assessment_type", "output_purpose", "regulatory_question", "matrix_product", "intended_use", "use_level", "endpoint_domain", "authorization_status", "legal_context", "decision_context"}
     present = sum(1 for k in keys if context.get(k))
     if context.get("exposure"):
         present += 1
-    return _confidence_from_score(min(3, present / 2))
+    return _confidence_from_score(min(3, present / 4))
 
 
 def _build_uncertainties_and_gaps(detail: dict, confidence: dict[str, str], coverage: dict[str, Any], context: dict[str, Any]) -> tuple[list[dict[str, str]], list[dict[str, str]]]:

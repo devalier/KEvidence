@@ -223,7 +223,7 @@
 
 <div class="app-shell">
   <nav aria-label="Risk assessment workflow">
-    <button class="step active" data-tab="problem"><span>1. Problem formulation</span>Chemical, context, use case</button>
+    <button class="step active" data-tab="problem"><span>1. Problem formulation</span>Regulated product, decision context</button>
     <button class="step" data-tab="aops"><span>2. AOP discovery</span>Find and select pathways</button>
     <button class="step" data-tab="evidence"><span>3. Evidence mapping</span>Events, KERs, NAM coverage</button>
     <button class="step" data-tab="openfoodtox"><span>4. OpenFoodTox</span>IUCLID toxicology records</button>
@@ -237,15 +237,26 @@
     <section id="problem" class="tab-content active">
       <div class="panel">
         <h2>1. Problem formulation</h2>
-        <p class="help">Start with the assessment question. KEvidence uses this context to find AOPs, map evidence, calculate screening margins, and draft transparent summaries.</p>
+        <p class="help">Start with an EFSA-style problem formulation. KEvidence uses this structured context to constrain AOP discovery, evidence mapping, quantitative screening, and transparent draft language.</p>
         <div class="grid">
-          <div><label for="chemicalInput">Chemical or stressor</label><input id="chemicalInput" placeholder="e.g., rotenone"></div>
-          <div><label for="useCaseInput">Use case</label><select id="useCaseInput"><option value="screening">Screening / prioritization</option><option value="read-across support">Read-across support</option><option value="data-gap analysis">Data-gap analysis</option><option value="regulatory memo">Regulatory memo</option></select></div>
-          <div><label for="routeInput">Route</label><input id="routeInput" placeholder="e.g., oral, dermal, inhalation"></div>
-          <div><label for="populationInput">Population/species</label><input id="populationInput" placeholder="e.g., human, fish, general population"></div>
+          <div><label for="chemicalInput">Substance / stressor identity</label><input id="chemicalInput" placeholder="e.g., rotenone; CAS/EC/InChIKey if known"></div>
+          <div><label for="productDomainInput">Regulated product domain</label><select id="productDomainInput"><option value="">Select domain…</option><option>Food additive</option><option>Pesticide / plant protection product</option><option>Feed additive</option><option>Novel food</option><option>Contaminant</option><option>Food contact material</option><option>Food enzyme</option><option>Flavouring</option><option>GMO / derived product</option><option>Other regulated product</option></select></div>
+          <div><label for="assessmentTypeInput">Assessment type</label><select id="assessmentTypeInput"><option value="">Select assessment type…</option><option>New application</option><option>Renewal / re-evaluation</option><option>Read-across support</option><option>TTC consideration</option><option>Genotoxicity follow-up</option><option>Endocrine activity follow-up</option><option>Cumulative assessment</option><option>Data-gap analysis</option></select></div>
+          <div><label for="outputPurposeInput">Required output purpose</label><select id="outputPurposeInput" required><option value="">Select purpose…</option><option value="triage">Triage / prioritization</option><option value="data-gap planning">Data-gap planning</option><option value="evidence mapping">Evidence mapping</option><option value="read-across support">Read-across support</option><option value="draft narrative support">Draft narrative support</option></select></div>
+          <div><label for="regulatoryQuestionInput">Regulatory question</label><input id="regulatoryQuestionInput" placeholder="e.g., Does the proposed use raise a neurotoxicity concern?"></div>
+          <div><label for="matrixInput">Matrix / product</label><input id="matrixInput" placeholder="e.g., cereal products, food contact coating, feed premix"></div>
+          <div><label for="intendedUseInput">Intended use</label><input id="intendedUseInput" placeholder="e.g., preservative in beverages; active substance on apples"></div>
+          <div><label for="useLevelInput">Use level / occurrence</label><input id="useLevelInput" placeholder="e.g., 10 mg/kg food; occurrence range; not established"></div>
+          <div><label for="populationInput">Population group / species</label><input id="populationInput" placeholder="e.g., infants, general population, bees, fish"></div>
+          <div><label for="routeInput">Exposure route</label><input id="routeInput" placeholder="e.g., dietary oral, dermal, inhalation"></div>
+          <div><label for="durationInput">Exposure duration / scenario</label><input id="durationInput" placeholder="e.g., acute, chronic, consumer high-percentile"></div>
+          <div><label for="endpointInput">Endpoint domain of concern</label><input id="endpointInput" placeholder="e.g., genotoxicity, neurotoxicity, endocrine, liver"></div>
+          <div><label for="authorizationInput">Existing authorization status</label><input id="authorizationInput" placeholder="e.g., new dossier, authorised, renewal, contaminant monitoring"></div>
+          <div><label for="legalContextInput">Legal / regulatory context</label><input id="legalContextInput" placeholder="e.g., EU food additive re-evaluation; pesticide MRL support"></div>
+          <div><label for="decisionContextInput">Decision context</label><input id="decisionContextInput" placeholder="e.g., screen for follow-up studies; support expert evidence map"></div>
         </div>
-        <div class="actions"><button class="primary" id="startAssessmentBtn">Start assessment</button><button class="secondary" data-jump="aops">Go to AOP discovery</button></div>
-        <div class="warning-box">This workbench organizes evidence for expert review. AOP structure comes from the local AOP-Wiki-derived data; NAM PODs, exposure estimates, IVIVE factors, and thresholds are user-supplied or heuristic unless explicitly connected to curated sources.</div>
+        <div class="actions"><button class="primary" id="startAssessmentBtn">Start evidence mapping</button><button class="secondary" data-jump="aops">Go to AOP discovery</button></div>
+        <div class="warning-box">Select an output purpose before starting. This workbench organizes evidence for expert review; it does not produce EFSA conclusions, health-based guidance values, ADIs, ARfDs, or acceptability decisions. AOP structure comes from local AOP-Wiki-derived data; NAM PODs, exposure estimates, IVIVE factors, and thresholds are user-supplied or heuristic unless explicitly connected to curated sources.</div>
       </div>
     </section>
 
@@ -422,19 +433,41 @@ function showTab(tabId) {
   steps.forEach(s => s.classList.toggle('active', s.dataset.tab === tabId));
   tabs.forEach(t => t.classList.toggle('active', t.id === tabId));
 }
+function fieldValue(id) { return $(id)?.value?.trim() || ''; }
 function updateContext() {
-  $('assistantContext').innerHTML = `Context: <strong>${escapeHtml(state.chemical || 'no chemical')}</strong>${state.selectedAop ? ` • AOP ${state.selectedAop.id}` : ''}${state.context.use_case ? ` • ${escapeHtml(state.context.use_case)}` : ''}`;
+  const bits = [state.context.product_domain, state.context.assessment_type, state.context.output_purpose].filter(Boolean);
+  $('assistantContext').innerHTML = `Context: <strong>${escapeHtml(state.chemical || 'no substance')}</strong>${state.selectedAop ? ` • AOP ${state.selectedAop.id}` : ''}${bits.length ? ` • ${bits.map(escapeHtml).join(' • ')}` : ''}`;
 }
 function captureProblem() {
-  state.chemical = $('chemicalInput').value.trim();
-  state.context = { use_case: $('useCaseInput').value, route: $('routeInput').value.trim(), population: $('populationInput').value.trim() };
+  state.chemical = fieldValue('chemicalInput');
+  state.context = {
+    substance_identity: state.chemical,
+    product_domain: fieldValue('productDomainInput'),
+    assessment_type: fieldValue('assessmentTypeInput'),
+    output_purpose: fieldValue('outputPurposeInput'),
+    regulatory_question: fieldValue('regulatoryQuestionInput'),
+    matrix_product: fieldValue('matrixInput'),
+    intended_use: fieldValue('intendedUseInput'),
+    use_level: fieldValue('useLevelInput'),
+    population: fieldValue('populationInput'),
+    route: fieldValue('routeInput'),
+    duration: fieldValue('durationInput'),
+    endpoint_domain: fieldValue('endpointInput'),
+    authorization_status: fieldValue('authorizationInput'),
+    legal_context: fieldValue('legalContextInput'),
+    decision_context: fieldValue('decisionContextInput'),
+    use_case: fieldValue('outputPurposeInput')
+  };
   if (state.chemical && !$('aopSearchInput').value.trim()) $('aopSearchInput').value = state.chemical;
   if (state.chemical && $('oftQuery') && !$('oftQuery').value.trim()) $('oftQuery').value = state.chemical;
   updateContext();
 }
+function problemFormulationReady() {
+  return Boolean(state.chemical && state.context.product_domain && state.context.assessment_type && state.context.output_purpose);
+}
 steps.forEach(step => step.addEventListener('click', () => showTab(step.dataset.tab)));
 document.querySelectorAll('[data-jump]').forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.jump)));
-$('startAssessmentBtn').addEventListener('click', () => { captureProblem(); showTab('aops'); searchAops(); });
+$('startAssessmentBtn').addEventListener('click', () => { captureProblem(); if (!problemFormulationReady()) { alert('Enter substance identity and select product domain, assessment type, and required output purpose before starting.'); return; } showTab('aops'); searchAops(); });
 $('searchAopsBtn').addEventListener('click', searchAops);
 $('loadNotableBtn').addEventListener('click', () => loadAops(''));
 $('runAssessBtn').addEventListener('click', runAssessment);
@@ -655,7 +688,7 @@ function buildDraft() {
   const a = state.assessment || {};
   const q = state.quantitative || {};
   const first = (a.hazard_hypotheses || [])[0];
-  $('draftText').value = `Problem formulation: ${state.chemical || '[chemical not specified]'}; use case ${state.context.use_case || '[not specified]'}; route ${state.context.route || '[not specified]'}; population/species ${state.context.population || '[not specified]'}.
+  $('draftText').value = `Problem formulation: ${state.chemical || '[substance not specified]'}; domain ${state.context.product_domain || '[not specified]'}; assessment type ${state.context.assessment_type || '[not specified]'}; output purpose ${state.context.output_purpose || '[not specified]'}; regulatory question ${state.context.regulatory_question || '[not specified]'}; matrix/product ${state.context.matrix_product || '[not specified]'}; intended use ${state.context.intended_use || '[not specified]'}; use level/occurrence ${state.context.use_level || '[not specified]'}; route ${state.context.route || '[not specified]'}; duration/scenario ${state.context.duration || '[not specified]'}; population/species ${state.context.population || '[not specified]'}; endpoint domain ${state.context.endpoint_domain || '[not specified]'}; authorization status ${state.context.authorization_status || '[not specified]'}; legal context ${state.context.legal_context || '[not specified]'}; decision context ${state.context.decision_context || '[not specified]'}.
 
 AOP hypothesis: ${first ? first.conclusion : 'No AOP-grounded hypothesis has been selected or generated yet.'}
 
@@ -677,7 +710,8 @@ async function sendAssistant(prompt) {
   addMessage('Thinking…', 'bot', 'typing');
   const assistantContext = {
     chemical: state.chemical || '',
-    use_case: state.context.use_case || '',
+    ...state.context,
+    use_case: state.context.use_case || state.context.output_purpose || '',
     route: state.context.route || '',
     population: state.context.population || '',
     selected_aop_id: state.selectedAop?.id || state.selectedAopDetail?.id || null,
