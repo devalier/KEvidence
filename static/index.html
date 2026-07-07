@@ -215,29 +215,29 @@
     <div class="logo">⚡</div>
     <div>
       <h1>KEvidence Risk Assessment Workbench</h1>
-      <div class="subtitle">AOP-guided hazard hypotheses, OpenFoodTox querying, NAM mapping, quantitative screening, and assessment drafting</div>
+      <div class="subtitle">Codex-aligned risk assessment: problem formulation → hazard identification → hazard characterisation → exposure assessment → risk characterisation</div>
     </div>
   </div>
-  <div class="status-pill">Prototype • screening support, not a stand-alone regulatory conclusion</div>
+  <div class="status-pill">Prototype • supports the scientific risk-assessment step of risk analysis, not risk management decisions</div>
 </header>
 
 <div class="app-shell">
-  <nav aria-label="Risk assessment workflow">
-    <button class="step active" data-tab="problem"><span>1. Problem formulation</span>Regulated product, decision context</button>
-    <button class="step" data-tab="aops"><span>2. AOP discovery</span>Find and select pathways</button>
-    <button class="step" data-tab="evidence"><span>3. Evidence mapping</span>Events, KERs, NAM coverage</button>
-    <button class="step" data-tab="openfoodtox"><span>4. OpenFoodTox</span>IUCLID toxicology records</button>
-    <button class="step" data-tab="quant"><span>5. Quantitative screening</span>POD vs exposure margin</button>
-    <button class="step" data-tab="gaps"><span>6. Uncertainty & gaps</span>Confidence and next data</button>
-    <button class="step" data-tab="draft"><span>7. Assessment draft</span>Memo-ready summary</button>
-    <button class="step" data-tab="questions"><span>8. Questions?</span>Feature requests & GitHub</button>
+  <nav aria-label="Codex risk assessment workflow">
+    <button class="step active" data-tab="problem"><span>Problem formulation</span>Question, scope, decision context</button>
+    <button class="step" data-tab="hazard-id"><span>1. Hazard identification</span>Can this agent cause harm?</button>
+    <button class="step" data-tab="hazard-char"><span>2. Hazard characterisation</span>Nature, severity, dose-response</button>
+    <button class="step" data-tab="exposure"><span>3. Exposure assessment</span>Who, how much, how often, route</button>
+    <button class="step" data-tab="risk-char"><span>4. Risk characterisation</span>Integrate hazard × exposure</button>
+    <button class="step" data-tab="uncertainty"><span>Uncertainty analysis</span>Confidence and data gaps</button>
+    <button class="step" data-tab="opinion"><span>Scientific opinion</span>Draft advice for risk managers</button>
+    <button class="step" data-tab="questions"><span>Guide & questions</span>Manual, samples, feedback</button>
   </nav>
 
   <main>
     <section id="problem" class="tab-content active">
       <div class="panel">
-        <h2>1. Problem formulation</h2>
-        <p class="help">Start with an EFSA-style problem formulation. KEvidence uses this structured context to constrain AOP discovery, evidence mapping, quantitative screening, and transparent draft language.</p>
+        <h2>Problem formulation</h2>
+        <p class="help">Problem formulation is the practical first step of a modern risk assessment — it is not one of the four formal Codex steps, but it frames all of them. Define the question, scope, population, endpoint, product/use scenario, data needs, and decision context. KEvidence carries this structured context into hazard identification, hazard characterisation, exposure assessment, and risk characterisation.</p>
         <div class="grid">
           <div><label for="chemicalInput">Substance / stressor identity</label><input id="chemicalInput" placeholder="e.g., rotenone; CAS/EC/InChIKey if known"></div>
           <div><label for="productDomainInput">Regulated product domain</label><select id="productDomainInput"><option value="">Select domain…</option><option>Food additive</option><option>Pesticide / plant protection product</option><option>Feed additive</option><option>Novel food</option><option>Contaminant</option><option>Food contact material</option><option>Food enzyme</option><option>Flavouring</option><option>GMO / derived product</option><option>Other regulated product</option></select></div>
@@ -255,102 +255,122 @@
           <div><label for="legalContextInput">Legal / regulatory context</label><input id="legalContextInput" placeholder="e.g., EU food additive re-evaluation; pesticide MRL support"></div>
           <div><label for="decisionContextInput">Decision context</label><input id="decisionContextInput" placeholder="e.g., screen for follow-up studies; support expert evidence map"></div>
         </div>
-        <div class="actions"><button class="primary" id="startAssessmentBtn">Start evidence mapping</button><button class="secondary" data-jump="aops">Go to AOP discovery</button></div>
-        <div class="warning-box">Select an output purpose before starting. This workbench organizes evidence for expert review; it does not produce EFSA conclusions, health-based guidance values, ADIs, ARfDs, or acceptability decisions. AOP structure comes from local AOP-Wiki-derived data; NAM PODs, exposure estimates, IVIVE factors, and thresholds are user-supplied or heuristic unless explicitly connected to curated sources.</div>
+        <div class="actions"><button class="primary" id="startAssessmentBtn">Start hazard identification</button><button class="secondary" data-jump="hazard-id">Go to hazard identification</button></div>
+        <div class="warning-box">Select an output purpose before starting. This workbench organizes evidence for expert review across the four Codex risk-assessment steps; it does not produce risk-management decisions, EFSA conclusions, health-based guidance values, ADIs, ARfDs, or acceptability decisions. AOP structure comes from local AOP-Wiki-derived data; NAM PODs, exposure estimates, IVIVE factors, and thresholds are user-supplied or heuristic unless explicitly connected to curated sources.</div>
       </div>
     </section>
 
-    <section id="aops" class="tab-content">
+    <section id="hazard-id" class="tab-content">
       <div class="panel">
-        <h2>2. AOP discovery</h2>
-        <p class="help">Find candidate pathways by chemical, key event, adverse outcome, or AOP ID. Select one AOP to carry forward into evidence mapping and quantitative screening.</p>
+        <h2>1. Hazard identification</h2>
+        <p class="help">Hazard identification asks: <strong>can this agent cause harm?</strong> Search candidate Adverse Outcome Pathways by chemical, key event, adverse outcome, or AOP ID, and select the pathway that best represents a plausible route from molecular initiating event to adverse outcome. Identifying a hazard is not yet a risk conclusion — that requires exposure (steps 3–4).</p>
         <div class="grid"><div><label for="aopSearchInput">Search AOPs</label><input id="aopSearchInput" placeholder="chemical, event, adverse outcome, or AOP ID"></div></div>
         <div class="actions"><button class="primary" id="searchAopsBtn">Search candidate AOPs</button><button class="secondary" id="loadNotableBtn">Load first AOPs</button></div>
       </div>
       <div class="cards" id="aopResults"></div>
     </section>
 
-    <section id="evidence" class="tab-content">
+    <section id="hazard-char" class="tab-content">
       <div class="panel">
-        <h2>3. Evidence & NAM mapping</h2>
-        <p class="help">Review the selected AOP as a pathway, then inspect evidence and quantitative understanding across KERs. NAM coverage is shown when submitted through the assessment or quantitative workflow.</p>
-        <div id="selectedAopSummary" class="muted">No AOP selected yet. Select one in AOP Discovery.</div>
+        <h2>2. Hazard characterisation</h2>
+        <p class="help">Hazard characterisation asks: <strong>what is the nature and severity of the harm, and at what dose?</strong> Review the selected pathway and its evidence, gather reference points and health-based guidance values (NOAEL/BMD, ADI/TDI/ARfD) from OpenFoodTox, and establish a dose-response point of departure (POD) from NAM data. The POD you set here becomes the hazard side of risk characterisation (step 4).</p>
+        <div id="selectedAopSummary" class="muted">No AOP selected yet. Identify a hazard pathway in step 1.</div>
         <h3>Pathway events</h3>
         <div id="pathwayView" class="pathway"></div>
-        <h3>KER evidence</h3>
+        <h3>KER evidence &amp; quantitative understanding</h3>
         <div id="kerEvidence" class="cards"></div>
       </div>
-    </section>
 
-
-    <section id="openfoodtox" class="tab-content">
       <div class="panel">
-        <h2>4. OpenFoodTox query</h2>
-        <p class="help">Question EFSA OpenFoodTox records from either a local SQLite index built from the official Excel export or, for institutions, a local IUCLID 6 import. Use this step to look for toxicant identity records, toxicological values/study documents, and publication links that can contextualize the selected AOP evidence.</p>
+        <h3>Toxicological reference points — OpenFoodTox</h3>
+        <p class="help">Query EFSA OpenFoodTox for substance identity, reference points, reference values, and study documents that describe the nature, severity, and dose of the hazard. Use a local SQLite index built from the official Excel export, or a local IUCLID 6 import.</p>
         <div class="grid">
           <div><label for="oftQuery">Toxicant search</label><input id="oftQuery" placeholder="name, CAS, EC number, or synonym"></div>
           <div><label for="oftLimit">Result limit</label><select id="oftLimit"><option>10</option><option>5</option><option>25</option></select></div>
         </div>
         <div class="actions"><button class="primary" id="runOftBtn">Query OpenFoodTox</button><button class="secondary" id="copyChemicalToOftBtn">Use current chemical</button></div>
-        <div class="warning-box">Zenodo REST API can retrieve/download OpenFoodTox files, but KEvidence still indexes the downloaded Excel locally for toxicant-level search. Run scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db to download and index automatically. Institutions can alternatively import i6z dossiers into IUCLID 6 and configure the local IUCLID REST API URL.</div>
+        <div class="warning-box">Run scripts/import_openfoodtox.py --download-latest --db data/openfoodtox.db to download and index automatically. Institutions can alternatively import i6z dossiers into IUCLID 6 and configure the local IUCLID REST API URL.</div>
       </div>
       <div class="panel" id="oftOutput"><div class="muted">No OpenFoodTox query run yet.</div></div>
-    </section>
 
-    <section id="quant" class="tab-content">
       <div class="panel">
-        <h2>5. Quantitative screening</h2>
-        <p class="help">Compare a NAM point of departure with an exposure estimate. This is a prototype screening calculator; it does not provide validated regulatory thresholds.</p>
+        <h3>Dose-response point of departure (POD)</h3>
+        <p class="help">Record the NAM / dose-response point of departure that characterises the hazard. This POD is carried into risk characterisation (step 4) and compared against the exposure estimate from step 3.</p>
         <div class="grid-3">
           <div><label for="quantAssay">NAM assay</label><input id="quantAssay" placeholder="e.g., complex I inhibition assay"></div>
           <div><label for="quantEvent">Mapped KE/Event ID</label><input id="quantEvent" type="number" placeholder="e.g., 887"></div>
           <div><label for="quantPodType">POD type</label><select id="quantPodType"><option>AC50</option><option>BMC</option><option>LEC</option><option>IC50</option><option>EC50</option><option>POD</option></select></div>
           <div><label for="quantPod">POD value + unit</label><input id="quantPod" placeholder="0.3 uM"></div>
-          <div><label for="quantExposure">Exposure value + unit</label><input id="quantExposure" placeholder="0.01 uM plasma equivalent"></div>
           <div><label for="quantIvive">Optional IVIVE factor</label><input id="quantIvive" placeholder="e.g., 4.1 mg/kg/day"></div>
         </div>
-        <div class="actions"><button class="primary" id="runQuantBtn">Calculate screening margin</button></div>
-        <div class="warning-box">Quantitative outputs are only as reliable as the submitted POD, exposure, and IVIVE inputs. Use for prioritization and hypothesis refinement unless validated sources and program-specific thresholds are configured.</div>
+        <div class="warning-box">A POD describes the hazard's dose-response; it is not itself a risk. Confirm KE mapping, assay quality, hit call, and units before use.</div>
       </div>
+
       <div class="panel">
         <h3>Browse EPA ToxCast/Tox21/ToxRefDB PODs</h3>
         <p class="help">Search a locally indexed EPA bioactivity/toxicity export for AC50 or POD candidates for the current chemical. Records are ranked higher when assay or endpoint text overlaps the selected AOP events.</p>
         <div class="actions"><button class="secondary" id="runBioBtn">Find candidate AC50/POD values</button></div>
         <div id="bioactivityOutput"><div class="muted">No EPA bioactivity search run yet.</div></div>
       </div>
-      <div class="panel" id="quantOutput"><div class="muted">No quantitative screen run yet.</div></div>
     </section>
 
-    <section id="gaps" class="tab-content">
+    <section id="exposure" class="tab-content">
       <div class="panel">
-        <h2>6. Uncertainty & data gaps</h2>
-        <p class="help">Run the evidence-to-decision engine to summarize hazard hypotheses, confidence, uncertainties, data gaps, and next recommended data collection.</p>
-        <div class="actions"><button class="primary" id="runAssessBtn">Run evidence-to-decision assessment</button></div>
+        <h2>3. Exposure assessment</h2>
+        <p class="help">Exposure assessment asks: <strong>who is exposed, how much, how often, and by which route?</strong> For food safety this is usually dietary exposure — concentration in food/feed × consumption pattern × population group × use conditions. Record the scenario and the resulting exposure estimate that will be integrated in risk characterisation (step 4).</p>
+        <div class="grid">
+          <div><label for="exposureOccurrence">Concentration / occurrence in food or feed</label><input id="exposureOccurrence" placeholder="e.g., 10 mg/kg food; occurrence range"></div>
+          <div><label for="exposureConsumption">Consumption pattern</label><input id="exposureConsumption" placeholder="e.g., high-percentile consumer, g/day"></div>
+          <div><label for="exposureRouteInput">Route</label><input id="exposureRouteInput" placeholder="e.g., dietary oral, dermal, inhalation"></div>
+          <div><label for="exposureDurationInput">Frequency / duration</label><input id="exposureDurationInput" placeholder="e.g., acute, chronic"></div>
+          <div><label for="exposurePopulationInput">Population group / species</label><input id="exposurePopulationInput" placeholder="e.g., infants, general population, bees"></div>
+          <div><label for="quantExposure">Exposure estimate value + unit</label><input id="quantExposure" placeholder="0.01 uM plasma equivalent"></div>
+        </div>
+        <div class="actions"><button class="secondary" id="copyProblemToExposureBtn">Prefill from problem formulation</button><button class="secondary" data-jump="risk-char">Go to risk characterisation</button></div>
+        <div class="warning-box">The exposure estimate is user-supplied unless connected to a curated dietary-exposure model. Exposure is what turns an intrinsic hazard into a risk — without it, no risk conclusion can be drawn.</div>
       </div>
-      <div class="panel" id="assessmentOutput"><div class="muted">No assessment run yet.</div></div>
     </section>
 
-    <section id="draft" class="tab-content">
+    <section id="risk-char" class="tab-content">
       <div class="panel">
-        <h2>7. Assessment draft</h2>
-        <p class="help">Generate a structured draft from selected AOP evidence, quantitative results, uncertainties, and data gaps. Use the assistant to rewrite or explain sections.</p>
-        <div class="actions"><button class="primary" id="buildDraftBtn">Build draft summary</button><button class="secondary" data-assistant-prompt="Draft this as a concise regulatory memo with caveats.">Ask assistant to refine</button></div>
-        <textarea id="draftText" placeholder="Draft assessment text will appear here..."></textarea>
+        <h2>4. Risk characterisation</h2>
+        <p class="help">Risk characterisation is the <strong>integration step</strong>: given the hazard (step 2) and the exposure (step 3), what is the risk? KEvidence compares the dose-response POD with the exposure estimate to produce a screening margin (BER / MOE) and a hazard-quotient-style ratio. Hazard is intrinsic potential for harm; risk is that hazard under actual exposure conditions.</p>
+        <div class="actions"><button class="primary" id="runQuantBtn">Integrate POD × exposure → screening margin</button></div>
+        <div class="warning-box">This is a prototype screening calculator, not a validated regulatory threshold framework. Screening margins support prioritization and hypothesis refinement unless validated sources and program-specific thresholds are configured.</div>
+      </div>
+      <div class="panel" id="quantOutput"><div class="muted">No risk characterisation run yet. Set a POD in step 2 and an exposure estimate in step 3.</div></div>
+    </section>
+
+    <section id="uncertainty" class="tab-content">
+      <div class="panel">
+        <h2>Uncertainty analysis</h2>
+        <p class="help">After risk characterisation, analyse uncertainty. Run the evidence-to-decision engine to summarize hazard hypotheses, confidence across the four steps, key uncertainties, critical data gaps, and next recommended data collection.</p>
+        <div class="actions"><button class="primary" id="runAssessBtn">Run uncertainty &amp; data-gap analysis</button></div>
+      </div>
+      <div class="panel" id="assessmentOutput"><div class="muted">No analysis run yet.</div></div>
+    </section>
+
+    <section id="opinion" class="tab-content">
+      <div class="panel">
+        <h2>Scientific opinion / advice</h2>
+        <p class="help">Assemble a structured draft opinion from problem formulation, hazard identification and characterisation, exposure assessment, risk characterisation, and uncertainty analysis. This scientific advice is the output handed to risk managers — risk assessment informs, but does not make, the risk-management decision. Use the assistant to rewrite or explain sections.</p>
+        <div class="actions"><button class="primary" id="buildDraftBtn">Build draft opinion</button><button class="secondary" data-assistant-prompt="Draft this as a concise regulatory scientific opinion with caveats, clearly separating hazard from risk.">Ask assistant to refine</button></div>
+        <textarea id="draftText" placeholder="Draft scientific opinion text will appear here..."></textarea>
       </div>
     </section>
 
     <section id="questions" class="tab-content">
       <div class="panel">
-        <h2>8. Quick user manual</h2>
-        <p class="help">A one-page workflow guide for regulatory risk assessors. Work left-to-right through the numbered tabs, keeping every generated statement traceable to source data and expert judgement.</p>
+        <h2>Quick user manual</h2>
+        <p class="help">A one-page guide to the Codex risk-assessment workflow. Risk assessment is the scientific part of risk analysis (which also covers risk management and risk communication). Problem formulation frames the four Codex steps below; keep every generated statement traceable to source data and expert judgement.</p>
         <div class="manual-grid">
           <div class="manual-steps">
-            <div class="manual-step"><strong>Define the assessment question.</strong><span class="muted">Enter the chemical/stressor, use case, route, and population/species. This frames every AOP search, evidence summary, and memo caveat.</span></div>
-            <div class="manual-step"><strong>Select a plausible AOP.</strong><span class="muted">Search by chemical, key event, adverse outcome, or AOP ID. Choose one candidate pathway before mapping evidence.</span></div>
-            <div class="manual-step"><strong>Check pathway evidence.</strong><span class="muted">Review MIE, key events, adverse outcome, KER evidence codes, and whether your NAM assay can be mapped to a specific event ID.</span></div>
-            <div class="manual-step"><strong>Query toxicology context.</strong><span class="muted">Use OpenFoodTox for substance identity, EFSA outputs, reference points, reference values, and genotoxicity context when the local index is configured.</span></div>
-            <div class="manual-step"><strong>Calculate only a screening margin.</strong><span class="muted">Provide NAM assay, mapped KE/Event ID, POD type and value, exposure value, and optional IVIVE factor. Interpret BER/MOE as prioritisation support, not a final regulatory conclusion.</span></div>
-            <div class="manual-step"><strong>Document uncertainty and draft.</strong><span class="muted">Run the evidence-to-decision step, then build a draft that clearly separates curated evidence, user-entered data, assumptions, and data gaps.</span></div>
+            <div class="manual-step"><strong>Problem formulation — define the question.</strong><span class="muted">Enter the substance/stressor, product domain, use scenario, endpoint of concern, and decision context. This pre-step frames all four Codex steps.</span></div>
+            <div class="manual-step"><strong>Hazard identification — can it cause harm?</strong><span class="muted">Search AOPs by chemical, key event, adverse outcome, or AOP ID, and select the pathway representing a plausible route from MIE to adverse outcome.</span></div>
+            <div class="manual-step"><strong>Hazard characterisation — nature, severity, dose.</strong><span class="muted">Review KER evidence, pull reference points/HBGVs from OpenFoodTox, and set a dose-response point of departure (POD) mapped to a key event.</span></div>
+            <div class="manual-step"><strong>Exposure assessment — who, how much, how often, route.</strong><span class="muted">Record concentration in food × consumption × population × use conditions, and the resulting exposure estimate.</span></div>
+            <div class="manual-step"><strong>Risk characterisation — integrate hazard × exposure.</strong><span class="muted">Compare the POD with the exposure estimate to obtain a screening margin (BER/MOE). Interpret as prioritisation support, not a final regulatory conclusion.</span></div>
+            <div class="manual-step"><strong>Uncertainty & scientific opinion.</strong><span class="muted">Run the uncertainty & data-gap analysis, then build a draft scientific opinion that separates curated evidence, user-entered data, assumptions, and gaps for handoff to risk managers.</span></div>
           </div>
           <div class="app-screenshot" aria-label="Annotated KEvidence workflow screenshot mock-up">
             <div class="shot-header"></div>
@@ -368,16 +388,16 @@
         <table class="sample-table">
           <thead><tr><th>Need</th><th>Use this</th><th>What to do in KEvidence</th></tr></thead>
           <tbody>
-            <tr><td>NAM POD / AC50 example</td><td><a href="samples/nam_pod_examples.csv" download>Download local CSV template</a><br><a href="https://www.epa.gov/comptox-tools/exploring-toxcast-data" target="_blank" rel="noopener">EPA ToxCast/Tox21 data portal</a><br><a href="https://epa.figshare.com/articles/dataset/ToxCast_Database_invitroDB_/6062623" target="_blank" rel="noopener">EPA invitroDB on Figshare</a></td><td>Copy assay, POD type, POD value/unit, and mapped event ID into tab 5. Use the EPA bioactivity import script for larger local searches.</td></tr>
-            <tr><td>OpenFoodTox reference points</td><td><a href="https://zenodo.org/records/19388272" target="_blank" rel="noopener">OpenFoodTox 3.0 on Zenodo</a><br><a href="https://zenodo.org/records/8120114" target="_blank" rel="noopener">Earlier OpenFoodTox Zenodo record</a></td><td>Download the Excel export, build the local SQLite index, then query tab 4 by substance name, CAS, EC number, or synonym.</td></tr>
-            <tr><td>AOP structure and event IDs</td><td><a href="https://aopwiki.org/downloads" target="_blank" rel="noopener">AOP-Wiki quarterly downloads</a><br><a href="https://zenodo.org/records/17499488" target="_blank" rel="noopener">AOP-Wiki RDF on Zenodo</a></td><td>Use event IDs to map NAM assays to MIE/KE/AO records in tabs 3 and 5.</td></tr>
-            <tr><td>Exposure / IVIVE test values</td><td><a href="samples/exposure_ivive_examples.csv" download>Download local CSV template</a></td><td>Paste exposure value/unit and optional IVIVE conversion factor into tab 5, documenting assumptions in tab 7.</td></tr>
+            <tr><td>NAM POD / AC50 example</td><td><a href="samples/nam_pod_examples.csv" download>Download local CSV template</a><br><a href="https://www.epa.gov/comptox-tools/exploring-toxcast-data" target="_blank" rel="noopener">EPA ToxCast/Tox21 data portal</a><br><a href="https://epa.figshare.com/articles/dataset/ToxCast_Database_invitroDB_/6062623" target="_blank" rel="noopener">EPA invitroDB on Figshare</a></td><td>Copy assay, POD type, POD value/unit, and mapped event ID into the hazard characterisation step (POD). Use the EPA bioactivity import script for larger local searches.</td></tr>
+            <tr><td>OpenFoodTox reference points</td><td><a href="https://zenodo.org/records/19388272" target="_blank" rel="noopener">OpenFoodTox 3.0 on Zenodo</a><br><a href="https://zenodo.org/records/8120114" target="_blank" rel="noopener">Earlier OpenFoodTox Zenodo record</a></td><td>Download the Excel export, build the local SQLite index, then query the hazard characterisation step by substance name, CAS, EC number, or synonym.</td></tr>
+            <tr><td>AOP structure and event IDs</td><td><a href="https://aopwiki.org/downloads" target="_blank" rel="noopener">AOP-Wiki quarterly downloads</a><br><a href="https://zenodo.org/records/17499488" target="_blank" rel="noopener">AOP-Wiki RDF on Zenodo</a></td><td>Use event IDs to map NAM assays to MIE/KE/AO records during hazard identification and characterisation.</td></tr>
+            <tr><td>Exposure / IVIVE test values</td><td><a href="samples/exposure_ivive_examples.csv" download>Download local CSV template</a></td><td>Paste the exposure value/unit into the exposure assessment step and the optional IVIVE factor into the hazard characterisation POD, documenting assumptions in the scientific opinion.</td></tr>
           </tbody>
         </table>
       </div>
 
       <div class="panel">
-        <h2>8. Questions?</h2>
+        <h2>Questions?</h2>
         <p class="help">Suggest improvements, report missing data sources, or propose new risk-assessment workflow features. You can open the GitHub repository directly or send a feature request by email.</p>
         <div class="actions"><a class="secondary" id="githubRepoLink" href="https://github.com/LyzDevalier/KEvidence" target="_blank" rel="noopener">Open GitHub repository</a></div>
         <div class="grid">
@@ -395,7 +415,7 @@
   </main>
 
   <aside class="assistant">
-    <div class="assistant-header"><h2>Evidence Assistant</h2><p class="muted">Use this to explain selected evidence, compare AOPs, or draft memo language.</p></div>
+    <div class="assistant-header"><h2>Evidence Assistant</h2><p class="muted">Use this to explain selected evidence, distinguish hazard from risk, or draft scientific-opinion language.</p></div>
     <div class="assistant-context" id="assistantContext">Context: no chemical selected.</div>
     <div class="assistant-context">
       <strong>Suggested prompts</strong>
@@ -407,7 +427,7 @@
         <button class="prompt-chip" data-assistant-prompt="Explain the quantitative screening result and its limitations.">Explain BER</button>
       </div>
     </div>
-    <div class="messages" id="messages"><div class="msg bot"><div class="msg-avatar">⚡</div><div class="msg-bubble">I am now a contextual assistant. Start with problem formulation, then ask me to explain selected AOPs, evidence, uncertainty, or draft text.</div></div></div>
+    <div class="messages" id="messages"><div class="msg bot"><div class="msg-avatar">⚡</div><div class="msg-bubble">I am a contextual assistant for the Codex risk-assessment workflow. Start with problem formulation, then move through hazard identification, hazard characterisation, exposure assessment, and risk characterisation. Ask me to explain a pathway, distinguish hazard from risk, or draft opinion text.</div></div></div>
     <div class="assistant-input"><input id="assistantInput" placeholder="Ask about the current assessment..."><button id="assistantSend">Send</button></div>
   </aside>
 </div>
@@ -456,8 +476,17 @@ function captureProblem() {
     authorization_status: fieldValue('authorizationInput'),
     legal_context: fieldValue('legalContextInput'),
     decision_context: fieldValue('decisionContextInput'),
-    use_case: fieldValue('outputPurposeInput')
+    use_case: fieldValue('outputPurposeInput'),
+    occurrence: fieldValue('exposureOccurrence') || fieldValue('useLevelInput'),
+    consumption: fieldValue('exposureConsumption'),
+    exposure_estimate: fieldValue('quantExposure')
   };
+  // The exposure assessment step can refine route/duration/population; prefer its
+  // values when the assessor has entered scenario-specific detail there.
+  state.context.route = fieldValue('exposureRouteInput') || state.context.route;
+  state.context.duration = fieldValue('exposureDurationInput') || state.context.duration;
+  state.context.population = fieldValue('exposurePopulationInput') || state.context.population;
+  if (state.context.exposure_estimate) state.context.exposure = state.context.exposure_estimate;
   if (state.chemical && !$('aopSearchInput').value.trim()) $('aopSearchInput').value = state.chemical;
   if (state.chemical && $('oftQuery') && !$('oftQuery').value.trim()) $('oftQuery').value = state.chemical;
   updateContext();
@@ -467,7 +496,7 @@ function problemFormulationReady() {
 }
 steps.forEach(step => step.addEventListener('click', () => showTab(step.dataset.tab)));
 document.querySelectorAll('[data-jump]').forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.jump)));
-$('startAssessmentBtn').addEventListener('click', () => { captureProblem(); if (!problemFormulationReady()) { alert('Enter substance identity and select product domain, assessment type, and required output purpose before starting.'); return; } showTab('aops'); searchAops(); });
+$('startAssessmentBtn').addEventListener('click', () => { captureProblem(); if (!problemFormulationReady()) { alert('Enter substance identity and select product domain, assessment type, and required output purpose before starting.'); return; } showTab('hazard-id'); searchAops(); });
 $('searchAopsBtn').addEventListener('click', searchAops);
 $('loadNotableBtn').addEventListener('click', () => loadAops(''));
 $('runAssessBtn').addEventListener('click', runAssessment);
@@ -475,6 +504,13 @@ $('runQuantBtn').addEventListener('click', runQuantitative);
 $('runBioBtn').addEventListener('click', runBioactivitySearch);
 $('runOftBtn').addEventListener('click', runOpenFoodTox);
 $('copyChemicalToOftBtn').addEventListener('click', () => { captureProblem(); $('oftQuery').value = state.chemical; });
+$('copyProblemToExposureBtn').addEventListener('click', () => {
+  captureProblem();
+  if (!$('exposureOccurrence').value.trim()) $('exposureOccurrence').value = state.context.use_level || '';
+  if (!$('exposureRouteInput').value.trim()) $('exposureRouteInput').value = state.context.route || '';
+  if (!$('exposureDurationInput').value.trim()) $('exposureDurationInput').value = state.context.duration || '';
+  if (!$('exposurePopulationInput').value.trim()) $('exposurePopulationInput').value = state.context.population || '';
+});
 $('buildDraftBtn').addEventListener('click', buildDraft);
 $('sendFeatureBtn').addEventListener('click', sendFeatureRequest);
 $('clearFeatureBtn').addEventListener('click', clearFeatureRequest);
@@ -512,7 +548,7 @@ async function selectAop(aopId) {
   updateContext();
   renderAopResults();
   await loadAopDetail(aopId);
-  showTab('evidence');
+  showTab('hazard-char');
 }
 async function loadAopDetail(aopId) {
   $('selectedAopSummary').textContent = 'Loading selected AOP…';
@@ -648,10 +684,10 @@ async function runQuantitative() {
 function renderQuantitative() {
   const q = state.quantitative || {};
   const ke = q.most_sensitive_ke || {};
-  $('quantOutput').innerHTML = `<h3>Quantitative screening result</h3>
+  $('quantOutput').innerHTML = `<h3>Risk characterisation result (hazard × exposure)</h3>
     <div class="metric-grid"><div class="metric"><small>BER</small><strong>${escapeHtml(q.bioactivity_exposure_ratio ?? 'n/a')}</strong></div><div class="metric"><small>MOE</small><strong>${escapeHtml(q.margin_of_exposure ?? 'n/a')}</strong></div><div class="metric"><small>Hazard quotient</small><strong>${escapeHtml(q.hazard_quotient ?? 'n/a')}</strong></div><div class="metric"><small>Confidence</small><strong>${escapeHtml(q.quantitative_confidence || 'n/a')}</strong></div></div>
-    <p>${escapeHtml(q.interpretation || '')}</p><p class="muted">Most sensitive KE: ${escapeHtml(ke.mapped_event_id || 'n/a')} ${escapeHtml(ke.mapped_event_name || '')}</p>
-    <h3>Uncertainties</h3><ul class="clean">${(q.uncertainties || []).map(u => `<li>${escapeHtml(u)}</li>`).join('') || '<li>No major quantitative uncertainties identified.</li>'}</ul>`;
+    <p>${escapeHtml(q.interpretation || '')}</p><p class="muted">Most sensitive hazard key event: ${escapeHtml(ke.mapped_event_id || 'n/a')} ${escapeHtml(ke.mapped_event_name || '')}</p>
+    <h3>Uncertainties</h3><ul class="clean">${(q.uncertainties || []).map(u => `<li>${escapeHtml(u)}</li>`).join('') || '<li>No major uncertainties identified in this integration.</li>'}</ul>`;
 }
 
 function sendFeatureRequest() {
@@ -676,29 +712,44 @@ function clearFeatureRequest() {
   ['featureName', 'featureEmail', 'featureTitle', 'featureDescription'].forEach(id => { $(id).value = ''; });
   $('featureType').selectedIndex = 0;
 }
-function renderQuantitative() {
-  const q = state.quantitative || {};
-  const ke = q.most_sensitive_ke || {};
-  $('quantOutput').innerHTML = `<h3>Quantitative screening result</h3>
-    <div class="metric-grid"><div class="metric"><small>BER</small><strong>${escapeHtml(q.bioactivity_exposure_ratio ?? 'n/a')}</strong></div><div class="metric"><small>MOE</small><strong>${escapeHtml(q.margin_of_exposure ?? 'n/a')}</strong></div><div class="metric"><small>Hazard quotient</small><strong>${escapeHtml(q.hazard_quotient ?? 'n/a')}</strong></div><div class="metric"><small>Confidence</small><strong>${escapeHtml(q.quantitative_confidence || 'n/a')}</strong></div></div>
-    <p>${escapeHtml(q.interpretation || '')}</p><p class="muted">Most sensitive KE: ${escapeHtml(ke.mapped_event_id || 'n/a')} ${escapeHtml(ke.mapped_event_name || '')}</p>
-    <h3>Uncertainties</h3><ul class="clean">${(q.uncertainties || []).map(u => `<li>${escapeHtml(u)}</li>`).join('') || '<li>No major quantitative uncertainties identified.</li>'}</ul>`;
-}
 function buildDraft() {
+  captureProblem();
   const a = state.assessment || {};
   const q = state.quantitative || {};
+  const c = state.context || {};
   const first = (a.hazard_hypotheses || [])[0];
-  $('draftText').value = `Problem formulation: ${state.chemical || '[substance not specified]'}; domain ${state.context.product_domain || '[not specified]'}; assessment type ${state.context.assessment_type || '[not specified]'}; output purpose ${state.context.output_purpose || '[not specified]'}; regulatory question ${state.context.regulatory_question || '[not specified]'}; matrix/product ${state.context.matrix_product || '[not specified]'}; intended use ${state.context.intended_use || '[not specified]'}; use level/occurrence ${state.context.use_level || '[not specified]'}; route ${state.context.route || '[not specified]'}; duration/scenario ${state.context.duration || '[not specified]'}; population/species ${state.context.population || '[not specified]'}; endpoint domain ${state.context.endpoint_domain || '[not specified]'}; authorization status ${state.context.authorization_status || '[not specified]'}; legal context ${state.context.legal_context || '[not specified]'}; decision context ${state.context.decision_context || '[not specified]'}.
+  const hazardId = state.selectedAopDetail
+    ? `AOP ${state.selectedAopDetail.id}: ${state.selectedAopDetail.title || ''} (MIE ${state.selectedAopDetail.mie || 'unspecified'} → AO ${state.selectedAopDetail.ao || 'unspecified'})`
+    : (state.selectedAop ? `AOP ${state.selectedAop.id}` : 'No candidate hazard pathway selected yet.');
+  const riskLine = (q.bioactivity_exposure_ratio ?? null) !== null
+    ? `Screening margin BER/MOE ${q.bioactivity_exposure_ratio}; confidence ${q.quantitative_confidence || 'not stated'}. ${q.interpretation || ''}`
+    : 'Not yet integrated — set a POD (hazard characterisation) and an exposure estimate (exposure assessment).';
+  $('draftText').value = `DRAFT SCIENTIFIC OPINION — risk assessment only
+Risk assessment is the scientific part of risk analysis; the risk-management decision and risk communication remain with the risk manager.
 
-AOP hypothesis: ${first ? first.conclusion : 'No AOP-grounded hypothesis has been selected or generated yet.'}
+PROBLEM FORMULATION
+Substance/stressor: ${state.chemical || '[not specified]'}; product domain ${c.product_domain || '[not specified]'}; assessment type ${c.assessment_type || '[not specified]'}; output purpose ${c.output_purpose || '[not specified]'}; regulatory question ${c.regulatory_question || '[not specified]'}; matrix/product ${c.matrix_product || '[not specified]'}; endpoint of concern ${c.endpoint_domain || '[not specified]'}; legal context ${c.legal_context || '[not specified]'}; decision context ${c.decision_context || '[not specified]'}.
 
-OpenFoodTox query: ${(state.openfoodtox && state.openfoodtox.summary) || 'Not queried or not configured.'}
+STEP 1 — HAZARD IDENTIFICATION (can it cause harm?)
+${hazardId}
+${first ? first.conclusion : 'No AOP-grounded hazard hypothesis has been generated yet.'}
 
-Quantitative screen: BER ${q.bioactivity_exposure_ratio ?? 'not calculated'}; confidence ${q.quantitative_confidence || 'not calculated'}. ${q.interpretation || ''}
+STEP 2 — HAZARD CHARACTERISATION (nature, severity, dose)
+Toxicological reference points (OpenFoodTox): ${(state.openfoodtox && state.openfoodtox.summary) || 'Not queried or not configured.'}
+Dose-response point of departure: ${c.exposure_estimate ? '' : ''}${(state.quantitative && state.quantitative.most_sensitive_ke && state.quantitative.most_sensitive_ke.mapped_event_name) ? `POD mapped to KE ${state.quantitative.most_sensitive_ke.mapped_event_id} (${state.quantitative.most_sensitive_ke.mapped_event_name}).` : 'No dose-response POD recorded yet.'}
 
+STEP 3 — EXPOSURE ASSESSMENT (who, how much, how often, route)
+Occurrence/concentration ${c.occurrence || '[not specified]'}; consumption ${c.consumption || '[not specified]'}; route ${c.route || '[not specified]'}; frequency/duration ${c.duration || '[not specified]'}; population/species ${c.population || '[not specified]'}; exposure estimate ${c.exposure_estimate || '[not specified]'}.
+
+STEP 4 — RISK CHARACTERISATION (hazard integrated with exposure)
+${riskLine}
+Note: an intrinsic hazard is not a risk until exposure is considered.
+
+UNCERTAINTY ANALYSIS
 Key uncertainties/data gaps: ${(a.critical_data_gaps || []).map(g => `${g.priority}: ${g.gap}`).join('; ') || 'Not yet assessed.'}
 
-Regulatory caveat: This is a prototype screening support summary. Values and thresholds require source validation before regulatory use.`;
+CAVEAT
+This is a prototype screening-support opinion. AOP structure is from local AOP-Wiki data; PODs, exposure estimates, IVIVE factors, and thresholds are user-supplied or heuristic. Values require source validation before regulatory use, and this output does not constitute a risk-management decision.`;
 }
 function askAboutAop(aopId) { sendAssistant(`Explain AOP ${aopId} in risk-assessment terms and identify why it may matter for ${state.chemical || 'the current chemical'}.`); }
 async function sendAssistant(prompt) {
