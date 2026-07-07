@@ -8,16 +8,17 @@ KEvidence is not intended to replace expert regulatory judgement. It is a decisi
 
 ## What KEvidence does
 
-KEvidence turns AOP-Wiki data into a workflow-oriented risk assessment interface:
+KEvidence turns AOP-Wiki data into a workflow-oriented risk assessment interface. **Risk analysis** is the whole governance cycle — risk assessment, risk management, and risk communication (EU General Food Law, Regulation (EC) No 178/2002). KEvidence supports the scientific **risk assessment** part, which Codex defines as four steps. The workbench follows that structure, with problem formulation as the practical framing step:
 
-1. **Problem formulation** — define the chemical or stressor, use case, route, population, and assessment context.
-2. **AOP discovery** — search candidate AOPs by chemical, stressor, key event, adverse outcome, or explicit AOP ID.
-3. **Evidence and NAM mapping** — review MIEs, key events, KERs, weight of evidence, quantitative understanding, and event components.
-4. **OpenFoodTox query** — optionally search a local EFSA OpenFoodTox SQLite index or a configured local IUCLID 6 instance for toxicological records and source links.
-5. **Quantitative screening** — compare user-supplied or selected NAM PODs such as AC50 values with exposure estimates to calculate simple screening margins.
-6. **EPA bioactivity browsing** — optionally browse locally indexed ToxCast/Tox21/ToxRefDB-style exports and copy candidate AC50/POD records into the quantitative screening form.
-7. **Uncertainty and data gaps** — generate confidence summaries, key uncertainties, critical data gaps, and recommended next data-generation steps.
-8. **Assessment draft** — create a memo-ready draft summary that can be refined with the Evidence Assistant.
+- **Problem formulation** — define the substance/stressor, product domain, use scenario, endpoint of concern, and decision context. Not one of the four formal Codex steps, but it frames all of them.
+1. **Hazard identification** — *can this agent cause harm?* Search and select candidate AOPs by chemical, stressor, key event, adverse outcome, or AOP ID.
+2. **Hazard characterisation** — *what is the nature and severity of the harm, and at what dose?* Review MIEs, key events, KERs, weight of evidence, and quantitative understanding; pull reference points and health-based guidance values from OpenFoodTox; and set a dose-response point of departure (POD) from NAM data (optionally browsing locally indexed EPA ToxCast/Tox21/ToxRefDB-style exports).
+3. **Exposure assessment** — *who is exposed, how much, how often, and by which route?* Record concentration in food/feed × consumption × population × use conditions, and the resulting exposure estimate.
+4. **Risk characterisation** — *given hazard and exposure, what is the risk?* Integrate the POD with the exposure estimate to calculate screening margins (BER/MOE) and a hazard-quotient-style ratio.
+
+The workbench then supports **uncertainty analysis** (confidence summaries, key uncertainties, critical data gaps, recommended next data) and a **scientific opinion draft** that can be refined with the Evidence Assistant and handed to risk managers.
+
+> **Hazard is not risk.** Hazard is the intrinsic potential for harm; risk is that hazard under actual exposure conditions. KEvidence keeps the two separate and does not make risk-management decisions.
 
 ---
 
@@ -36,7 +37,7 @@ KEvidence builds a local SQLite database from bundled AOP-Wiki-derived TSV and X
 
 ### Risk assessment workbench UI
 
-The frontend is a single-page workbench with step navigation and a contextual assistant. The workflow is organized around how a scientific officer works rather than around a generic chat page.
+The frontend is a single-page workbench with step navigation and a contextual assistant. The workflow is organized around the four Codex risk-assessment steps (hazard identification, hazard characterisation, exposure assessment, risk characterisation), framed by problem formulation and followed by uncertainty analysis and a scientific-opinion draft — rather than around a generic chat page.
 
 ### Evidence-to-decision assessment
 
@@ -50,9 +51,9 @@ The `/api/assess` endpoint produces structured assessment outputs for a chemical
 - Recommended next tests or NAMs.
 - Regulatory summary language.
 
-### Quantitative AOP / exposure-aware screening
+### Quantitative AOP / exposure-aware screening (risk characterisation)
 
-The `/api/quantitative-assessment` endpoint accepts NAM PODs, mapped AOP events, exposure values, and optional simple IVIVE conversion factors. It returns:
+The `/api/quantitative-assessment` endpoint performs the risk-characterisation integration: it accepts hazard-side NAM PODs, mapped AOP events, exposure-side values, and optional simple IVIVE conversion factors. It returns:
 
 - Most sensitive measured key event.
 - Bioactivity-exposure ratio (BER).

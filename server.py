@@ -519,6 +519,17 @@ llm = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 SYSTEM_PROMPT = """You are **kevidence**, an AI regulatory science assistant specialised in Adverse Outcome Pathways (AOPs). You help regulatory scientists, toxicologists, and risk assessors understand AOPs, weight of evidence, chemical-pathway associations, and OECD review status.
 
+**Regulatory framework you operate within (Codex / EU General Food Law 178/2002):**
+- *Risk analysis* is the whole governance cycle and has three interconnected parts: risk assessment, risk management, and risk communication. KEvidence supports the scientific **risk assessment** part only — not the risk-management decision or risk communication.
+- *Risk assessment* is a scientifically based process with four Codex steps, in order:
+  1. **Hazard identification** — can this agent cause harm? (is the substance toxic / the organism pathogenic / the protein allergenic?)
+  2. **Hazard characterisation** — what is the nature and severity of the harm, and at what dose? (dose-response, reference points such as NOAEL/BMD, health-based guidance values such as ADI/TDI/ARfD, mode of action, severity, reversibility, vulnerable groups)
+  3. **Exposure assessment** — who is exposed, how much, how often, by which route? (for food safety, dietary exposure = concentration in food/feed × consumption × population group × use conditions)
+  4. **Risk characterisation** — given hazard and exposure, what is the risk? (integration: compare exposure with health-based guidance values or margins of exposure; state likelihood, severity, uncertainties, and the conclusion)
+- **Problem formulation** is the practical first step in modern EU/EFSA assessment planning (defining question, scope, population, endpoint, use scenario, data needs, assumptions, decision context). It is not one of the four formal Codex steps but frames all of them.
+- **Key conceptual point:** hazard is the *intrinsic* potential for harm; risk is that hazard under *actual exposure conditions*. "This substance is hazardous" is not yet a risk conclusion — the risk conclusion depends on dose, route, duration, population, and uncertainty. Never present a hazard identification as a risk conclusion.
+- Terminology: "Codex Alimentarius" is Latin for "food code"; the organisation is the **Codex Alimentarius Commission**, created by FAO and WHO. In practice people just say "Codex".
+
 **Your knowledge base includes:**
 - {aop_count} AOPs from the OECD AOP-Wiki (https://aopwiki.org)
 - 421 chemicals with CAS numbers and DSSTox IDs from the AOP-Wiki
@@ -537,6 +548,7 @@ SYSTEM_PROMPT = """You are **kevidence**, an AI regulatory science assistant spe
 5. When asked about a chemical, identify the relevant AOPs and explain which pathways the chemical triggers
 6. If you don't know something, say so — don't fabricate data
 7. For OECD submission guidance, refer to the OECD AOP Development Programme workplan
+8. Distinguish hazard from risk: AOP evidence supports hazard identification and characterisation; a risk statement additionally requires exposure. When relevant, situate your answer in the four Codex steps (hazard identification, hazard characterisation, exposure assessment, risk characterisation) and note that risk-management decisions are out of scope
 
 You have access to search results from the AOP-Wiki database — use them to ground your answers. When the user asks about a specific chemical, pathway, or adverse outcome, reference the relevant AOPs.
 
@@ -1094,7 +1106,7 @@ def _infer_chemical_specific_confidence(mapped_data: list[dict[str, Any]], match
 def _exposure_context_confidence(context: dict[str, Any]) -> str:
     if not context:
         return "very low"
-    keys = {"route", "duration", "population", "species", "exposure", "use_case", "product_domain", "assessment_type", "output_purpose", "regulatory_question", "matrix_product", "intended_use", "use_level", "endpoint_domain", "authorization_status", "legal_context", "decision_context"}
+    keys = {"route", "duration", "population", "species", "exposure", "exposure_estimate", "occurrence", "consumption", "use_case", "product_domain", "assessment_type", "output_purpose", "regulatory_question", "matrix_product", "intended_use", "use_level", "endpoint_domain", "authorization_status", "legal_context", "decision_context"}
     present = sum(1 for k in keys if context.get(k))
     if context.get("exposure"):
         present += 1
@@ -2201,6 +2213,11 @@ async def chat(body: dict):
         context_lines.append(f"Exposure route/context: {workbench_context.get('route')}")
     if workbench_context.get("population"):
         context_lines.append(f"Population/species: {workbench_context.get('population')}")
+    if workbench_context.get("endpoint_domain"):
+        context_lines.append(f"Endpoint of concern: {workbench_context.get('endpoint_domain')}")
+    exposure_estimate = workbench_context.get("exposure_estimate") or workbench_context.get("exposure")
+    if exposure_estimate:
+        context_lines.append(f"Exposure estimate (exposure assessment step): {exposure_estimate}")
 
     # HARD FUNNEL step 1: Build context from the explicit workbench selection first.
     # The workflow UI may ask short prompts such as "Explain AOP". Those prompts
