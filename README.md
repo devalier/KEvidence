@@ -11,6 +11,7 @@ KEvidence is not intended to replace expert regulatory judgement. It is a decisi
 KEvidence turns AOP-Wiki data into a workflow-oriented risk assessment interface. **Risk analysis** is the whole governance cycle — risk assessment, risk management, and risk communication (EU General Food Law, Regulation (EC) No 178/2002). KEvidence supports the scientific **risk assessment** part, which Codex defines as four steps. The workbench follows that structure, with problem formulation as the practical framing step:
 
 - **Problem formulation** — define the substance/stressor, product domain, use scenario, endpoint of concern, and decision context. Not one of the four formal Codex steps, but it frames all of them.
+0. **Substance / product characterisation** (feed additives) — establish exactly what is being assessed: identity and composition of the additive and of *each component* of a product, mixture or formulation, impurities, physical properties, manufacturing, stability, homogeneity, conditions of use and methods of analysis, grounded in the EFSA FEEDAP *Guidance on the identity, characterisation and conditions of use of feed additives* (EFSA Journal 2017;15(10):5023). The MVP covers chemical characterisation.
 1. **Hazard identification** — *can this agent cause harm?* Search and select candidate AOPs by chemical, stressor, key event, adverse outcome, or AOP ID.
 2. **Hazard characterisation** — *what is the nature and severity of the harm, and at what dose?* Review MIEs, key events, KERs, weight of evidence, and quantitative understanding; pull reference points and health-based guidance values from OpenFoodTox; and set a dose-response point of departure (POD) from NAM data (optionally browsing locally indexed EPA ToxCast/Tox21/ToxRefDB-style exports).
 3. **Exposure assessment** — *who is exposed, how much, how often, and by which route?* Record concentration in food/feed × consumption × population × use conditions, and the resulting exposure estimate.
@@ -23,6 +24,20 @@ The workbench then supports **uncertainty analysis** (confidence summaries, key 
 ---
 
 ## Key features
+
+### Step 0 — feed additive characterisation (chemical MVP)
+
+Assists EFSA scientific officers with the characterisation section of a feed additive assessment.
+
+- **Input:** confidential applicant documents — uploads (PDF, DOCX, XLSX, CSV/TSV, TXT/MD, JSON, HTML) and/or URLs (a PDF/DOCX/XLSX link, or an HTML page whose linked documents are followed). Product form, routes of administration, production type, additive type, and each component (name, CAS, role).
+- **Output:** a characterisation in Markdown that follows Section 2 of the guidance (2.1 Identity … 2.6 Methods of analysis), shown on screen and downloadable, plus a data-gap analysis.
+- **Data-gap analysis:** each of 27 guidance requirements is marked *evidence located*, *partially addressed*, *not located*, *applicability to confirm*, *scientific-officer review* or *not applicable*. Quantitative checks come straight from the guidance: ≥ 5 batches for the specification and ≥ 3 for impurities (§2.1.3, §2.1.4), analyses within the last 5 years, statements of compliance flagged (not sufficient on their own), dusting potential in ≥ 3 batches (§2.1.5), shelf life in ≥ 3 batches (§2.4.1.1), premixture ≥ 6 months and feed ≥ 3 months (§2.4.1.2), water ≥ 48 h (§2.4.1.3), homogeneity ≥ 10 subsamples (§2.4.2). The minimum impurity set depends on production type (chemical synthesis, fermentation, plant-derived, animal-derived, mineral; §2.1.4). Exemptions (flavouring compounds, silage additives, colourants, mineral-based additives) are applied where the guidance gives them. Applicant justifications for omissions are surfaced (guidance p.5: reasons should be given for any omission).
+- **Grounding:** the requirement catalogue (`data/guidance/feedap_2017_5023_chemical_requirements.json`) cites the guidance section and page and quotes it verbatim for every requirement. The guidance PDF is bundled unmodified (CC BY-ND 4.0) and every requirement is re-anchored against its text at start-up; the UI shows how many are anchored and the PDF is served at `/api/characterisation/guidance.pdf`. `tests/test_characterisation.py` fails if any quote, page reference or anchor drifts from the guidance. In step 0 the Evidence Assistant answers only from the guidance entries and refuses questions it cannot ground.
+- **Traceability:** extraction is deterministic (pattern-based); every value carries a `D<n> p.<page>` citation. Statuses say whether evidence was *located*, not whether it is adequate — adequacy stays with the scientific officer.
+- **Confidentiality:** documents are processed in memory for one request and are not stored. Extraction and gap analysis run locally. Optional LLM drafting of section narratives sends extracted excerpts to the OpenAI API and is **off unless ticked per request**; every number in an LLM narrative is checked against the dossier excerpts and untraced numbers are flagged.
+- **Limits:** scanned PDFs need OCR first; dossier portals rendered by JavaScript (e.g. Open EFSA) cannot be read by URL — download and upload the documents. Production-strain characterisation (§2.2.1.2, §2.2.2.2; FEEDAP microorganism guidance, EFSA Journal 2018;16(3):5206) is out of scope; fermentation-related impurity requirements of §2.1.4 are included.
+
+A fictional, deliberately incomplete demo dossier is provided at `static/samples/characterisation_demo_dossier.md` (also linked from the in-app *Guide & questions* tab).
 
 ### AOP-Wiki knowledge base
 
@@ -91,12 +106,19 @@ The Evidence Assistant uses structured workbench context when answering question
 ```text
 .
 ├── server.py                         # FastAPI backend and risk assessment logic
+├── characterisation.py               # Step 0: document ingestion, guidance-grounded characterisation and gap analysis
 ├── static/index.html                 # Single-page workbench UI
 ├── requirements.txt                  # Python dependencies
 ├── scripts/
 │   ├── import_openfoodtox.py          # EFSA OpenFoodTox Excel/CSV/XLSX importer
 │   └── import_epa_bioactivity.py      # EPA ToxCast/Tox21/ToxRefDB-style importer
+├── tests/
+│   └── test_characterisation.py       # Grounding guard (quotes/anchors vs guidance PDF) and step 0 behaviour
 ├── data/
+│   ├── guidance/
+│   │   ├── efsa_2017_5023.pdf         # FEEDAP guidance on identity/characterisation (CC BY-ND 4.0, unmodified)
+│   │   ├── feedap_2017_5023_chemical_requirements.json  # Requirement catalogue with verbatim quotes
+│   │   └── characterisation_template.md                 # Markdown template (guidance Section 2 structure)
 │   ├── aop_ke_mie_ao.tsv              # AOP/event/MIE/AO source data
 │   ├── aop_ke_ker.tsv                 # KER source data
 │   ├── aop_ke_ec.tsv                  # Event component source data
@@ -230,6 +252,9 @@ export BIOACTIVITY_SQLITE_PATH="/path/to/bioactivity.db"
 | `/api/openfoodtox/query` | POST | Query local OpenFoodTox SQLite index or configured IUCLID instance. |
 | `/api/bioactivity/status` | GET | EPA bioactivity index status and setup guidance. |
 | `/api/bioactivity/search` | POST | Search locally indexed ToxCast/Tox21/ToxRefDB-style AC50/POD records. |
+| `/api/characterisation/guidance` | GET | Step 0 requirement catalogue and grounding status of each requirement against the guidance text. |
+| `/api/characterisation/guidance.pdf` | GET | The bundled FEEDAP guidance PDF (unmodified). |
+| `/api/characterisation/analyse` | POST | Multipart: `files` (repeatable), `urls` (newline-separated), `meta` (JSON: `product_name`, `applicant`, `dossier_ref`, `product_form`, `routes`, `production_types`, `additive_type`, `components`), `allow_external_llm`. Returns requirement evaluations, gap summary and `markdown`. |
 
 ---
 
@@ -282,6 +307,7 @@ Important limitations:
 - Imported OpenFoodTox, ToxCast/Tox21, and ToxRefDB records require source review, provenance tracking, assay-quality checks, and expert interpretation.
 - NAM-to-key-event mapping by text overlap is a prioritization aid, not a validated mechanistic mapping.
 - The Evidence Assistant can draft and explain but should not be treated as a source of regulatory truth.
+- Step 0 characterisation locates evidence; it does not judge adequacy or compliance. "Not located" can reflect extraction limits (scanned PDFs, images, unusual tables) as well as true data gaps.
 
 ---
 
@@ -299,7 +325,9 @@ Important limitations:
 Recommended checks before opening a pull request:
 
 ```bash
-python -m py_compile server.py scripts/import_openfoodtox.py scripts/import_epa_bioactivity.py
+python -m py_compile server.py characterisation.py scripts/import_openfoodtox.py scripts/import_epa_bioactivity.py
+python -m pip install -r requirements-dev.txt
+python -m pytest -q tests
 ```
 
 Extract and syntax-check the embedded frontend script if Node.js is available:

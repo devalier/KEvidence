@@ -194,6 +194,27 @@
   .sample-table th, .sample-table td { border-bottom: 1px solid var(--surface2); padding: 9px 7px; text-align: left; vertical-align: top; }
   .sample-table th { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
   .sample-table a { color: var(--accent); font-weight: 700; }
+  .check-row { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 0; }
+  .check-row label { display: inline-flex; align-items: center; gap: 6px; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--text); font-size: 13px; margin: 0; }
+  .check-row input { width: auto; }
+  .comp-table input, .comp-table select { padding: 7px 8px; font-size: 13px; }
+  .comp-table td { padding: 5px 4px; }
+  .md-view { background: var(--bg); border: 1px solid var(--surface2); border-radius: var(--radius); padding: 16px; font-size: 14px; line-height: 1.55; overflow-x: auto; }
+  .md-view h1 { font-size: 20px; margin: 4px 0 10px; }
+  .md-view h2 { font-size: 17px; margin: 20px 0 8px; color: var(--accent); border-bottom: 1px solid var(--surface2); padding-bottom: 4px; }
+  .md-view h3 { font-size: 15px; margin: 16px 0 6px; color: var(--text); }
+  .md-view h4 { font-size: 14px; margin: 12px 0 6px; color: var(--text); }
+  .md-view p { margin: 6px 0; }
+  .md-view blockquote { border-left: 3px solid var(--accent2); padding: 4px 10px; margin: 8px 0; color: var(--text2); }
+  .md-view table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 12.5px; }
+  .md-view th, .md-view td { border: 1px solid var(--surface2); padding: 5px 7px; text-align: left; vertical-align: top; }
+  .md-view th { color: var(--accent); }
+  .md-view code { background: var(--surface2); border-radius: 4px; padding: 0 4px; font-size: 12px; }
+  .md-view ul { padding-left: 20px; margin: 6px 0; }
+  .md-view details { margin: 6px 0; color: var(--text2); }
+  .md-view summary { cursor: pointer; }
+  pre.md-source { white-space: pre-wrap; word-break: break-word; background: var(--bg); border: 1px solid var(--surface2); border-radius: var(--radius); padding: 12px; font-size: 12px; max-height: 70vh; overflow: auto; }
+  .status-gap { color: var(--danger); } .status-partial { color: var(--warning); } .status-evidence_located { color: var(--success); }
   @media (max-width: 900px) { .manual-grid { grid-template-columns: 1fr; } }
   @media (max-width: 1050px) {
     .app-shell { grid-template-columns: 190px minmax(0, 1fr); }
@@ -215,7 +236,7 @@
     <div class="logo">⚡</div>
     <div>
       <h1>KEvidence Risk Assessment Workbench</h1>
-      <div class="subtitle">Codex-aligned risk assessment: problem formulation → hazard identification → hazard characterisation → exposure assessment → risk characterisation</div>
+      <div class="subtitle">Codex-aligned risk assessment: problem formulation → substance characterisation → hazard identification → hazard characterisation → exposure assessment → risk characterisation</div>
     </div>
   </div>
   <div class="status-pill">Prototype • supports the scientific risk-assessment step of risk analysis, not risk management decisions</div>
@@ -224,6 +245,7 @@
 <div class="app-shell">
   <nav aria-label="Codex risk assessment workflow">
     <button class="step active" data-tab="problem"><span>Problem formulation</span>Question, scope, decision context</button>
+    <button class="step" data-tab="characterisation"><span>0. Substance characterisation</span>Feed additive identity &amp; composition (FEEDAP 2017)</button>
     <button class="step" data-tab="hazard-id"><span>1. Hazard identification</span>Can this agent cause harm?</button>
     <button class="step" data-tab="hazard-char"><span>2. Hazard characterisation</span>Nature, severity, dose-response</button>
     <button class="step" data-tab="exposure"><span>3. Exposure assessment</span>Who, how much, how often, route</button>
@@ -255,9 +277,49 @@
           <div><label for="legalContextInput">Legal / regulatory context</label><input id="legalContextInput" placeholder="e.g., EU food additive re-evaluation; pesticide MRL support"></div>
           <div><label for="decisionContextInput">Decision context</label><input id="decisionContextInput" placeholder="e.g., screen for follow-up studies; support expert evidence map"></div>
         </div>
-        <div class="actions"><button class="primary" id="startAssessmentBtn">Start hazard identification</button><button class="secondary" data-jump="hazard-id">Go to hazard identification</button></div>
+        <div class="actions"><button class="primary" id="startAssessmentBtn">Start hazard identification</button><button class="secondary" data-jump="characterisation">Characterise the substance/product first (step 0)</button><button class="secondary" data-jump="hazard-id">Go to hazard identification</button></div>
         <div class="warning-box">Select an output purpose before starting. This workbench organizes evidence for expert review across the four Codex risk-assessment steps; it does not produce risk-management decisions, EFSA conclusions, health-based guidance values, ADIs, ARfDs, or acceptability decisions. AOP structure comes from local AOP-Wiki-derived data; NAM PODs, exposure estimates, IVIVE factors, and thresholds are user-supplied or heuristic unless explicitly connected to curated sources.</div>
       </div>
+    </section>
+
+    <section id="characterisation" class="tab-content">
+      <div class="panel">
+        <h2>0. Substance / product characterisation</h2>
+        <p class="help">Characterise a feed additive — and, for products, mixtures and formulations, <strong>each component</strong> — before hazard identification. KEvidence reads the applicant's documents (uploads or URLs: technical dossier sections, specifications, certificates of analysis, study reports), locates the evidence for each requirement of the <strong>FEEDAP Guidance on the identity, characterisation and conditions of use of feed additives</strong> (EFSA Journal 2017;15(10):5023), and produces a characterisation in Markdown following Section 2 of the guidance, with a data-gap analysis. This MVP covers <strong>chemical characterisation</strong>; production-strain characterisation is out of scope.</p>
+        <div id="charGuidanceStatus" class="muted">Loading guidance grounding status…</div>
+      </div>
+
+      <div class="panel">
+        <h3>Product</h3>
+        <div class="grid">
+          <div><label for="charProductName">Additive / product name</label><input id="charProductName" placeholder="e.g., trade name of the additive"></div>
+          <div><label for="charApplicant">Applicant</label><input id="charApplicant" placeholder="Optional"></div>
+          <div><label for="charDossierRef">Dossier / question reference</label><input id="charDossierRef" placeholder="e.g., FEED-2024-XXXXX / EFSA-Q-2024-XXXXX"></div>
+          <div><label for="charForm">Physical form (§2.1.5)</label><select id="charForm"><option value="">Not stated</option><option value="solid">Solid</option><option value="liquid">Liquid</option></select></div>
+          <div><label for="charAdditiveType">Additive type (exemptions in §2.4.1.2, §2.4.2)</label><select id="charAdditiveType"><option value="">Not stated</option><option value="none_of_these">None of these</option><option value="flavouring_compound">Flavouring compound</option><option value="silage_additive">Silage additive</option><option value="colourant">Colourant (feed / ornamental birds or fish)</option></select></div>
+        </div>
+        <label style="margin-top:12px">Proposed routes of administration (§2.4.1, §2.4.2, §2.5.1)</label>
+        <div class="check-row" id="charRoutes"><label><input type="checkbox" value="feed"> Feedingstuffs</label><label><input type="checkbox" value="premixture"> Premixtures</label><label><input type="checkbox" value="water"> Water for drinking</label></div>
+        <label>Production type — sets the minimum impurity set of §2.1.4</label>
+        <div class="check-row" id="charProduction"><label><input type="checkbox" value="chemical_synthesis"> Chemical synthesis</label><label><input type="checkbox" value="fermentation"> Fermentation</label><label><input type="checkbox" value="plant_derived"> Plant-derived</label><label><input type="checkbox" value="animal_derived"> Animal-derived</label><label><input type="checkbox" value="mineral"> Mineral / trace-element compound</label></div>
+        <h3>Components</h3>
+        <p class="muted">Enter each active substance and other component (carriers, formulants) of the product. Leave empty to auto-detect components from valid CAS numbers in the documents.</p>
+        <table class="sample-table comp-table"><thead><tr><th>Name</th><th>CAS No</th><th>Role</th><th></th></tr></thead><tbody id="charComponents"></tbody></table>
+        <div class="actions"><button class="ghost" id="charAddComponentBtn">+ Add component</button></div>
+      </div>
+
+      <div class="panel">
+        <h3>Applicant documents (confidential)</h3>
+        <div class="grid">
+          <div><label for="charFiles">Upload documents</label><input id="charFiles" type="file" multiple accept=".pdf,.docx,.xlsx,.xlsm,.csv,.tsv,.txt,.md,.json,.html,.htm"><div id="charFileList" class="muted" style="margin-top:6px"></div></div>
+          <div><label for="charUrls">Document URLs (one per line)</label><textarea id="charUrls" placeholder="https://… (PDF, DOCX, XLSX or an HTML page linking to them)"></textarea></div>
+        </div>
+        <div class="check-row"><label><input type="checkbox" id="charAllowLlm"> Draft section narratives with the external LLM (sends extracted dossier excerpts to the OpenAI API)</label></div>
+        <div class="warning-box">Documents are processed in memory for one request and are not stored by KEvidence. Extraction and gap analysis are deterministic and run locally. Leave LLM drafting unticked for confidential dossiers unless its use is approved. Scanned PDFs need OCR first. Dossier portals rendered by JavaScript (e.g. Open EFSA) cannot be read by URL — download the documents and upload them.</div>
+        <div class="actions"><button class="primary" id="charAnalyseBtn">Characterise &amp; analyse data gaps</button><button class="secondary" id="charDownloadBtn" disabled>Download Markdown</button><button class="secondary" id="charCopyBtn" disabled>Copy Markdown</button><button class="ghost" id="charUseIdentityBtn" disabled>Use identity in problem formulation</button></div>
+      </div>
+
+      <div class="panel" id="charOutput"><div class="muted">No characterisation run yet. Try the fictional demo dossier from the Guide &amp; questions tab.</div></div>
     </section>
 
     <section id="hazard-id" class="tab-content">
@@ -366,6 +428,7 @@
         <div class="manual-grid">
           <div class="manual-steps">
             <div class="manual-step"><strong>Problem formulation — define the question.</strong><span class="muted">Enter the substance/stressor, product domain, use scenario, endpoint of concern, and decision context. This pre-step frames all four Codex steps.</span></div>
+            <div class="manual-step"><strong>0. Substance characterisation — what exactly is being assessed?</strong><span class="muted">For feed additives, upload or link the applicant's documents, enter product form, routes, production type and each component, then run the analysis. KEvidence maps the evidence to each requirement of the FEEDAP identity/characterisation guidance (EFSA Journal 2017;15(10):5023), cites document and page for every value, lists data gaps, and exports the characterisation as Markdown.</span></div>
             <div class="manual-step"><strong>Hazard identification — can it cause harm?</strong><span class="muted">Search AOPs by chemical, key event, adverse outcome, or AOP ID, and select the pathway representing a plausible route from MIE to adverse outcome.</span></div>
             <div class="manual-step"><strong>Hazard characterisation — nature, severity, dose.</strong><span class="muted">Review KER evidence, pull reference points/HBGVs from OpenFoodTox, and set a dose-response point of departure (POD) mapped to a key event.</span></div>
             <div class="manual-step"><strong>Exposure assessment — who, how much, how often, route.</strong><span class="muted">Record concentration in food × consumption × population × use conditions, and the resulting exposure estimate.</span></div>
@@ -375,7 +438,7 @@
           <div class="app-screenshot" aria-label="Annotated KEvidence workflow screenshot mock-up">
             <div class="shot-header"></div>
             <div class="shot-body">
-              <div class="shot-nav"><div class="shot-tab active"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab active"></div></div>
+              <div class="shot-nav"><div class="shot-tab active"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab"></div><div class="shot-tab active"></div></div>
               <div class="shot-main"><div class="shot-field"></div><div class="shot-field"></div><div class="shot-field"></div><div class="shot-field" style="width:65%"></div><div class="warning-box">Tip: required fields are the values needed to make the next tab meaningful. If uncertain, record assumptions in the draft caveat.</div></div>
             </div>
           </div>
@@ -388,6 +451,7 @@
         <table class="sample-table">
           <thead><tr><th>Need</th><th>Use this</th><th>What to do in KEvidence</th></tr></thead>
           <tbody>
+            <tr><td>Feed additive characterisation (step 0)</td><td><a href="samples/characterisation_demo_dossier.md" download>Download fictional demo dossier</a><br><a href="api/characterisation/guidance.pdf" target="_blank" rel="noopener">FEEDAP identity/characterisation guidance (PDF)</a></td><td>Upload the demo dossier in step 0 with: solid, premixtures + feedingstuffs, chemical synthesis, flavouring compound, component "vanillin" (CAS 121-33-5). It is deliberately incomplete (3 batches instead of 5, no residual solvents, no SDS) so the gap analysis has findings.</td></tr>
             <tr><td>NAM POD / AC50 example</td><td><a href="samples/nam_pod_examples.csv" download>Download local CSV template</a><br><a href="https://www.epa.gov/comptox-tools/exploring-toxcast-data" target="_blank" rel="noopener">EPA ToxCast/Tox21 data portal</a><br><a href="https://epa.figshare.com/articles/dataset/ToxCast_Database_invitroDB_/6062623" target="_blank" rel="noopener">EPA invitroDB on Figshare</a></td><td>Copy assay, POD type, POD value/unit, and mapped event ID into the hazard characterisation step (POD). Use the EPA bioactivity import script for larger local searches.</td></tr>
             <tr><td>OpenFoodTox reference points</td><td><a href="https://zenodo.org/records/19388272" target="_blank" rel="noopener">OpenFoodTox 3.0 on Zenodo</a><br><a href="https://zenodo.org/records/8120114" target="_blank" rel="noopener">Earlier OpenFoodTox Zenodo record</a></td><td>Download the Excel export, build the local SQLite index, then query the hazard characterisation step by substance name, CAS, EC number, or synonym.</td></tr>
             <tr><td>AOP structure and event IDs</td><td><a href="https://aopwiki.org/downloads" target="_blank" rel="noopener">AOP-Wiki quarterly downloads</a><br><a href="https://zenodo.org/records/17499488" target="_blank" rel="noopener">AOP-Wiki RDF on Zenodo</a></td><td>Use event IDs to map NAM assays to MIE/KE/AO records during hazard identification and characterisation.</td></tr>
@@ -420,6 +484,8 @@
     <div class="assistant-context">
       <strong>Suggested prompts</strong>
       <div class="prompt-row">
+        <button class="prompt-chip" data-assistant-prompt="Which characterisation data gaps matter most, and what exactly does the guidance require for each?" data-char-only="1">Explain gaps</button>
+        <button class="prompt-chip" data-assistant-prompt="What does the guidance require for batch-to-batch variation and impurities analyses?" data-char-only="1">Batches &amp; impurities</button>
         <button class="prompt-chip" data-assistant-prompt="Find AOPs for the current chemical and explain why they matter.">Find AOPs</button>
         <button class="prompt-chip" data-assistant-prompt="Explain the selected AOP in risk-assessment terms.">Explain AOP</button>
         <button class="prompt-chip" data-assistant-prompt="Summarize weight of evidence and data gaps for the selected AOP.">Summarize evidence</button>
@@ -434,7 +500,7 @@
 
 <script>
 const API_BASE = window.location.pathname.startsWith('/kevidence') ? '/kevidence/api' : '/api';
-const state = { chemical: '', context: {}, candidateAops: [], selectedAop: null, selectedAopDetail: null, assessment: null, quantitative: null, openfoodtox: null };
+const state = { chemical: '', context: {}, candidateAops: [], selectedAop: null, selectedAopDetail: null, assessment: null, quantitative: null, openfoodtox: null, characterisation: null, activeTab: 'problem' };
 
 const $ = id => document.getElementById(id);
 const steps = document.querySelectorAll('.step');
@@ -450,6 +516,7 @@ function parseValueUnit(text) {
   return { value: Number(match[1]), unit: match[2].trim() };
 }
 function showTab(tabId) {
+  state.activeTab = tabId;
   steps.forEach(s => s.classList.toggle('active', s.dataset.tab === tabId));
   tabs.forEach(t => t.classList.toggle('active', t.id === tabId));
 }
@@ -516,7 +583,10 @@ $('sendFeatureBtn').addEventListener('click', sendFeatureRequest);
 $('clearFeatureBtn').addEventListener('click', clearFeatureRequest);
 $('assistantSend').addEventListener('click', sendAssistant);
 $('assistantInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendAssistant(); });
-document.querySelectorAll('[data-assistant-prompt]').forEach(btn => btn.addEventListener('click', () => sendAssistant(btn.dataset.assistantPrompt)));
+document.querySelectorAll('[data-assistant-prompt]').forEach(btn => btn.addEventListener('click', () => {
+  if (btn.dataset.charOnly) showTab('characterisation');
+  sendAssistant(btn.dataset.assistantPrompt);
+}));
 
 async function searchAops() {
   captureProblem();
@@ -759,7 +829,11 @@ async function sendAssistant(prompt) {
   $('assistantInput').value = '';
   addMessage(msg, 'user');
   addMessage('Thinking…', 'bot', 'typing');
+  const charGaps = state.characterisation ? characterisationGapSummary() : [];
   const assistantContext = {
+    workflow_step: state.activeTab === 'characterisation' ? 'characterisation' : '',
+    characterisation_product: state.characterisation?.meta?.product_name || '',
+    characterisation_gaps: charGaps,
     chemical: state.chemical || '',
     ...state.context,
     use_case: state.context.use_case || state.context.output_purpose || '',
@@ -774,7 +848,8 @@ async function sendAssistant(prompt) {
     const res = await fetch(`${API_BASE}/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, context: assistantContext }) });
     const data = await res.json();
     removeTyping();
-    addMessage(data.answer || 'No answer returned.', 'bot');
+    const cited = (data.guidance_requirements || []).length ? `\n\nGuidance entries used: ${data.guidance_requirements.join(', ')}` : '';
+    addMessage((data.answer || 'No answer returned.') + cited, 'bot');
   } catch (e) {
     removeTyping();
     addMessage('Assistant request failed.', 'bot');
@@ -789,6 +864,190 @@ function addMessage(text, role, id) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 function removeTyping() { const el = $('typing'); if (el) el.remove(); }
+
+// ---------------------------------------------------------------------------
+// Step 0 — substance / product characterisation
+// ---------------------------------------------------------------------------
+const STATUS_TEXT = { gap: 'Not located', partial: 'Partial', conditional: 'Applicability to confirm', manual_review: 'SO review', evidence_located: 'Evidence located', not_applicable: 'Not applicable' };
+function addComponentRow(comp = {}) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input class="char-comp-name" placeholder="e.g., vanillin" value="${escapeHtml(comp.name || '')}"></td>
+    <td><input class="char-comp-cas" placeholder="e.g., 121-33-5" value="${escapeHtml(comp.cas || '')}"></td>
+    <td><select class="char-comp-role"><option>Active substance</option><option>Other component</option><option>Carrier / excipient</option><option>Impurity of concern</option></select></td>
+    <td><button class="ghost" type="button" title="Remove component">✕</button></td>`;
+  if (comp.role) tr.querySelector('.char-comp-role').value = comp.role;
+  tr.querySelector('button').addEventListener('click', () => tr.remove());
+  $('charComponents').appendChild(tr);
+}
+function checkedValues(containerId) { return [...document.querySelectorAll(`#${containerId} input:checked`)].map(i => i.value); }
+function characterisationMeta() {
+  const components = [...document.querySelectorAll('#charComponents tr')].map(tr => ({
+    name: tr.querySelector('.char-comp-name').value.trim(),
+    cas: tr.querySelector('.char-comp-cas').value.trim(),
+    role: tr.querySelector('.char-comp-role').value
+  })).filter(c => c.name || c.cas);
+  return {
+    product_name: fieldValue('charProductName'), applicant: fieldValue('charApplicant'), dossier_ref: fieldValue('charDossierRef'),
+    product_form: fieldValue('charForm'), additive_type: fieldValue('charAdditiveType'),
+    routes: checkedValues('charRoutes'), production_types: checkedValues('charProduction'), components
+  };
+}
+async function loadCharacterisationGuidance() {
+  try {
+    const res = await fetch(`${API_BASE}/characterisation/guidance`);
+    const g = await res.json();
+    const anchored = g.verification_counts?.anchored_in_guidance_text || 0;
+    const total = (g.requirements || []).length;
+    const broken = (g.requirements || []).filter(r => r.grounding?.status === 'not_found_in_guidance_text').map(r => r.id);
+    $('charGuidanceStatus').innerHTML = `<span class="badge">Grounding</span>${escapeHtml(g.guidance?.citation || '')}
+      <br><span class="badge">${g.guidance_text_loaded ? 'Guidance text loaded' : 'Guidance text NOT loaded'}</span>${anchored}/${total} catalogue requirements anchored verbatim in the guidance text${broken.length ? ` — <strong class="status-gap">review: ${broken.map(escapeHtml).join(', ')}</strong>` : ''}.
+      <a href="${API_BASE}/characterisation/guidance.pdf" target="_blank" rel="noopener" style="color:var(--accent)">Open guidance PDF</a>`;
+  } catch (e) {
+    $('charGuidanceStatus').textContent = 'Guidance status unavailable.';
+  }
+}
+async function runCharacterisation() {
+  const files = $('charFiles').files;
+  const urls = fieldValue('charUrls');
+  if (!files.length && !urls) { $('charOutput').innerHTML = '<div class="muted">Upload at least one document or enter a URL.</div>'; return; }
+  const fd = new FormData();
+  [...files].forEach(f => fd.append('files', f, f.name));
+  fd.append('urls', urls);
+  fd.append('meta', JSON.stringify(characterisationMeta()));
+  fd.append('allow_external_llm', $('charAllowLlm').checked ? 'true' : 'false');
+  $('charOutput').innerHTML = '<div class="muted">Reading documents and mapping evidence to the guidance…</div>';
+  $('charAnalyseBtn').disabled = true;
+  try {
+    const res = await fetch(`${API_BASE}/characterisation/analyse`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    state.characterisation = data;
+    renderCharacterisation();
+  } catch (e) {
+    $('charOutput').innerHTML = `<div class="muted">Characterisation failed: ${escapeHtml(e.message)}</div>`;
+  } finally {
+    $('charAnalyseBtn').disabled = false;
+  }
+}
+function allCharacterisationResults() {
+  const c = state.characterisation || {};
+  const rows = (c.requirements || []).map(r => ({ ...r, scope: 'Additive' }));
+  (c.components || []).forEach(comp => (comp.requirements || []).forEach(r => rows.push({ ...r, scope: comp.component?.name || comp.component?.cas || 'Component' })));
+  return rows;
+}
+function characterisationGapSummary() {
+  return allCharacterisationResults().filter(r => ['gap', 'partial', 'conditional'].includes(r.status))
+    .map(r => ({ id: r.id, guidance_section: r.guidance_section, title: r.title, status: r.status, scope: r.scope, missing: (r.missing || []).slice(0, 4) }));
+}
+function renderCharacterisation() {
+  const c = state.characterisation || {};
+  const s = c.summary || {};
+  const order = { gap: 0, partial: 1, conditional: 2, manual_review: 3, evidence_located: 4, not_applicable: 5 };
+  const rows = allCharacterisationResults().sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9));
+  const flags = (c.scope_flags || []).map(f => `<div class="warning-box"><strong>${escapeHtml(f.flag)}.</strong> ${escapeHtml(f.detail)}</div>`).join('');
+  const notes = (c.fetch_notes || []).map(n => `<li>${escapeHtml(n)}</li>`).join('');
+  const docWarnings = (c.documents || []).filter(d => d.warnings?.length).map(d => `<li>${escapeHtml(d.doc_id)} ${escapeHtml(d.name)}: ${escapeHtml(d.warnings.join('; '))}</li>`).join('');
+  const llm = c.llm?.requested ? `<p class="muted">LLM drafting: ${c.llm.used ? 'used — numbers in each narrative were checked against the dossier excerpts' : escapeHtml(c.llm.error || 'not used')}.</p>` : '';
+  $('charOutput').innerHTML = `<h3>Data-gap analysis — ${escapeHtml(c.meta?.product_name || 'product')}</h3>
+    <div class="metric-grid">
+      <div class="metric"><small>Not located</small><strong class="status-gap">${s.gap || 0}</strong></div>
+      <div class="metric"><small>Partially addressed</small><strong class="status-partial">${s.partial || 0}</strong></div>
+      <div class="metric"><small>Applicability to confirm / SO review</small><strong>${(s.conditional || 0) + (s.manual_review || 0)}</strong></div>
+      <div class="metric"><small>Evidence located</small><strong class="status-evidence_located">${s.evidence_located || 0}</strong></div>
+    </div>
+    ${flags}${notes || docWarnings ? `<ul class="clean">${notes}${docWarnings}</ul>` : ''}${llm}
+    <table class="sample-table"><thead><tr><th>§</th><th>Requirement</th><th>Scope</th><th>Status</th><th>Missing / to clarify</th></tr></thead><tbody>
+    ${rows.filter(r => r.status !== 'not_applicable').map(r => `<tr><td>${escapeHtml(r.guidance_section)}</td><td>${escapeHtml(r.title)}<br><span class="muted">${escapeHtml(r.id)}</span></td><td>${escapeHtml(r.scope)}</td><td class="status-${escapeHtml(r.status)}">${escapeHtml(STATUS_TEXT[r.status] || r.status)}</td><td>${(r.missing || []).slice(0, 4).map(escapeHtml).join('<br>') || '—'}</td></tr>`).join('')}
+    </tbody></table>
+    <h3>Characterisation (EFSA FEEDAP Section 2 structure)</h3>
+    <div class="actions"><button class="secondary" id="charViewRendered">Rendered</button><button class="ghost" id="charViewSource">Markdown source</button></div>
+    <div id="charMarkdownView" class="md-view">${renderMarkdown(c.markdown || '')}</div>`;
+  $('charViewRendered').addEventListener('click', () => { $('charMarkdownView').className = 'md-view'; $('charMarkdownView').innerHTML = renderMarkdown(c.markdown || ''); });
+  $('charViewSource').addEventListener('click', () => { $('charMarkdownView').className = ''; $('charMarkdownView').innerHTML = `<pre class="md-source">${escapeHtml(c.markdown || '')}</pre>`; });
+  ['charDownloadBtn', 'charCopyBtn', 'charUseIdentityBtn'].forEach(id => { $(id).disabled = false; });
+}
+function inlineMarkdown(text) {
+  return escapeHtml(text)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--accent)">$1</a>');
+}
+function splitRow(line) {
+  return line.trim().replace(/^\||\|$/g, '').split(/(?<!\\)\|/).map(c => c.replace(/\\\|/g, '|').trim());
+}
+function renderMarkdown(md) {
+  const lines = String(md || '').split('\n');
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (/^<details><summary>(.*)<\/summary>$/.test(line.trim())) { out.push(`<details><summary>${escapeHtml(line.trim().replace(/^<details><summary>|<\/summary>$/g, ''))}</summary>`); i++; continue; }
+    if (line.trim() === '</details>') { out.push('</details>'); i++; continue; }
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if (h) { out.push(`<h${h[1].length}>${inlineMarkdown(h[2])}</h${h[1].length}>`); i++; continue; }
+    if (/^\s*\|/.test(line) && i + 1 < lines.length && /^\s*\|\s*-/.test(lines[i + 1])) {
+      const head = splitRow(line);
+      i += 2;
+      const body = [];
+      while (i < lines.length && /^\s*\|/.test(lines[i])) { body.push(splitRow(lines[i])); i++; }
+      out.push(`<table><thead><tr>${head.map(c => `<th>${inlineMarkdown(c)}</th>`).join('')}</tr></thead><tbody>${body.map(r => `<tr>${r.map(c => `<td>${inlineMarkdown(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
+      continue;
+    }
+    if (/^>\s?/.test(line)) {
+      const quote = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) { quote.push(lines[i].replace(/^>\s?/, '')); i++; }
+      out.push(`<blockquote>${quote.map(inlineMarkdown).join('<br>')}</blockquote>`);
+      continue;
+    }
+    if (/^\s*-\s+/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*-\s+/.test(lines[i])) { items.push(lines[i].replace(/^\s*-\s+/, '')); i++; }
+      out.push(`<ul>${items.map(it => `<li>${inlineMarkdown(it)}</li>`).join('')}</ul>`);
+      continue;
+    }
+    if (/^---\s*$/.test(line)) { out.push('<hr>'); i++; continue; }
+    if (line.trim()) out.push(`<p>${inlineMarkdown(line.replace(/\s{2,}$/, ''))}</p>`);
+    i++;
+  }
+  return out.join('\n');
+}
+function downloadCharacterisation() {
+  const c = state.characterisation;
+  if (!c) return;
+  const name = (c.meta?.product_name || 'additive').replace(/[^A-Za-z0-9._-]+/g, '_');
+  const blob = new Blob([c.markdown || ''], { type: 'text/markdown;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `characterisation_${name}.md`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+}
+async function copyCharacterisation() {
+  try { await navigator.clipboard.writeText(state.characterisation?.markdown || ''); $('charCopyBtn').textContent = 'Copied'; setTimeout(() => { $('charCopyBtn').textContent = 'Copy Markdown'; }, 1500); }
+  catch (e) { alert('Clipboard not available — use Download Markdown.'); }
+}
+function useCharacterisedIdentity() {
+  const comp = (state.characterisation?.components || []).find(c => /active/i.test(c.component?.role || '')) || (state.characterisation?.components || [])[0];
+  if (!comp) { alert('No characterised component available.'); return; }
+  const id = comp.identity || {};
+  const name = comp.component?.name || id.generic_name?.value || '';
+  const cas = comp.component?.cas || id.cas?.value || '';
+  $('chemicalInput').value = [name, cas ? `CAS ${cas}` : ''].filter(Boolean).join('; ');
+  if (!$('productDomainInput').value) $('productDomainInput').value = 'Feed additive';
+  if (!$('aopSearchInput').value.trim()) $('aopSearchInput').value = name;
+  captureProblem();
+  showTab('problem');
+}
+$('charAddComponentBtn').addEventListener('click', () => addComponentRow());
+$('charAnalyseBtn').addEventListener('click', runCharacterisation);
+$('charDownloadBtn').addEventListener('click', downloadCharacterisation);
+$('charCopyBtn').addEventListener('click', copyCharacterisation);
+$('charUseIdentityBtn').addEventListener('click', useCharacterisedIdentity);
+$('charFiles').addEventListener('change', () => { $('charFileList').textContent = [...$('charFiles').files].map(f => `${f.name} (${Math.ceil(f.size / 1024)} kB)`).join(' · '); });
+addComponentRow();
+loadCharacterisationGuidance();
 updateContext();
 </script>
 </body>
