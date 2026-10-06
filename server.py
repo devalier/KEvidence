@@ -4,7 +4,9 @@ kevidence.devalier.com — AI Augmented Regulatory Chatbot for AOP-Wiki
 Use case #7 from the AOP Wiki analysis: "Regulatory Augmented Chatbot"
 """
 
+import base64
 import csv
+import hmac
 import json
 import os
 import re
@@ -14,9 +16,9 @@ from pathlib import Path
 from typing import Any, Optional
 
 import httpx
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from openai import OpenAI
 
 import characterisation as charmod
@@ -24,19 +26,66 @@ import characterisation as charmod
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-DATA_DIR = Path("/var/www/kevidence/data")
-STATIC_DIR = Path("/var/www/kevidence/static")
+KEVIDENCE_HOME = Path(os.getenv("KEVIDENCE_HOME", "/var/www/kevidence"))
+DATA_DIR = KEVIDENCE_HOME / "data"
+STATIC_DIR = KEVIDENCE_HOME / "static"
+STATIC_ROOT = STATIC_DIR.resolve()
 AOP_CACHE_DIR = DATA_DIR / "aops"
 DB_PATH = DATA_DIR / "kevidence.db"
 LLM_MODEL = "gpt-4o-mini"  # cheap, good enough for protoype
 
-app = FastAPI(title="KEvidence — Risk Assessment Workbench")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = FastAPI(title="KEvidence — Risk Assessment Workbench", docs_url=None, redoc_url=None, openapi_url=None)
+
+# The UI is served from the same origin, so cross-origin access is off unless explicitly allowed.
+CORS_ORIGINS = [o.strip() for o in os.getenv("KEVIDENCE_CORS_ORIGINS", "").split(",") if o.strip()]
+if CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=CORS_ORIGINS,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type", "Authorization"],
+    )
+
+# Optional HTTP Basic authentication for every route. Set both variables to enable it.
+AUTH_USER = os.getenv("KEVIDENCE_AUTH_USER", "")
+AUTH_PASSWORD = os.getenv("KEVIDENCE_AUTH_PASSWORD", "")
+if not (AUTH_USER and AUTH_PASSWORD):
+    print("WARNING: KEVIDENCE_AUTH_USER/KEVIDENCE_AUTH_PASSWORD not set — every endpoint is open to anyone who can reach "
+          "this server. Set them, or put an authenticating reverse proxy in front.")
+
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    # The single-page UI uses inline script/styles; everything else is restricted to this origin.
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+                               "img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; "
+                               "frame-ancestors 'none'; form-action 'self'",
+}
+
+
+def _authorised(header: str) -> bool:
+    if not header.startswith("Basic "):
+        return False
+    try:
+        user, _, password = base64.b64decode(header[6:], validate=True).decode("utf-8").partition(":")
+    except (ValueError, UnicodeDecodeError):
+        return False
+    return hmac.compare_digest(user.encode(), AUTH_USER.encode()) & hmac.compare_digest(password.encode(), AUTH_PASSWORD.encode())
+
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    if AUTH_USER and AUTH_PASSWORD and not _authorised(request.headers.get("authorization", "")):
+        response = Response("Authentication required", status_code=401,
+                            headers={"WWW-Authenticate": 'Basic realm="KEvidence", charset="UTF-8"'})
+    else:
+        response = await call_next(request)
+    for key, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(key, value)
+    return response
 
 # ---------------------------------------------------------------------------
 # Data loading
@@ -2633,12 +2682,28 @@ async def index():
     return FileResponse(str(STATIC_DIR / "index.html"))
 
 
+def _static_file(path: str) -> Optional[Path]:
+    """Resolve a request path to a file inside STATIC_ROOT, or None.
+
+    Rejects absolute paths, '..' traversal (including percent-encoded forms, which
+    arrive here decoded), symlinks leading outside the directory and dotfiles."""
+    try:
+        candidate = (STATIC_ROOT / path.lstrip("/\\")).resolve()
+    except (OSError, ValueError):
+        return None
+    if not candidate.is_relative_to(STATIC_ROOT) or not candidate.is_file():
+        return None
+    if any(part.startswith(".") for part in candidate.relative_to(STATIC_ROOT).parts):
+        return None
+    return candidate
+
+
 @app.get("/{path:path}")
 async def serve_static(path: str):
-    file_path = STATIC_DIR / path
-    if file_path.exists() and file_path.is_file():
-        return FileResponse(str(file_path))
-    return FileResponse(str(STATIC_DIR / "index.html"))
+    if path.startswith("api/"):
+        raise HTTPException(404, "Not found")
+    file_path = _static_file(path)
+    return FileResponse(str(file_path or STATIC_ROOT / "index.html"))
 
 
 # ---------------------------------------------------------------------------

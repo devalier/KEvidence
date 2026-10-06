@@ -185,6 +185,15 @@ http://127.0.0.1:3457
 
 ---
 
+## Deployment security
+
+- **Authentication:** every endpoint is open unless you set `KEVIDENCE_AUTH_USER` and `KEVIDENCE_AUTH_PASSWORD` (HTTP Basic, checked in constant time on every route) or put an authenticating reverse proxy in front. Serve over HTTPS only. Step 0 handles confidential dossiers; do not expose it without authentication.
+- **CORS:** off by default (the UI is same-origin). To allow other origins, set `KEVIDENCE_CORS_ORIGINS` to a comma-separated list.
+- **Static files:** only files inside `static/` are served; absolute paths, `..` traversal (including percent-encoded), symlinks leading out and dotfiles are refused (`tests/test_server_security.py`).
+- **Headers:** `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` on every response. The interactive API docs (`/docs`, `/openapi.json`) are disabled.
+- **Paths:** `KEVIDENCE_HOME` (default `/var/www/kevidence`) sets where `data/` and `static/` are read from.
+- **Dependencies:** no frontend frameworks or CDN scripts; Python dependencies are pinned and checked with `pip-audit` in CI.
+
 ## Optional data imports
 
 KEvidence works with the bundled AOP-Wiki-derived data out of the box. OpenFoodTox and EPA bioactivity browsing require optional local indexes.
