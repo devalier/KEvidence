@@ -1,0 +1,611 @@
+{
+  "catalogue_id": "feedap-2017-5023-chemical-mvp",
+  "catalogue_version": "0.2.0",
+  "scope": "Chemical characterisation of feed additives that are, or contain, chemically defined substances (MVP). Characterisation of microorganisms (Section 2.2.1.2 / 2.2.2.2 of the guidance and the FEEDAP microorganism guidance) is outside this MVP; fermentation-related impurity requirements of Section 2.1.4 are included because they apply to chemical substances produced by fermentation.",
+  "guidance": {
+    "title": "Guidance on the identity, characterisation and conditions of use of feed additives",
+    "author": "EFSA Panel on Additives and Products or Substances used in Animal Feed (FEEDAP)",
+    "citation": "EFSA FEEDAP Panel (Rychen G et al.), 2017. Guidance on the identity, characterisation and conditions of use of feed additives. EFSA Journal 2017;15(10):5023, 12 pp.",
+    "doi": "10.2903/j.efsa.2017.5023",
+    "url": "https://doi.org/10.2903/j.efsa.2017.5023",
+    "bundled_file": "efsa_2017_5023.pdf",
+    "license": "CC BY-ND 4.0 (open access; redistributed unmodified with citation)",
+    "legal_basis": "Section 2 of Annex II and the relevant sections of Annex III of Commission Regulation (EC) No 429/2008 (application under Article 7.6 of Regulation (EC) No 1831/2003)",
+    "adopted": "2017-09-27",
+    "applicable_from": "2018-05-01",
+    "title_check_phrase": "identity, characterisation and conditions of use of feed additives",
+    "general_principles": [
+      {"page": 5, "section": "2", "quote": "Reasons should be given for the omission from the dossier of any data prescribed there."},
+      {"page": 5, "section": "2.1", "quote": "The additive has to be fully identified and characterised. The studies described in this section must be based on the final product(s), for which authorisation is sought."}
+    ]
+  },
+  "related_guidance": [
+    {
+      "title": "Guidance on the characterisation of microorganisms used as feed additives or as production organisms",
+      "citation": "EFSA FEEDAP Panel, 2018. EFSA Journal 2018;16(3):5206.",
+      "doi": "10.2903/j.efsa.2018.5206",
+      "use": "Referred to by Sections 2.1.4, 2.2.1.2 and 2.2.2.2 of the 2017 guidance for production strains (absence of viable cells and DNA, antimicrobial resistance, toxins). Outside this MVP."
+    }
+  ],
+  "verification_levels": {
+    "anchored_in_guidance_text": "The requirement's anchor phrases were located in the guidance text loaded in this KEvidence instance; the located passage is shown and must be read by the scientific officer.",
+    "verified_primary": "Requirement wording and verbatim quote checked against the full text of EFSA Journal 2017;15(10):5023 (automated test tests/test_characterisation.py asserts every anchor is present).",
+    "not_found_in_guidance_text": "One or more anchor phrases were not found in the loaded guidance text. The catalogue entry must be reviewed before use."
+  },
+  "template_sections": [
+    {"token": "S2_1", "number": "2.1", "title": "Identity of the additive"},
+    {"token": "S2_2", "number": "2.2", "title": "Characterisation of the active substance(s)"},
+    {"token": "S2_3", "number": "2.3", "title": "Manufacturing process, including any specific processing procedures"},
+    {"token": "S2_4", "number": "2.4", "title": "Physical–chemical and technological properties of the additive"},
+    {"token": "S2_5", "number": "2.5", "title": "Conditions of use of the additive"},
+    {"token": "S2_6", "number": "2.6", "title": "Methods of analysis and reference samples"}
+  ],
+  "meta_options": {
+    "product_form": ["solid", "liquid"],
+    "routes": ["feed", "premixture", "water"],
+    "production_type": ["chemical_synthesis", "fermentation", "plant_derived", "animal_derived", "mineral"],
+    "additive_type": ["flavouring_compound", "silage_additive", "colourant", "none_of_these"]
+  },
+  "requirements": [
+    {
+      "id": "G2.1-FINAL",
+      "guidance_section": "2.1",
+      "guidance_page": 5,
+      "template_section": "S2_1",
+      "scope": "additive",
+      "title": "Studies on the final product; in-house identifiers",
+      "requirement": "Identity studies must be based on the final product(s) for which authorisation is sought. In-house identifiers should be avoided unless embedded in old or third-party documents, in which case a statement is required confirming that the identifier(s) refer to the formulation(s) under application.",
+      "quote": "In-house identifiers should be avoided unless embedded in old or third-party documents. In this case, a statement is required to confirm that the identifier(s) refers to the formulation(s) for which the application is made.",
+      "guidance_anchors": ["must be based on the final product(s), for which authorisation is sought", "In-house identifiers should be avoided"],
+      "applies_when": {},
+      "manual_review": true,
+      "patterns": ["formulation", "final\\s+product", "in-?house\\s+(identifier|code|name|reference|designation)", "internal\\s+(code|identifier)", "refers?\\s+to\\s+the\\s+formulation"],
+      "sub_items": [
+        {"label": "Statement linking any in-house identifiers to the formulation(s) under application", "patterns": ["in-?house\\s+(identifier|code|name|reference|designation)", "internal\\s+(code|identifier)", "refers?\\s+to\\s+the\\s+formulation", "corresponds?\\s+to\\s+the\\s+(formulation|product)"], "required": false}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.1.1-NAME",
+      "guidance_section": "2.1.1",
+      "guidance_page": 5,
+      "template_section": "S2_1",
+      "scope": "additive",
+      "title": "Name of the additive",
+      "requirement": "The name of the additive; whether it consists of one or more active substance(s) and whether it is a preparation. A trade name may be used to identify the additive and its formulations.",
+      "quote": "The name of the additive should be given. It should be indicated if the additive consists of one or more active substance(s)/agent(s) and whether it consists of a preparation.",
+      "guidance_anchors": ["The name of the additive should be given", "whether it consists of a preparation"],
+      "applies_when": {},
+      "patterns": ["name\\s+of\\s+the\\s+(additive|product)", "trade\\s*name", "product\\s+name", "proprietary\\s+name", "preparation", "active\\s+substances?"],
+      "sub_items": [
+        {"label": "Name of the additive", "patterns": ["name\\s+of\\s+the\\s+(additive|product)", "product\\s+name", "trade\\s*name", "proprietary\\s+name", "additive\\s*:"], "required": true},
+        {"label": "Number of active substances / whether a preparation", "patterns": ["preparation", "(one|single|two|several|more)\\s+active\\s+substances?", "active\\s+substances?\\s*:", "consists?\\s+of"], "required": true},
+        {"label": "Trade name (optional)", "patterns": ["trade\\s*name", "proprietary\\s+name", "brand"], "required": false}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.1.2-CLASS",
+      "guidance_section": "2.1.2",
+      "guidance_page": 5,
+      "template_section": "S2_1",
+      "scope": "additive",
+      "title": "Proposal for classification; other uses and authorisations",
+      "requirement": "Intended effect and proposed category/functional group(s) under Article 6 and Annex I of Regulation (EC) No 1831/2003. Data from other known uses of the identical active substance (food, human/veterinary medicine, agriculture, industry) and any other authorisations, properly referenced.",
+      "quote": "The applicant should specify the intended effect of the additive in animal nutrition and make a proposal for the classification of the additive in one or more categories and functional groups according to its main functions under Article 6 and Annex I of Regulation (EC) No 1831/2003.",
+      "guidance_anchors": ["proposal for the classification of the additive in one or more categories and functional groups", "Any data from other known uses of the identical active substances"],
+      "applies_when": {},
+      "patterns": ["functional\\s+group", "categor(y|ies)", "(nutritional|sensory|technological|zootechnical)\\s+additives?", "coccidiostat", "intended\\s+effect", "authori[sz](ed|ation)", "\\bE\\s?\\d{3}\\b", "\\b3[a-z]\\d{3}\\b", "\\b2b\\d{3,5}\\b", "food\\s+additive", "veterinary", "JECFA", "FLAVIS"],
+      "sub_items": [
+        {"label": "Intended effect", "patterns": ["intended\\s+(effect|use|function)", "used\\s+as\\s+an?", "function\\s+of"], "required": true},
+        {"label": "Proposed category and functional group", "patterns": ["functional\\s+group", "categor(y|ies)\\s*[:(]", "(nutritional|sensory|technological|zootechnical)\\s+additives?", "coccidiostat"], "required": true},
+        {"label": "Other known uses and other authorisations (referenced)", "patterns": ["authori[sz](ed|ation)", "food\\s+additive", "\\bE\\s?\\d{3}\\b", "veterinary", "human\\s+medicine", "pharmacop", "other\\s+uses", "JECFA", "GRAS"], "required": true}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.1.3-COMP",
+      "guidance_section": "2.1.3",
+      "guidance_page": 5,
+      "template_section": "S2_1",
+      "scope": "additive",
+      "title": "Qualitative and quantitative composition",
+      "requirement": "Composition fully described, giving the proportion of the different components by weight. For mixtures of definable active substances, each active substance described and the proportions given. For preparations, the supporting compound(s), justification and intended inclusion level.",
+      "quote": "The composition of the additive should be fully described, giving the proportion of the different components by weight.",
+      "guidance_anchors": ["The composition of the additive should be fully described, giving the proportion of the different components by weight", "the active substances/agents must be described and the proportions in the mixture given", "information on the supporting compound(s) including the justification for inclusion"],
+      "applies_when": {},
+      "patterns": ["composition", "%\\s*(w/w|by\\s+weight)", "g/kg", "carrier", "excipient", "formulant", "anti-?caking", "supporting\\s+compound", "content"],
+      "sub_items": [
+        {"label": "Proportion of each component by weight (% w/w or g/kg)", "patterns": ["%\\s*(w/w|by\\s+weight)", "\\d+(\\.\\d+)?\\s*%", "\\d+\\s*g/kg"], "required": true},
+        {"label": "Mixture: each active substance described with its proportion", "patterns": ["mixture", "proportion", "ratio"], "required": true, "applies_when": {"components_min": 2}},
+        {"label": "Preparation: supporting compound(s), justification and inclusion level", "patterns": ["carrier", "excipient", "supporting\\s+compound", "formulant", "anti-?caking", "stabili[sz]er"], "required": false}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.1.3-SPEC",
+      "guidance_section": "2.1.3",
+      "guidance_page": 5,
+      "template_section": "S2_1",
+      "scope": "additive",
+      "title": "Specification and batch-to-batch variation",
+      "requirement": "A specification of the product for the concentration of the active substance(s), with evidence from at least five independent production batches (pilot batches acceptable only if commercial batches are not yet available and they represent the intended process); at least five batches for each manufacturing method or source. Certificates of analysis (preferably within the last 5 years) with analytical values; statements of compliance alone are not sufficient. Identity established with methods of adequate selectivity, sensitivity, accuracy and precision, internationally recognised where available.",
+      "quote": "Evidence should be provided by the analysis of at least five independent production batches that this specification is satisfied in practice.",
+      "guidance_anchors": ["Evidence should be provided by the analysis of at least five independent production batches", "If an application for an additive covers different manufacturing methods or origins/sources, data from at least five batches should be provided for each", "Statements of compliance alone are not considered sufficient"],
+      "applies_when": {},
+      "patterns": ["specification", "batch", "\\blot\\b", "certificates?\\s+of\\s+analysis", "\\bCoA\\b", "\\bassay\\b", "purity"],
+      "sub_items": [
+        {"label": "Proposed specification (e.g. ≥ x % active substance)", "patterns": ["specification", "(≥|>=|not\\s+less\\s+than|min(imum|\\.)?)\\s*\\d+(\\.\\d+)?\\s*%"], "required": true},
+        {"label": "Batch analytical results", "patterns": ["batch", "\\blot\\b"], "required": true},
+        {"label": "Certificates of analysis with analytical values", "patterns": ["certificates?\\s+of\\s+analysis", "\\bCoA\\b", "analytical\\s+certificate", "test\\s+report"], "required": true},
+        {"label": "Analytical method used for the active substance", "patterns": ["HPLC", "LC-?MS", "\\bGC\\b", "titrat", "ion[-\\s]exchange", "spectro", "method"], "required": true}
+      ],
+      "min_batches": 5,
+      "recency_years": 5,
+      "red_flag_patterns": ["statements?\\s+of\\s+compliance", "compl(y|ies)\\s+with\\s+(the\\s+)?specification", "conforms?\\s+to\\s+specification", "\\bpasses\\b"],
+      "red_flag_message": "Statement(s) of compliance located — the guidance requires certificates of analysis with analytical values; statements of compliance alone are not sufficient (p.5).",
+      "pilot_batch_patterns": ["pilot\\s+(scale\\s+)?batch", "laboratory\\s+batch"]
+    },
+    {
+      "id": "G2.1.4-GEN",
+      "guidance_section": "2.1.4",
+      "guidance_page": 6,
+      "template_section": "S2_1",
+      "scope": "additive",
+      "title": "Impurities — general requirements",
+      "requirement": "Identify and quantify microbiological and chemical (including residual solvents) impurities. Describe which impurities are monitored routinely, the testing frequency and the action limits (respecting e.g. Directive 2002/32/EC). Analytical data for at least three production batches produced within the last 5 years (three per manufacturing method/source), with certificates of analysis (not statements of compliance) and the LOD/LOQ of the methods.",
+      "quote": "Analytical data on the impurities should be provided for at least three production batches, produced within the last 5 years.",
+      "guidance_anchors": ["The applicant should identify and quantify microbiological and chemical (including residual solvents)", "the frequency of testing and the action limits set for each monitored impurity", "Analytical data on the impurities should be provided for at least three production batches, produced within the last 5 years", "The limits of detection (LOD) and quantification (LOQ) of the analytical methods should be given"],
+      "applies_when": {},
+      "patterns": ["impurit", "contaminant", "residual\\s+solvents?", "heavy\\s+metals?", "\\blead\\b", "cadmium", "mercury", "arsenic", "dioxin", "mycotoxin", "salmonella", "enterobacteriaceae", "\\bmicrobiolog", "\\bLOQ\\b", "\\bLOD\\b", "action\\s+limit", "2002/32"],
+      "sub_items": [
+        {"label": "Chemical impurities identified and quantified", "patterns": ["impurit", "heavy\\s+metals?", "\\blead\\b", "cadmium", "arsenic", "related\\s+substances", "by-?products?"], "required": true},
+        {"label": "Residual solvents", "patterns": ["residual\\s+solvents?", "solvent\\s+residues?", "VICH\\s*GL\\s*18"], "required": true},
+        {"label": "Microbiological impurities", "patterns": ["\\bmicrobiolog", "\\bmicrobial", "salmonella", "enterobacteriaceae", "yeasts?", "moulds?", "\\bCFU\\b", "total\\s+(plate|viable|aerobic)"], "required": true},
+        {"label": "Routine monitoring: impurities monitored, frequency and action limits", "patterns": ["action\\s+limits?", "routine(ly)?\\s+(monitor|test|analys)", "frequency", "monitoring\\s+plan", "in-?process\\s+control"], "required": true},
+        {"label": "LOD / LOQ of the analytical methods", "patterns": ["\\bLOQ\\b", "\\bLOD\\b", "limit\\s+of\\s+(quantification|detection)"], "required": true}
+      ],
+      "min_batches": 3,
+      "recency_years": 5,
+      "red_flag_patterns": ["statements?\\s+of\\s+compliance", "compl(y|ies)\\s+with", "conforms?\\s+to", "within\\s+(the\\s+)?limits?\\b(?!\\s*of\\s*(detection|quantification))"],
+      "red_flag_message": "Statement(s) of compliance located for impurities — certificates of analysis indicating the analytical values are required (p.6)."
+    },
+    {
+      "id": "G2.1.4-MIN",
+      "guidance_section": "2.1.4",
+      "guidance_page": 7,
+      "template_section": "S2_1",
+      "scope": "additive",
+      "title": "Impurities — minimum requirements by type of product",
+      "requirement": "Minimum impurity analyses depend on how the additive is produced: chemical synthesis (all chemicals used and remaining intermediates identified and quantified); fermentation products (microbiological contamination, spent growth medium, LPS for Gram-negative strains, absence of production organism/antimicrobial activity/DNA where applicable, and depending on media and excipients mycotoxins and heavy metals); plant-derived (microbiological and botanical contamination, mycotoxins, dioxins and dioxin-like PCBs, pesticides, Pb, Hg, Cd, As); animal-derived (microbiological, Pb, Hg, Cd, As); mineral (Pb, Hg, Cd, As, fluorine, dioxins and dioxin-like PCBs).",
+      "quote": "for products produced by chemical synthesis and processes: all chemicals used in the synthetic processes and any intermediate products remaining in the final product shall be identified and their concentrations given.",
+      "guidance_anchors": ["As a guide, the following should be considered as minimum requirements", "all chemicals used in the synthetic processes and any intermediate products remaining in the final product", "the extent to which spent growth medium is incorporated into the final product", "lead, mercury, cadmium, arsenic and fluorine, dioxins"],
+      "applies_when": {},
+      "requires_meta": "production_type",
+      "patterns": ["\\blead\\b", "(?-i:\\bPb\\b)", "cadmium", "(?-i:\\bCd\\b)", "mercury", "(?-i:\\bHg\\b)", "arsenic", "fluorine", "fluoride", "dioxin", "PCB", "mycotoxin", "aflatoxin", "pesticide", "salmonella", "enterobacteriaceae", "yeasts?", "moulds?", "intermediate", "reagent", "catalyst", "spent\\s+(growth\\s+)?medium", "lipopolysaccharide", "\\bLPS\\b", "endotoxin", "production\\s+(strain|organism)", "viable\\s+cells", "antimicrobial\\s+activity", "\\bDNA\\b", "botanical\\s+(contamination|impurit)"],
+      "sub_items": [
+        {"label": "Chemicals used in synthesis and remaining intermediates identified and quantified", "patterns": ["intermediates?", "reagents?", "catalysts?", "starting\\s+materials?", "synthesis\\s+(impurit|by-?product)", "from\\s+(the\\s+)?synthesis", "residual\\s+chemicals?", "residual\\s+(reactant|reagent)"], "required": true, "applies_when": {"production_type_any": ["chemical_synthesis"]}},
+        {"label": "Lead (Pb)", "patterns": ["\\blead\\b", "(?-i:\\bPb\\b)"], "required": true, "applies_when": {"production_type_any": ["plant_derived", "animal_derived", "mineral", "fermentation"]}, "note_when": {"fermentation": "depending on the fermentation media and excipients"}},
+        {"label": "Mercury (Hg)", "patterns": ["mercury", "(?-i:\\bHg\\b)"], "required": true, "applies_when": {"production_type_any": ["plant_derived", "animal_derived", "mineral", "fermentation"]}, "note_when": {"fermentation": "depending on the fermentation media and excipients"}},
+        {"label": "Cadmium (Cd)", "patterns": ["cadmium", "(?-i:\\bCd\\b)"], "required": true, "applies_when": {"production_type_any": ["plant_derived", "animal_derived", "mineral", "fermentation"]}, "note_when": {"fermentation": "depending on the fermentation media and excipients"}},
+        {"label": "Arsenic (As)", "patterns": ["arsenic", "(?-i:\\bAs\\b)\\s*[:(<≤]?\\s*[<≤]?\\s*\\d"], "required": true, "applies_when": {"production_type_any": ["plant_derived", "animal_derived", "mineral", "fermentation"]}, "note_when": {"fermentation": "depending on the fermentation media and excipients"}},
+        {"label": "Fluorine", "patterns": ["fluorine", "fluoride", "(?-i:\\bF\\b)\\s*[:(<≤]"], "required": true, "applies_when": {"production_type_any": ["mineral"]}},
+        {"label": "Dioxins and sum of dioxins and dioxin-like PCBs", "patterns": ["dioxin", "PCDD", "PCDF", "dl-?PCB", "WHO-?TEQ"], "required": true, "applies_when": {"production_type_any": ["plant_derived", "mineral"]}},
+        {"label": "Mycotoxins (selected according to matrix)", "patterns": ["mycotoxin", "aflatoxin", "ochratoxin", "zearalenone", "deoxynivalenol", "fumonisin", "T-?2", "HT-?2"], "required": true, "applies_when": {"production_type_any": ["plant_derived", "fermentation"]}, "note_when": {"fermentation": "depending on the fermentation media and excipients"}},
+        {"label": "Pesticide residues", "patterns": ["pesticide"], "required": true, "applies_when": {"production_type_any": ["plant_derived"]}},
+        {"label": "Botanical contamination", "patterns": ["botanical\\s+(contamination|impurit)", "foreign\\s+(matter|plant)"], "required": true, "applies_when": {"production_type_any": ["plant_derived"]}},
+        {"label": "Microbiological contamination", "patterns": ["\\bmicrobiolog", "\\bmicrobial\\s+contamination", "salmonella", "enterobacteriaceae", "\\bCFU\\b"], "required": true, "applies_when": {"production_type_any": ["plant_derived", "animal_derived", "fermentation"]}},
+        {"label": "Salmonella, Enterobacteriaceae, total yeasts and filamentous fungi", "patterns": ["salmonella", "enterobacteriaceae", "yeasts?", "filamentous\\s+fungi", "moulds?"], "required": true, "applies_when": {"production_type_any": ["fermentation"]}},
+        {"label": "Extent of spent growth medium in the final product", "patterns": ["spent\\s+(growth\\s+)?medium", "fermentation\\s+(broth|medium)\\s+residu"], "required": true, "applies_when": {"production_type_any": ["fermentation"]}},
+        {"label": "Lipopolysaccharides (Gram-negative production strains)", "patterns": ["lipopolysaccharide", "\\bLPS\\b", "endotoxin"], "required": false, "applies_when": {"production_type_any": ["fermentation"]}},
+        {"label": "Absence of the production organism (viable cells)", "patterns": ["absence\\s+of\\s+(viable|the\\s+production)", "viable\\s+cells", "production\\s+(strain|organism)\\s+(was\\s+)?not\\s+detected"], "required": true, "applies_when": {"production_type_any": ["fermentation"]}},
+        {"label": "Absence of antimicrobial activity", "patterns": ["antimicrobial\\s+activity", "antibiotic\\s+activity"], "required": true, "applies_when": {"production_type_any": ["fermentation"]}},
+        {"label": "Absence of production-strain DNA (GMM or AMR genes)", "patterns": ["\\bDNA\\b", "recombinant", "\\bPCR\\b"], "required": false, "applies_when": {"production_type_any": ["fermentation"]}}
+      ],
+      "min_batches": 3
+    },
+    {
+      "id": "G2.1.5-SOLID",
+      "guidance_section": "2.1.5",
+      "guidance_page": 7,
+      "template_section": "S2_1",
+      "scope": "additive",
+      "title": "Physical state — solid formulations (density, bulk density, dusting potential)",
+      "requirement": "For each solid formulation: density, bulk density and dusting potential; for multiple sources, a representative range. Dusting potential in at least three batches by a recognised method (rotating drum: Stauber–Heubach, DIN 55992, EN 15051; or continuous drop, EN 15051), in mg/m³ air.",
+      "quote": "Dusting potential should be measured (at least three batches) following recognised methods, e.g. rotating drum (Stauber–Heubach, DIN 55992, EN 15051) or continuous drop methods (EN 15051), and expressed in mg/m3 air.",
+      "guidance_anchors": ["For solid additives, data on density, bulk density and dusting potential should be provided for each formulation", "Dusting potential should be measured (at least three batches)"],
+      "applies_when": {"form": "solid"},
+      "patterns": ["bulk\\s+density", "tapped\\s+density", "\\bdensity\\b", "dusting\\s+potential", "stauber", "heubach", "EN\\s*15051", "DIN\\s*55992", "mg/m\\s*(3|³)"],
+      "sub_items": [
+        {"label": "Density", "patterns": ["(?<!bulk\\s)(?<!tapped\\s)\\bdensity\\b", "specific\\s+(weight|gravity)", "true\\s+density"], "required": true},
+        {"label": "Bulk density", "patterns": ["bulk\\s+density", "tapped\\s+density"], "required": true},
+        {"label": "Dusting potential (mg/m³ air)", "patterns": ["dusting\\s+potential", "mg/m\\s*(3|³)"], "required": true},
+        {"label": "Recognised method (Stauber–Heubach / DIN 55992 / EN 15051)", "patterns": ["stauber", "heubach", "EN\\s*15051", "DIN\\s*55992", "continuous\\s+drop", "rotating\\s+drum"], "required": true}
+      ],
+      "min_batches": 3
+    },
+    {
+      "id": "G2.1.5-DUST",
+      "guidance_section": "2.1.5",
+      "guidance_page": 7,
+      "template_section": "S2_1",
+      "scope": "additive",
+      "title": "Dust: active substance content and particle size distribution",
+      "requirement": "When an occupational exposure limit is set or there is known or suspected inhalation toxicity: concentration of the active substance in the dust and particle size distribution of the dust, preferably by laser diffraction (ISO 13320:2009), expressed in relation to volume.",
+      "quote": "the concentration of the active substance in the dust and particle size distribution of the dust should be measured, preferably by laser diffraction (ISO 13320:2009)",
+      "guidance_anchors": ["When an occupational exposure limit is set or where there is a known or suspected toxicity after inhalatory exposure", "particle size distribution of the dust should be measured"],
+      "applies_when": {"form": "solid", "manual": "Applies only if an occupational exposure limit is set or inhalation toxicity is known/suspected — scientific officer to decide."},
+      "patterns": ["dust", "occupational\\s+exposure\\s+limit", "\\bOEL\\b", "inhal", "ISO\\s*13320"],
+      "sub_items": [
+        {"label": "Active substance content in the dust", "patterns": ["(content|concentration)\\s+(of\\s+[\\w\\s-]+\\s+)?in\\s+(the\\s+)?dust", "dust\\s+(content|composition)"], "required": true},
+        {"label": "Particle size distribution of the dust (laser diffraction)", "patterns": ["particle\\s+size\\s+distribution\\s+of\\s+the\\s+dust", "dust.*particle\\s+size", "particle\\s+size.*dust", "ISO\\s*13320"], "required": true}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.1.5-NANO",
+      "guidance_section": "2.1.5",
+      "guidance_page": 7,
+      "template_section": "S2_1",
+      "scope": "additive",
+      "title": "Possible presence of nanoparticles",
+      "requirement": "If the nature of the additive allows the presence of nanoparticles: particle size analysis of the additive by laser diffraction; if more than 1% of particles are below 1 µm, characterise that fraction by scanning electron microscopy (wet method), as proportion of total particle number; state whether the product is a nanomaterial as defined by EU legislation.",
+      "quote": "If the particle size analysis of the additive indicates that more than 1% of particles below 1 µm are present, this fraction should be further characterised by scanning electronic microscopy (wet method).",
+      "guidance_anchors": ["If the nature of the additive allows the possibility of the presence of nanoparticles", "this fraction should be further characterised by scanning electronic microscopy (wet method)"],
+      "applies_when": {"form": "solid", "manual": "Applies if the nature of the additive allows the presence of nanoparticles — scientific officer to decide."},
+      "patterns": ["particle\\s+size", "laser\\s+diffraction", "nano", "electron\\s+microscop", "\\bSEM\\b", "<\\s*1\\s*(µ|μ|u)m", "below\\s+1\\s*(µ|μ|u)m", "\\bD\\s*v?\\s*\\(?\\s*(10|50|90)"],
+      "sub_items": [
+        {"label": "Particle size analysis of the additive by laser diffraction", "patterns": ["laser\\s+diffraction", "particle\\s+size\\s+(distribution|analysis)"], "required": true},
+        {"label": "Fraction of particles below 1 µm reported", "patterns": ["<\\s*1\\s*(µ|μ|u)m", "below\\s+1\\s*(µ|μ|u)m", "less\\s+than\\s+1\\s*(µ|μ|u)m", "\\bsub-?micron"], "required": true},
+        {"label": "SEM (wet method) if > 1% of particles < 1 µm", "patterns": ["electron\\s+microscop", "\\bSEM\\b"], "required": false},
+        {"label": "Statement whether the product is a nanomaterial", "patterns": ["nanomaterial", "not\\s+a\\s+nano", "nanoform"], "required": true}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.1.5-LIQUID",
+      "guidance_section": "2.1.5",
+      "guidance_page": 7,
+      "template_section": "S2_1",
+      "scope": "additive",
+      "title": "Physical state — liquid formulations",
+      "requirement": "For liquid additives: vapour pressure, viscosity, specific weight and, where used in water, (pH-dependent) solubility or dispersibility.",
+      "quote": "For liquid additives, data on vapour pressure, viscosity, specific weight and, where the additive is intended to be used in water, (pH dependent) solubility or dispersibility should be provided.",
+      "guidance_anchors": ["For liquid additives, data on vapour pressure, viscosity, specific weight"],
+      "applies_when": {"form": "liquid"},
+      "patterns": ["vapou?r\\s+pressure", "viscosity", "specific\\s+(weight|gravity)", "\\bdensity\\b", "solubility", "dispersib"],
+      "sub_items": [
+        {"label": "Vapour pressure", "patterns": ["vapou?r\\s+pressure"], "required": true},
+        {"label": "Viscosity", "patterns": ["viscosity"], "required": true},
+        {"label": "Specific weight", "patterns": ["specific\\s+(weight|gravity)", "\\bdensity\\b"], "required": true},
+        {"label": "(pH-dependent) solubility or dispersibility in water", "patterns": ["solubility", "dispersib", "miscib"], "required": true, "applies_when": {"route_any": ["water"]}}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.2.1-DESC",
+      "guidance_section": "2.2.1",
+      "guidance_page": 7,
+      "template_section": "S2_2",
+      "scope": "component",
+      "title": "Description of the active substance",
+      "requirement": "Qualitative description of the active substance including purity and origin and other relevant characteristics; identity data from analytical methods with adequate selectivity, sensitivity, accuracy and precision; overview of natural occurrence in materials used as feed/food. Where supplied by a third party, the applicant's requirements/specifications (e.g. purity and safety-relevant impurities).",
+      "quote": "A qualitative description of the active substance or agent should be given. This should include purity and origin of the substance or agent, plus any other relevant characteristics.",
+      "guidance_anchors": ["This should include purity and origin of the substance or agent", "An overview of the natural occurrence of the active substance(s) in materials used as feed/food should be provided", "When the active substance(s)/agent(s) is/are supplied by a third party"],
+      "applies_when": {},
+      "patterns": ["purity", "\\bassay\\b", "origin", "source", "natural(ly)?\\s+occur", "present\\s+in", "supplier", "third\\s+party"],
+      "sub_items": [
+        {"label": "Purity", "field": "purity", "patterns": ["purity", "\\bassay\\b"], "required": true},
+        {"label": "Origin of the substance", "patterns": ["origin", "obtained\\s+(by|from)", "produced\\s+(by|from)", "synthes", "ferment", "extract"], "required": true},
+        {"label": "Natural occurrence in feed/food materials", "patterns": ["natural(ly)?\\s+occur", "occurs?\\s+naturally", "natural\\s+occurrence", "present\\s+in\\s+(feed|food|plants?)"], "required": true},
+        {"label": "Third-party supplier specification (if applicable)", "patterns": ["supplier", "third\\s+party", "purchased\\s+from"], "required": false}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.2.1.1-ID",
+      "guidance_section": "2.2.1.1",
+      "guidance_page": 7,
+      "template_section": "S2_2",
+      "scope": "component",
+      "title": "Chemical identity of each chemically defined substance",
+      "requirement": "Generic name; chemical name (IUPAC); other generic international names and abbreviations; CAS number; EINECS / EC number if available; structural and molecular formula, openSMILES notation and molecular weight (must be included); isomeric forms where relevant; structurally related substances when appropriate; FLAVIS number for flavourings; microbial origin for substances produced by fermentation.",
+      "quote": "The structural and molecular formula, the openSMILES notation and the molecular weight must be included. Where relevant, the isomeric forms should be given.",
+      "guidance_anchors": ["Chemically defined substances should be described by generic name, chemical name according to the International Union of Pure and Applied Chemistry (IUPAC)", "The structural and molecular formula, the openSMILES notation and the molecular weight must be included", "Where relevant, the isomeric forms should be given"],
+      "applies_when": {},
+      "patterns": ["IUPAC", "\\bCAS\\b", "\\bEC\\s*(no|number)", "EINECS", "molecular\\s+formula", "structural\\s+formula", "SMILES", "molecular\\s+(weight|mass)", "molar\\s+mass", "synonym", "generic\\s+name", "isomer", "enantiomer", "FLAVIS"],
+      "sub_items": [
+        {"label": "Generic name", "field": "generic_name", "patterns": ["generic\\s+name", "common\\s+name", "INN\\b"], "required": true},
+        {"label": "Chemical name (IUPAC)", "field": "iupac_name", "patterns": ["IUPAC"], "required": true},
+        {"label": "Other generic international names / abbreviations", "field": "synonyms", "patterns": ["synonym", "other\\s+names?", "abbreviation", "also\\s+known\\s+as"], "required": true},
+        {"label": "CAS number", "field": "cas", "patterns": ["\\bCAS\\b"], "required": true},
+        {"label": "EINECS / EC number (if available)", "field": "ec", "patterns": ["\\bEC\\s*(no|number)", "EINECS"], "required": false},
+        {"label": "Structural formula", "field": "structural_formula", "patterns": ["structural\\s+formula", "chemical\\s+structure"], "required": true},
+        {"label": "Molecular formula", "field": "molecular_formula", "patterns": ["molecular\\s+formula", "chemical\\s+formula", "empirical\\s+formula"], "required": true},
+        {"label": "openSMILES notation", "field": "smiles", "patterns": ["SMILES"], "required": true},
+        {"label": "Molecular weight", "field": "molecular_weight", "patterns": ["molecular\\s+(weight|mass)", "molar\\s+mass"], "required": true},
+        {"label": "Isomeric forms (where relevant)", "patterns": ["isomer", "enantiomer", "racem", "chiral", "\\b[DL]-[A-Za-z]", "\\([RS]\\)", "optical\\s+rotation"], "required": false},
+        {"label": "Structurally related substances (when appropriate)", "patterns": ["structurally\\s+related", "related\\s+compounds?"], "required": false},
+        {"label": "FLAVIS number", "field": "flavis", "patterns": ["FLAVIS", "FL[\\s-]?no"], "required": true, "applies_when": {"additive_type_any": ["flavouring_compound"]}},
+        {"label": "Microbial origin (fermentation)", "patterns": ["production\\s+(strain|organism)", "ferment", "\\b(DSM|KCCM|CGMCC|NRRL|ATCC|CBS|NCIMB)\\s*\\d"], "required": true, "applies_when": {"production_type_any": ["fermentation"]}}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.2.2.1-PROP",
+      "guidance_section": "2.2.2.1",
+      "guidance_page": 8,
+      "template_section": "S2_2",
+      "scope": "component",
+      "title": "Relevant physical and chemical properties",
+      "requirement": "Description of physical and chemical properties, as appropriate: dissociation constant (pKa), melting point, boiling point, density, vapour pressure, specific optical rotation, (pH-dependent) solubility in water and in organic solvents, Kow and Kd/Koc, and any other relevant physical properties.",
+      "quote": "Dissociation constant, pKa, melting point, boiling point, density, vapour pressure, specific optical rotation, (pH dependent) solubility in water and in organic solvents, Kow and Kd/Koc and any other relevant physical properties should be provided, as appropriate.",
+      "guidance_anchors": ["Description of physical and chemical properties should be given", "specific optical rotation, (pH dependent) solubility in water and in organic solvents"],
+      "applies_when": {},
+      "conditional_note": "The guidance asks for these properties 'as appropriate': the scientific officer judges which are needed for the substance.",
+      "patterns": ["\\bpKa\\b", "dissociation\\s+constant", "melting\\s+point", "boiling\\s+point", "\\bdensity\\b", "vapou?r\\s+pressure", "optical\\s+rotation", "solubility", "soluble", "log\\s*K\\s*ow", "\\bK\\s*ow\\b", "log\\s*P\\b", "partition\\s+coefficient", "\\bK\\s*oc\\b", "\\bK\\s*d\\b"],
+      "sub_items": [
+        {"label": "Dissociation constant (pKa)", "field": "pka", "patterns": ["\\bpKa\\b", "dissociation\\s+constant"], "required": false},
+        {"label": "Melting point", "field": "melting_point", "patterns": ["melting\\s+point", "decomposition\\s+temperature"], "required": false},
+        {"label": "Boiling point", "patterns": ["boiling\\s+point"], "required": false},
+        {"label": "Density", "patterns": ["\\bdensity\\b"], "required": false},
+        {"label": "Vapour pressure", "patterns": ["vapou?r\\s+pressure"], "required": false},
+        {"label": "Specific optical rotation", "field": "optical_rotation", "patterns": ["optical\\s+rotation", "specific\\s+rotation", "\\[α\\]"], "required": false},
+        {"label": "(pH-dependent) solubility in water", "field": "water_solubility", "patterns": ["solubility\\s+in\\s+water", "water\\s+solubility", "soluble\\s+in\\s+water", "solubility"], "required": false},
+        {"label": "Solubility in organic solvents", "patterns": ["solubility\\s+in\\s+(organic|ethanol|methanol|acetone|hexane)", "soluble\\s+in\\s+(ethanol|methanol|acetone|organic)", "insoluble\\s+in"], "required": false},
+        {"label": "Kow (octanol/water partition coefficient)", "field": "log_kow", "patterns": ["log\\s*K\\s*ow", "\\bK\\s*ow\\b", "log\\s*P\\b", "partition\\s+coefficient"], "required": false},
+        {"label": "Kd / Koc", "patterns": ["\\bK\\s*oc\\b", "\\bK\\s*d\\b", "adsorption\\s+coefficient"], "required": false}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.3.1-ACTIVE",
+      "guidance_section": "2.3.1",
+      "guidance_page": 9,
+      "template_section": "S2_3",
+      "scope": "additive",
+      "title": "Manufacturing process of the active substance(s)",
+      "requirement": "Detailed description of the production process of the active substance (e.g. chemical synthesis, fermentation, extraction, distillation and downstream purification), supported by a flowchart if appropriate, sufficient to define the critical points that may influence purity and impurities. Declare any antimicrobial substances used; give the composition of fermentation/cultivation media.",
+      "quote": "A detailed description of the production process (e.g. chemical synthesis, fermentation, cultivation, extraction from organic material or distillation and downstream purification steps) used in the production of the active substance(s)/agent(s) of the additive should be submitted if appropriate supported by a flowchart.",
+      "guidance_anchors": ["To define the critical points of the process that may have an influence on the purity and impurities", "The use of any antimicrobial substances during the production process should be declared", "The composition of the fermentation/cultivation media should be provided"],
+      "applies_when": {},
+      "patterns": ["manufactur", "production\\s+process", "synthes", "ferment", "extraction", "distillation", "purification", "crystalli", "flow\\s*(chart|diagram|sheet)", "starting\\s+materials?", "raw\\s+materials?", "reagents?", "critical\\s+(control\\s+)?points?", "culture\\s+medi", "fermentation\\s+medi", "antimicrobial", "antibiotic"],
+      "sub_items": [
+        {"label": "Detailed process description (synthesis/fermentation/extraction)", "patterns": ["manufactur(ing)?\\s+process", "production\\s+process", "synthes", "ferment", "extraction", "process\\s+description"], "required": true},
+        {"label": "Downstream purification steps", "patterns": ["purification", "crystalli", "filtration", "chromatograph", "downstream", "evaporat", "drying"], "required": true},
+        {"label": "Critical points influencing purity/impurities", "patterns": ["critical\\s+(control\\s+)?points?", "\\bCCP\\b", "in-?process\\s+control", "HACCP"], "required": true},
+        {"label": "Flowchart (if appropriate)", "patterns": ["flow\\s*(chart|diagram|sheet)"], "required": false},
+        {"label": "Declaration on antimicrobial substances used", "patterns": ["antimicrobial", "antibiotic"], "required": true},
+        {"label": "Composition of fermentation/cultivation media", "patterns": ["(fermentation|culture|cultivation|growth)\\s+medi(um|a)", "medium\\s+composition", "carbon\\s+source", "nitrogen\\s+source"], "required": true, "applies_when": {"production_type_any": ["fermentation"]}}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.3.2-ADDITIVE",
+      "guidance_section": "2.3.2",
+      "guidance_page": 9,
+      "template_section": "S2_3",
+      "scope": "additive",
+      "title": "Manufacturing process of the additive",
+      "requirement": "Detailed description of the manufacturing process of the additive: key stages, point(s) of introduction of the active substance(s) and other components, and subsequent process steps affecting the additive, supported by a flow chart if appropriate.",
+      "quote": "The key stages in the preparation of the additive including the point(s) of introduction of the active substance(s)/agent(s) and other components, and any subsequent process steps affecting the additive should be provided if appropriate supported by a flow chart.",
+      "guidance_anchors": ["A detailed description of the manufacturing process of the additive should be submitted", "the point(s) of introduction of the active substance"],
+      "applies_when": {},
+      "patterns": ["formulat", "blend", "mix(ing|ed)", "granulat", "coat", "spray[\\s-]dr", "packag", "flow\\s*(chart|diagram)", "carrier", "manufactur"],
+      "sub_items": [
+        {"label": "Key stages of additive preparation", "patterns": ["formulat", "blend", "mix(ing|ed)", "granulat", "coat", "spray[\\s-]dr", "manufactur(ing)?\\s+of\\s+the\\s+(additive|product)"], "required": true},
+        {"label": "Point(s) of introduction of active substance and other components", "patterns": ["(added|introduced|incorporated)\\s+(at|during|to|in)", "addition\\s+of", "carrier"], "required": true},
+        {"label": "Flow chart (if appropriate)", "patterns": ["flow\\s*(chart|diagram|sheet)"], "required": false}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.4.1.1-SHELF",
+      "guidance_section": "2.4.1.1",
+      "guidance_page": 9,
+      "template_section": "S2_4",
+      "scope": "additive",
+      "title": "Shelf life of the additive",
+      "requirement": "Realistic shelf-life estimate for each formulation, from studies under the recommended (specified) storage conditions, with data from at least three batches. Stability is followed analytically for each active substance, with at least one observation at the beginning and one at the end of storage; degradation/decomposition products characterised where appropriate. Normally not required for mineral-based additives.",
+      "quote": "This should be based on studies performed under the recommended storage conditions, which should be specified. Data should be provided from at least three batches of the additive.",
+      "guidance_anchors": ["Data should be provided from at least three batches of the additive", "Data should include at least one observation at the beginning and one at the end of the storage period", "Stability studies are normally not required for mineral-based additives"],
+      "applies_when": {"production_type_not": ["mineral"]},
+      "patterns": ["shelf[\\s-]*life", "stability", "storage", "recovery", "\\d+\\s*months?", "°\\s*C"],
+      "sub_items": [
+        {"label": "Shelf-life study of each formulation", "patterns": ["shelf[\\s-]*life", "storage\\s+stability", "stability\\s+of\\s+the\\s+(additive|product|formulation)"], "required": true},
+        {"label": "Recommended storage conditions specified (temperature, packaging)", "patterns": ["°\\s*C", "ambient\\s+temperature", "room\\s+temperature", "storage\\s+condition", "relative\\s+humidity", "packag"], "required": true},
+        {"label": "Observations at beginning and end of storage", "patterns": ["\\bT\\s*0\\b", "initial", "start", "time\\s+zero", "after\\s+\\d+\\s*months?", "end\\s+of\\s+(the\\s+)?storage", "recovery", "\\bloss"], "required": true},
+        {"label": "Degradation / decomposition products (where appropriate)", "patterns": ["degradation", "decomposition"], "required": false}
+      ],
+      "min_batches": 3
+    },
+    {
+      "id": "G2.4.1.2-PREMIX",
+      "guidance_section": "2.4.1.2",
+      "guidance_page": 10,
+      "template_section": "S2_4",
+      "scope": "additive",
+      "title": "Stability of the additive in premixtures",
+      "requirement": "When incorporated via a premixture: stability in one typical premixture containing trace elements, at the recommended inclusion level, of at least 6 months' duration, with the composition of the premixture given. Not required for silage additives and flavouring compounds.",
+      "quote": "For other additives, stability studies in feedingstuffs and premixtures should be of at least 3 and 6 months’ duration, respectively. When the additive is intended to be incorporated via a premixture, stability should be tested in one typical premixture containing trace elements.",
+      "guidance_anchors": ["stability studies in feedingstuffs and premixtures should be of at least 3 and 6", "stability should be tested in one typical premixture containing trace elements"],
+      "applies_when": {"route": "premixture", "additive_type_not": ["flavouring_compound", "silage_additive"], "production_type_not": ["mineral"]},
+      "patterns": ["premix"],
+      "sub_items": [
+        {"label": "Stability study in a premixture", "patterns": ["premix"], "required": true},
+        {"label": "Premixture contains trace elements", "patterns": ["trace\\s+elements?", "mineral", "copper", "zinc", "iron", "manganese"], "required": true},
+        {"label": "Composition of the premixture given", "patterns": ["composition", "contain(s|ing)"], "required": true}
+      ],
+      "min_batches": null,
+      "min_months": 6
+    },
+    {
+      "id": "G2.4.1.2-FEED",
+      "guidance_section": "2.4.1.2",
+      "guidance_page": 10,
+      "template_section": "S2_4",
+      "scope": "additive",
+      "title": "Stability of the additive in feedingstuffs",
+      "requirement": "Stability at the recommended inclusion level in feedingstuffs manufactured and stored under practical conditions, of at least 3 months' duration, reflecting the diversity of rations (generally one batch of the additive in at least three feeds), in mash and, when relevant, processed feed (pelleted/extruded) to assess the influence of processing; composition of the feeds given. Not required for silage additives and flavouring compounds.",
+      "quote": "Stability studies in feedingstuffs should reflect the diversity of rations for different animal species (generally one batch of the additive in at least three feeds). When relevant, stability in feedingstuffs should be determined in both mash and further processed feed (e.g. pelleted or extruded)",
+      "guidance_anchors": ["generally one batch of the additive in at least three feeds", "should be determined in both mash and further processed feed", "Stability studies in feedingstuffs are not required for silage additives and flavouring compounds"],
+      "applies_when": {"route": "feed", "additive_type_not": ["flavouring_compound", "silage_additive"], "production_type_not": ["mineral"]},
+      "patterns": ["pellet", "extru", "mash", "complete\\s+feed", "feedingstuff", "compound\\s+feed", "\\bfeeds?\\b"],
+      "sub_items": [
+        {"label": "Stability in mash feed", "patterns": ["mash"], "required": true},
+        {"label": "Processed feed (pelleted/extruded) and effect of processing", "patterns": ["pellet", "extru", "conditioning"], "required": true},
+        {"label": "At least three feeds (diversity of rations)", "patterns": ["(three|3|four|4|five|5)\\s+(different\\s+)?(feeds|diets|feedingstuffs)", "(poultry|chicken|pig|piglet|cattle|calves|fish|dog|cat)s?\\s+(feed|diet)"], "required": true},
+        {"label": "Composition of feeds given", "patterns": ["composition", "ingredients", "maize", "wheat", "soybean"], "required": true}
+      ],
+      "min_batches": null,
+      "min_months": 3
+    },
+    {
+      "id": "G2.4.1.3-WATER",
+      "guidance_section": "2.4.1.3",
+      "guidance_page": 10,
+      "template_section": "S2_4",
+      "scope": "additive",
+      "title": "Stability of the additive in water for drinking",
+      "requirement": "Stability at the recommended inclusion level under conditions simulating practical use (e.g. water temperature, time) for a minimum of 48 h, considering excipients that could trigger growth of contaminating microorganisms.",
+      "quote": "The stability of the additive intended to be distributed via water for drinking should be studied at the recommended inclusion level and under conditions simulating practical use (e.g. water temperature, time) for a minimum duration of 48 h.",
+      "guidance_anchors": ["for a minimum duration of 48 h"],
+      "applies_when": {"route": "water"},
+      "patterns": ["water\\s+for\\s+drinking", "drinking\\s+water"],
+      "sub_items": [
+        {"label": "Stability study in water for drinking", "patterns": ["water\\s+for\\s+drinking", "drinking\\s+water"], "required": true},
+        {"label": "Conditions simulating practical use (temperature/time)", "patterns": ["°\\s*C", "\\d+\\s*h(ours?)?\\b", "room\\s+temperature"], "required": true}
+      ],
+      "min_batches": null,
+      "min_hours": 48
+    },
+    {
+      "id": "G2.4.2-HOMOG",
+      "guidance_section": "2.4.2",
+      "guidance_page": 10,
+      "template_section": "S2_4",
+      "scope": "additive",
+      "title": "Homogeneity",
+      "requirement": "Capacity for homogeneous distribution in premixtures, feedingstuffs or water as appropriate: as a guide, additive content in a minimum of 10 subsamples from a single batch and the coefficient of variation calculated. Demonstration in the final feedingstuff makes premixture data unnecessary; not required for water if soluble/miscible at the proposed concentration. Not required for silage additives, flavouring compounds, certain colourings, and additives with an effect in feed whose efficacy has been demonstrated.",
+      "quote": "As a guide, the content of the additive should be analysed in a minimum of 10 subsamples from a single batch (of the premixture or feedingstuff) and the coefficient of variation calculated.",
+      "guidance_anchors": ["the content of the additive should be analysed in a minimum of 10 subsamples from a single batch", "Homogeneity studies are not required for silage additives, flavouring compounds"],
+      "applies_when": {"route_any": ["feed", "premixture"], "additive_type_not": ["flavouring_compound", "silage_additive", "colourant"]},
+      "patterns": ["homogene", "coefficient\\s+of\\s+variation", "\\bCV\\b", "subsamples?"],
+      "sub_items": [
+        {"label": "Homogeneity study (premixture or feedingstuff)", "patterns": ["homogene"], "required": true},
+        {"label": "Coefficient of variation calculated", "patterns": ["coefficient\\s+of\\s+variation", "\\bCV\\b"], "required": true},
+        {"label": "Minimum of 10 subsamples from a single batch", "patterns": ["(1\\d|[2-9]\\d|ten|twelve|fifteen|twenty)\\s+(sub-?)?samples", "subsamples?"], "required": true}
+      ],
+      "min_batches": null,
+      "min_subsamples": 10
+    },
+    {
+      "id": "G2.4.3-OTHER",
+      "guidance_section": "2.4.3",
+      "guidance_page": 10,
+      "template_section": "S2_4",
+      "scope": "additive",
+      "title": "Other characteristics",
+      "requirement": "Any other relevant characteristics should be described.",
+      "quote": "Any other relevant characteristics should be described.",
+      "guidance_anchors": ["Any other relevant characteristics should be described"],
+      "applies_when": {},
+      "manual_review": true,
+      "patterns": ["flowability", "hygroscop", "caking", "angle\\s+of\\s+repose", "electrostatic", "colour", "odou?r"],
+      "sub_items": [],
+      "min_batches": null
+    },
+    {
+      "id": "G2.4.4-INTER",
+      "guidance_section": "2.4.4",
+      "guidance_page": 10,
+      "template_section": "S2_4",
+      "scope": "additive",
+      "title": "Physicochemical interactions in feed",
+      "requirement": "Physicochemical incompatibilities or interactions expected in feed with feed materials, carriers, other approved additives or medicinal products must be documented; for preparations, compatibility between components.",
+      "quote": "Physicochemical incompatibilities or interactions that could be expected in feed with feed materials, carriers, other approved additives or medicinal products must be documented.",
+      "guidance_anchors": ["Physicochemical incompatibilities or interactions that could be expected in feed with feed materials, carriers, other approved additives or medicinal products must be documented"],
+      "applies_when": {},
+      "patterns": ["incompatib", "interaction", "compatib"],
+      "sub_items": [
+        {"label": "Incompatibilities / interactions with feed materials, carriers, other additives or medicinal products", "patterns": ["incompatib", "interactions?", "compatib"], "required": true}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.5.1-USE",
+      "guidance_section": "2.5.1",
+      "guidance_page": 11,
+      "template_section": "S2_5",
+      "scope": "additive",
+      "title": "Proposed mode of use in animal nutrition",
+      "requirement": "Animal species/categories, age group or production stage; use and inclusion level (recommended, minimum or maximum) in feed materials, complete feedingstuffs (12% moisture) or water for drinking; daily dose where used in complementary feed; duration of administration and any withdrawal period; contraindications or restrictions.",
+      "quote": "The use and level of inclusion (as recommended, minimum or maximum concentration) in feed materials, complete feedingstuffs (containing 12% moisture) or water for drinking should be defined, as appropriate.",
+      "guidance_anchors": ["The animal species or categories, age group or production stage of animals", "complete feedingstuffs (containing 12% moisture)", "The duration of administration and any withdrawal period should be indicated"],
+      "applies_when": {},
+      "patterns": ["target\\s+species", "all\\s+animal\\s+species", "poultry", "pigs?", "ruminants", "chickens?", "dogs?", "cats?", "fish", "cattle", "mg/kg", "complete\\s+feed", "12\\s*%\\s*moisture", "88\\s*%\\s*(DM|dry)", "inclusion\\s+level", "use\\s+level", "withdrawal", "duration\\s+of\\s+administration", "contraindicat"],
+      "sub_items": [
+        {"label": "Species / categories / age or production stage", "patterns": ["target\\s+species", "all\\s+animal\\s+species", "poultry", "pigs?", "piglets?", "ruminants", "chickens?", "dogs?", "cats?", "fish", "cattle", "categor"], "required": true},
+        {"label": "Inclusion level (recommended / min / max) in complete feed (12% moisture) or water", "patterns": ["mg/kg\\s+(of\\s+)?(complete\\s+)?(feed|feedingstuff)", "inclusion\\s+level", "use\\s+level", "(maximum|minimum|recommended)\\s+(content|concentration|level)", "mg/L", "12\\s*%\\s*moisture", "88\\s*%\\s*(DM|dry)"], "required": true},
+        {"label": "Duration of administration and withdrawal period", "patterns": ["withdrawal", "duration\\s+of\\s+(administration|use)", "no\\s+withdrawal"], "required": true},
+        {"label": "Contraindications or restrictions", "patterns": ["contraindicat", "restriction", "not\\s+(to\\s+be\\s+)?(used|recommended)"], "required": false}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.5.2.1-USER",
+      "guidance_section": "2.5.2.1",
+      "guidance_page": 11,
+      "template_section": "S2_5",
+      "scope": "additive",
+      "title": "Information related to user safety (chemical substances)",
+      "requirement": "A safety data sheet formatted in accordance with Regulation (EC) No 1907/2006 (REACH) must be provided; if necessary, measures for prevention of occupational risks and means of protection during manufacture, handling, use and disposal.",
+      "quote": "A safety data sheet formatted in accordance with the requirements of Regulation (EC) No 1907/2006 [...] must be provided.",
+      "guidance_anchors": ["A safety data sheet formatted in accordance with the requirements of Regulation (EC) No 1907/"],
+      "applies_when": {},
+      "patterns": ["safety\\s+data\\s+sheet", "\\bSDS\\b", "\\bMSDS\\b", "1907/2006", "REACH", "personal\\s+protective", "\\bPPE\\b", "occupational"],
+      "sub_items": [
+        {"label": "Safety data sheet (Regulation (EC) No 1907/2006 format)", "patterns": ["safety\\s+data\\s+sheet", "\\bSDS\\b", "\\bMSDS\\b"], "required": true},
+        {"label": "Occupational protection measures (if necessary)", "patterns": ["personal\\s+protective", "\\bPPE\\b", "occupational", "respirator", "protective\\s+(gloves|equipment)"], "required": false}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.5.2.3-LABEL",
+      "guidance_section": "2.5.2.3",
+      "guidance_page": 11,
+      "template_section": "S2_5",
+      "scope": "additive",
+      "title": "Labelling requirements",
+      "requirement": "Any specific labelling requirements and, where appropriate, specific conditions for use and handling (including known incompatibilities and contraindications) and instructions for proper use.",
+      "quote": "any specific labelling requirements and, where appropriate, specific conditions for use and handling (including known incompatibilities and contraindications) and instructions for proper use should be indicated.",
+      "guidance_anchors": ["any specific labelling requirements"],
+      "applies_when": {},
+      "patterns": ["label", "instructions\\s+for\\s+use", "directions\\s+for\\s+use", "storage\\s+instructions", "handling"],
+      "sub_items": [
+        {"label": "Specific labelling / conditions for use and handling / instructions", "patterns": ["label", "instructions\\s+for\\s+use", "directions\\s+for\\s+use", "handling"], "required": true}
+      ],
+      "min_batches": null
+    },
+    {
+      "id": "G2.6-METHODS",
+      "guidance_section": "2.6",
+      "guidance_page": 11,
+      "template_section": "S2_6",
+      "scope": "additive",
+      "title": "Methods of analysis and reference samples",
+      "requirement": "Methods to determine the active substance in the additive and, as appropriate, in premixtures and feedingstuffs, suitable for official control (evaluated by the EURL); methods for residues/marker residue in tissues if residues of concern; methods for identity and characteristics (composition, impurities, physical and chemical properties) internationally recognised or fully described.",
+      "quote": "Methods of analysis to determine the active substance(s)/agent(s) in the additive itself and in premixtures and feedingstuffs as appropriate should be submitted. These should be suitable for the official control of the feed additive.",
+      "guidance_anchors": ["These methods will be evaluated by the EU Reference Laboratory (EURL)", "Methods to determine the identity and the characteristics of the additive", "should be internationally recognised or otherwise fully described"],
+      "applies_when": {},
+      "patterns": ["HPLC", "\\bGC\\b", "LC-?MS", "ICP-?(MS|OES|AES)", "\\bAAS\\b", "titrat", "ion[-\\s]exchange", "\\bNMR\\b", "spectro", "EURL", "ISO\\s*17025", "accredit", "validat", "method\\s+of\\s+analysis", "analytical\\s+method", "Ph\\.?\\s*Eur", "\\bEN\\s*(ISO\\s*)?\\d{3,5}", "\\bAOAC\\b", "\\bISO\\s*\\d{3,5}", "reference\\s+sample"],
+      "sub_items": [
+        {"label": "Method for the active substance in the additive", "patterns": ["HPLC", "LC-?MS", "\\bGC\\b", "titrat", "ion[-\\s]exchange", "spectro", "method\\s+of\\s+analysis", "analytical\\s+method"], "required": true},
+        {"label": "Method in premixtures and feedingstuffs (as appropriate)", "patterns": ["(in|for)\\s+(premix\\w*|feed\\w*)", "feed\\s+matri", "EN\\s*ISO\\s*\\d+", "EN\\s*\\d{4,5}"], "required": true},
+        {"label": "Identity/characterisation methods internationally recognised or fully described", "patterns": ["Ph\\.?\\s*Eur", "\\bAOAC\\b", "\\bISO\\s*\\d{3,5}", "\\bEN\\s*\\d{3,5}", "\\bUSP\\b", "\\bFCC\\b", "JECFA", "validat", "fully\\s+described", "accredit", "ISO\\s*17025"], "required": true},
+        {"label": "EURL evaluation / reference samples", "patterns": ["EURL", "reference\\s+laboratory", "reference\\s+samples?"], "required": false}
+      ],
+      "min_batches": null
+    }
+  ]
+}

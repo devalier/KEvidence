@@ -16,4 +16,4 @@ jobs:
       - name: Install pip-audit
         run: pip install pip-audit
       - name: Audit dependencies for known CVEs
-        run: pip-audit -r requirements.txt
+        run: pip-audit -r requirements.txt -r requirements-dev.txt

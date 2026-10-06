@@ -14,10 +14,12 @@ from pathlib import Path
 from typing import Any, Optional
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from openai import OpenAI
+
+import characterisation as charmod
 
 # ---------------------------------------------------------------------------
 # Config
@@ -2197,6 +2199,8 @@ async def chat(body: dict):
         raise HTTPException(400, "message is required")
 
     workbench_context = body.get("context") if isinstance(body.get("context"), dict) else {}
+    if workbench_context.get("workflow_step") == "characterisation":
+        return characterisation_chat(query, workbench_context)
     selected_aop_id = _safe_int(
         workbench_context.get("selected_aop_id")
         or workbench_context.get("aop_id")
@@ -2464,6 +2468,163 @@ async def weight_of_evidence(chemical: str, aop_id: Optional[int] = None):
         "aops": detailed_aops,
         "summary": f"Found {len(detailed_aops)} AOPs associated with '{chemical}'.",
     }
+
+
+# ---------------------------------------------------------------------------
+# Step 0 — substance/product characterisation (feed additives, chemical MVP)
+# ---------------------------------------------------------------------------
+CHAR_CATALOGUE = charmod.load_catalogue()
+CHAR_GUIDANCE_PAGES = charmod.load_guidance_pages()
+
+CHAR_SYSTEM_PROMPT = """You are the KEvidence characterisation assistant for EFSA scientific officers assessing feed additives.
+You answer ONLY from the EFSA FEEDAP Guidance on the identity, characterisation and conditions of use of feed additives
+(EFSA Journal 2017;15(10):5023), supplied below as requirement entries with verbatim quotes and guidance text excerpts.
+
+Rules:
+1. Ground every statement in the supplied guidance entries. Cite the guidance section and page, e.g. (§2.1.3, p.5), and the requirement ID.
+2. Quote the guidance verbatim when the exact wording matters (batch numbers, durations, methods, thresholds).
+3. If the supplied guidance entries do not answer the question, say that the identity/characterisation guidance does not
+   address it (or that it is outside the chemical-characterisation scope), and name the guidance that may apply if one is
+   listed. Never fill gaps from general knowledge, and never invent requirements, numbers or section references.
+4. When a dossier gap summary is supplied, relate your answer to it, but do not assume dossier content beyond it.
+5. Do not draw safety or efficacy conclusions; characterisation supports, but is not, the risk assessment."""
+
+
+def _char_meta(raw: str) -> dict:
+    try:
+        meta = json.loads(raw or "{}")
+    except ValueError:
+        raise HTTPException(400, "meta must be a JSON object")
+    if not isinstance(meta, dict):
+        raise HTTPException(400, "meta must be a JSON object")
+    components = meta.get("components") or []
+    if not isinstance(components, list):
+        raise HTTPException(400, "meta.components must be a list")
+    meta["components"] = [
+        {k: str(c.get(k) or "").strip()[:200] for k in ("name", "cas", "role")}
+        for c in components[:20] if isinstance(c, dict)
+    ]
+    formulations = meta.get("formulations") or []
+    if isinstance(formulations, str):
+        formulations = formulations.splitlines()
+    meta["formulations"] = [str(f).strip()[:100] for f in formulations[:10] if str(f).strip()]
+    meta["authorisation"] = str(meta.get("authorisation") or "").strip()[:300]
+    return meta
+
+
+def _llm_complete(system: str, user: str) -> str:
+    resp = llm.chat.completions.create(
+        model=LLM_MODEL,
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+        temperature=0,
+        max_tokens=2500,
+        response_format={"type": "json_object"},
+    )
+    return resp.choices[0].message.content or ""
+
+
+@app.get("/api/characterisation/guidance")
+async def characterisation_guidance():
+    """Guidance catalogue, grounding status of every requirement, and scope."""
+    return charmod.guidance_status(CHAR_CATALOGUE)
+
+
+@app.get("/api/characterisation/guidance.pdf")
+async def characterisation_guidance_pdf():
+    """The bundled guidance (EFSA Journal 2017;15(10):5023, CC BY-ND 4.0), unmodified."""
+    pdf = charmod.GUIDANCE_DIR / CHAR_CATALOGUE["guidance"]["bundled_file"]
+    if not pdf.exists():
+        raise HTTPException(404, "Guidance PDF not bundled in this instance")
+    return FileResponse(str(pdf), media_type="application/pdf", filename="EFSA_FEEDAP_2017_5023_identity_characterisation.pdf")
+
+
+@app.post("/api/characterisation/analyse")
+def characterisation_analyse(
+    files: list[UploadFile] = File(default=[]),
+    urls: str = Form(""),
+    meta: str = Form("{}"),
+    allow_external_llm: str = Form("false"),
+):
+    """Characterise a feed additive from dossier documents (uploads and/or URLs).
+
+    Documents are processed in memory for this request only and are not stored.
+    The response contains the structured requirement evaluation, the data-gap
+    analysis and the EFSA-structured characterisation in Markdown.
+    """
+    meta_obj = _char_meta(meta)
+    url_list = [u.strip() for u in re.split(r"[\n\r]+", urls or "") if u.strip()]
+    if not files and not url_list:
+        raise HTTPException(400, "Provide at least one document upload or URL.")
+    if len(files) > charmod.MAX_FILES:
+        raise HTTPException(413, f"At most {charmod.MAX_FILES} files per analysis.")
+
+    docs, notes = [], []
+    for upload in files:
+        content = upload.file.read(charmod.MAX_FILE_BYTES + 1)
+        docs.append(charmod.extract_document(upload.filename or "upload", content, f"D{len(docs) + 1}",
+                                             "upload", upload.content_type or ""))
+    for url in url_list[:10]:
+        fetched, fetch_notes = charmod.fetch_url_documents(url, len(docs) + 1)
+        docs.extend(fetched)
+        notes.extend(fetch_notes)
+    if len(url_list) > 10:
+        notes.append(f"{len(url_list) - 10} URL(s) ignored (limit 10 per analysis).")
+
+    result = charmod.analyse_dossier(docs, meta_obj, CHAR_CATALOGUE, CHAR_GUIDANCE_PAGES, notes)
+
+    use_llm = str(allow_external_llm).lower() in ("1", "true", "yes", "on")
+    result["llm"] = {"requested": use_llm, "used": False}
+    if use_llm:
+        if not os.environ.get("OPENAI_API_KEY"):
+            result["llm"]["error"] = "OPENAI_API_KEY is not configured; narrative drafting skipped."
+        else:
+            try:
+                result["narrative"] = charmod.draft_narrative(result, _llm_complete)
+                result["llm"]["used"] = bool(result["narrative"])
+                result["markdown"] = charmod.render_markdown(result, CHAR_CATALOGUE)
+            except Exception as exc:
+                result["llm"]["error"] = f"Narrative drafting failed: {type(exc).__name__}"
+    return result
+
+
+def characterisation_chat(query: str, workbench_context: dict) -> dict:
+    gap_summary = workbench_context.get("characterisation_gaps") or []
+    if not isinstance(gap_summary, list):
+        gap_summary = []
+    gap_terms = " ".join(f"{g.get('id', '')} {g.get('title', '')}" for g in gap_summary[:30] if isinstance(g, dict))
+    guidance_ctx, ids = charmod.guidance_context_for_question(query, CHAR_CATALOGUE, CHAR_GUIDANCE_PAGES)
+    if (not ids or re.search(r"\bgaps?\b|missing|dossier", query, re.I)) and gap_terms:
+        # Questions about "the gaps" are answered from the requirements behind the current gap list.
+        guidance_ctx, ids = charmod.guidance_context_for_question(f"{query} {gap_terms}", CHAR_CATALOGUE,
+                                                                  CHAR_GUIDANCE_PAGES, limit=8)
+    if not guidance_ctx:
+        return {
+            "answer": "I could not match this question to a requirement of the FEEDAP Guidance on the identity, "
+                      "characterisation and conditions of use of feed additives (EFSA Journal 2017;15(10):5023). "
+                      "In step 0 I only answer from that guidance — try naming the topic (e.g. batches, impurities, "
+                      "dusting potential, stability, homogeneity) or the section (e.g. §2.1.4).",
+            "sources": [], "guidance_requirements": [], "no_data": True,
+        }
+    lines = []
+    for g in gap_summary[:40]:
+        if isinstance(g, dict):
+            lines.append(f"- {g.get('id')} (§{g.get('guidance_section')}): {g.get('status')}"
+                         + (f" — {'; '.join(str(m) for m in (g.get('missing') or [])[:3])}" if g.get("missing") else ""))
+    product = workbench_context.get("characterisation_product") or ""
+    user = (f"Guidance entries (FEEDAP 2017, EFSA Journal 15(10):5023):\n\n{guidance_ctx}\n\n---\n\n"
+            f"Dossier gap summary{(' for ' + str(product)) if product else ''}:\n"
+            f"{chr(10).join(lines) if lines else 'No dossier analysed yet.'}\n\n---\n\nQuestion: {query}")
+    try:
+        resp = llm.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[{"role": "system", "content": CHAR_SYSTEM_PROMPT}, {"role": "user", "content": user}],
+            temperature=0.1,
+            max_tokens=1200,
+        )
+        answer = resp.choices[0].message.content
+    except Exception as e:
+        return {"answer": f"I encountered an error querying the LLM: {str(e)}", "sources": [], "guidance_requirements": ids}
+    return {"answer": answer, "sources": [], "guidance_requirements": ids}
 
 
 # Serve frontend
