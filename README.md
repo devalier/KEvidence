@@ -29,8 +29,13 @@ The workbench then supports **uncertainty analysis** (confidence summaries, key 
 
 Assists EFSA scientific officers with the characterisation section of a feed additive assessment.
 
-- **Input:** confidential applicant documents — uploads (PDF, DOCX, XLSX, CSV/TSV, TXT/MD, JSON, HTML) and/or URLs (a PDF/DOCX/XLSX link, or an HTML page whose linked documents are followed). Product form, routes of administration, production type, additive type, and each component (name, CAS, role).
-- **Output:** a characterisation in Markdown that follows Section 2 of the guidance (2.1 Identity … 2.6 Methods of analysis), shown on screen and downloadable, plus a data-gap analysis.
+- **Input:** confidential applicant documents — uploads (PDF, DOCX, XLSX, CSV/TSV, TXT/MD, JSON, HTML) and/or URLs (a PDF/DOCX/XLSX link, or an HTML page whose linked documents are followed). Product form, routes of administration, production type, additive type, current authorisation, preparations/formulations under application, and each component (name, CAS, role).
+- **Output (Markdown, on screen and downloadable):**
+  1. a draft of the opinion's characterisation section in the FEEDAP opinion layout: §1.1.1 *Characterisation of the additive* with the specifications, **Table 1** (product/active substance) and, when preparations are listed, **Table 2** (one column per preparation) — batch-to-batch variation as average (range) [number of batches], substance-related impurities and residual solvents as ranges, `<` below the LOQ, `-` not analysed, footnotes naming the source documents — followed by facts located for the scientific officer's conclusion (e.g. "3/3 batch values meet the specification ≥ 99.5 %") and, for fermentation products, the viable-cell and DNA fields; **Appendix A** with other impurities and physico-chemical/technological properties; §1.1.2 (production microorganism) as an out-of-scope stub;
+  2. the data-gap analysis;
+  3. an evidence map against Section 2 of the guidance (2.1 Identity … 2.6 Methods of analysis).
+
+  KEvidence never writes the Panel's conclusions; it leaves an explicit placeholder for the scientific officer. The public template (`data/guidance/characterisation_template.md`) reproduces only the layout conventions visible in published FEEDAP opinions. An institution can use its own internal template by saving it as `data/guidance/local/characterisation_template.md` (git-ignored) or by setting `KEVIDENCE_CHARACTERISATION_TEMPLATE`; the available placeholders are documented at the top of the public template.
 - **Data-gap analysis:** each of 27 guidance requirements is marked *evidence located*, *partially addressed*, *not located*, *applicability to confirm*, *scientific-officer review* or *not applicable*. Quantitative checks come straight from the guidance: ≥ 5 batches for the specification and ≥ 3 for impurities (§2.1.3, §2.1.4), analyses within the last 5 years, statements of compliance flagged (not sufficient on their own), dusting potential in ≥ 3 batches (§2.1.5), shelf life in ≥ 3 batches (§2.4.1.1), premixture ≥ 6 months and feed ≥ 3 months (§2.4.1.2), water ≥ 48 h (§2.4.1.3), homogeneity ≥ 10 subsamples (§2.4.2). The minimum impurity set depends on production type (chemical synthesis, fermentation, plant-derived, animal-derived, mineral; §2.1.4). Exemptions (flavouring compounds, silage additives, colourants, mineral-based additives) are applied where the guidance gives them. Applicant justifications for omissions are surfaced (guidance p.5: reasons should be given for any omission).
 - **Grounding:** the requirement catalogue (`data/guidance/feedap_2017_5023_chemical_requirements.json`) cites the guidance section and page and quotes it verbatim for every requirement. The guidance PDF is bundled unmodified (CC BY-ND 4.0) and every requirement is re-anchored against its text at start-up; the UI shows how many are anchored and the PDF is served at `/api/characterisation/guidance.pdf`. `tests/test_characterisation.py` fails if any quote, page reference or anchor drifts from the guidance. In step 0 the Evidence Assistant answers only from the guidance entries and refuses questions it cannot ground.
 - **Traceability:** extraction is deterministic (pattern-based); every value carries a `D<n> p.<page>` citation. Statuses say whether evidence was *located*, not whether it is adequate — adequacy stays with the scientific officer.
@@ -118,7 +123,8 @@ The Evidence Assistant uses structured workbench context when answering question
 │   ├── guidance/
 │   │   ├── efsa_2017_5023.pdf         # FEEDAP guidance on identity/characterisation (CC BY-ND 4.0, unmodified)
 │   │   ├── feedap_2017_5023_chemical_requirements.json  # Requirement catalogue with verbatim quotes
-│   │   └── characterisation_template.md                 # Markdown template (guidance Section 2 structure)
+│   │   ├── characterisation_template.md                 # Public output template (FEEDAP opinion layout + evidence map)
+│   │   └── local/                                       # Git-ignored: institution's own template (optional)
 │   ├── aop_ke_mie_ao.tsv              # AOP/event/MIE/AO source data
 │   ├── aop_ke_ker.tsv                 # KER source data
 │   ├── aop_ke_ec.tsv                  # Event component source data
@@ -254,7 +260,7 @@ export BIOACTIVITY_SQLITE_PATH="/path/to/bioactivity.db"
 | `/api/bioactivity/search` | POST | Search locally indexed ToxCast/Tox21/ToxRefDB-style AC50/POD records. |
 | `/api/characterisation/guidance` | GET | Step 0 requirement catalogue and grounding status of each requirement against the guidance text. |
 | `/api/characterisation/guidance.pdf` | GET | The bundled FEEDAP guidance PDF (unmodified). |
-| `/api/characterisation/analyse` | POST | Multipart: `files` (repeatable), `urls` (newline-separated), `meta` (JSON: `product_name`, `applicant`, `dossier_ref`, `product_form`, `routes`, `production_types`, `additive_type`, `components`), `allow_external_llm`. Returns requirement evaluations, gap summary and `markdown`. |
+| `/api/characterisation/analyse` | POST | Multipart: `files` (repeatable), `urls` (newline-separated), `meta` (JSON: `product_name`, `applicant`, `dossier_ref`, `authorisation`, `product_form`, `routes`, `production_types`, `additive_type`, `formulations`, `components`), `allow_external_llm`. Returns requirement evaluations, gap summary and `markdown`. |
 
 ---
 

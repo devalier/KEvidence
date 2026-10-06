@@ -261,3 +261,78 @@ def test_assistant_context_selects_relevant_requirements(catalogue, guidance_pag
     assert "Stauber" in ctx
     ctx, ids = c.guidance_context_for_question("Explain section 2.4.2", catalogue, guidance_pages)
     assert ids[0] == "G2.4.2-HOMOG"
+
+
+# --- Opinion-template layout (Table 1 / Table 2 / Appendix A) -------------------------------
+
+def _rows_by_label(result):
+    return {r["label"].lower(): r for r in result["opinion"]["all_rows"]}
+
+
+def test_table1_values_follow_template_conventions(catalogue):
+    result = _demo(catalogue=catalogue)
+    rows = _rows_by_label(result)
+    assay = rows["assay (hplc)"]
+    assert assay["category"] == "batch_active"
+    assert c.format_row_value(assay, average=True) == "99.8 (99.7–99.9) [3]"
+    assert c.format_row_value(rows["loss on drying"], average=True) == "0.10 (0.09–0.12) [3]"
+    assert rows["guaiacol"]["category"] == "substance_related"
+    assert c.format_row_value(rows["glyoxylic acid"], average=False).startswith("<0.01")
+    assert rows["lead"]["category"] == "other_impurities"            # Appendix A
+    assert c.format_row_value(rows["lead"], average=False) == "<0.5 [3]"
+    assert c.format_row_value(rows["dusting potential"], average=False) == "120–140 [3]"
+
+
+def test_specifications_deduplicated_and_compliance_facts(catalogue):
+    result = _demo(catalogue=catalogue)
+    specs = result["opinion"]["specifications"]
+    assert [(s["comparator"], s["value"]) for s in specs] == [("≥", 99.5), ("≤", 0.5)]
+    facts = result["opinion"]["table1"]["compliance"]
+    assert any(f.startswith("Assay (HPLC): 3/3") for f in facts)
+    assert not any("Assay" in f and "≤ 0.5" in f for f in facts)
+
+
+def test_opinion_section_rendered(catalogue):
+    md = _demo(catalogue=catalogue)["markdown"]
+    assert "## 1.1.1 Characterisation of the additive" in md
+    assert "**Table 1:**" in md and "## Appendix A" in md
+    assert "| Assay (HPLC) (%) | 99.8 (99.7–99.9) [3] | D1 p.1 |" in md
+    assert "<: below the limit of quantification; -: not analysed." in md
+    assert "[Scientific officer to conclude]" in md
+    assert "[^b2b]: Batch-to-batch variation: D1" in md
+
+
+def test_table2_one_column_per_preparation(catalogue):
+    a = c.extract_document("a.txt", b"Product A 50%\nAppearance: beige powder\nAssay (%) | 50.1 | 50.4 | 49.8 | 50.0 | 50.2\n", "D1")
+    b = c.extract_document("b.txt", b"Product B 10%\nAppearance: liquid\nAssay (%) | 10.2 | 10.1 | 9.9\nMethanol (mg/kg) | <10 | <10 | 12\n", "D2")
+    meta = {"product_name": "X", "formulations": ["Product A 50%", "Product B 10%"], "components": [{"name": "X", "role": "Active substance"}]}
+    result = c.analyse_dossier([a, b], meta, catalogue)
+    op = result["opinion"]
+    assert op["doc_formulation_map"] == {"D1": "Product A 50%", "D2": "Product B 10%"}
+    assert op["table1"] is None
+    md = result["markdown"]
+    assert "**Table 2:**" in md
+    assert "| Assay (%) | 50.1 (49.8–50.4) [5] | 10.1 (9.9–10.2) [3] |" in md
+    assert "| Methanol (mg/kg) | - | <10–12 [3] |" in md
+
+
+def test_fermentation_strain_paragraph_fields(catalogue):
+    text = (b"The absence of viable cells of the production strain was tested in three batches analysed in triplicate "
+            b"(1 gram per sample). No viable cells were detected.\n"
+            b"DNA of the production strain was analysed by PCR in three batches in triplicate (1 g per sample); "
+            b"primers targeted a 350 bp region; limit of detection 10 ng per gram of product. No DNA was detected.\n")
+    doc = c.extract_document("strain.txt", text, "D1")
+    result = c.analyse_dossier([doc], {"production_types": ["fermentation"]}, catalogue)
+    ferm = result["opinion"]["fermentation"]
+    assert ferm["viable_cells"]["replicates"] == "triplicate"
+    assert ferm["viable_cells"]["sample_size"] == "1 gram per sample"
+    assert ferm["dna"]["amplicon"] == "350 bp" and ferm["dna"]["lod"] == "10 ng per gram" and ferm["dna"]["method"] == "PCR"
+    assert "Outside this chemical-characterisation MVP" in result["markdown"]
+
+
+def test_local_template_override(tmp_path, catalogue):
+    result = _demo(catalogue=catalogue)
+    custom = tmp_path / "t.md"
+    custom.write_text("<!-- note {{X}} -->\n# {{PRODUCT_NAME}}\n{{OPINION_111}}\n")
+    md = c.render_markdown(result, catalogue, custom)
+    assert md.startswith("# DemoVan 99") and "**Table 1:**" in md and "{{" not in md

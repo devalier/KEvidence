@@ -40,6 +40,9 @@ from urllib.parse import urljoin, urlparse
 GUIDANCE_DIR = Path(os.getenv("KEVIDENCE_GUIDANCE_DIR", str(Path(__file__).resolve().parent / "data" / "guidance")))
 CATALOGUE_PATH = GUIDANCE_DIR / "feedap_2017_5023_chemical_requirements.json"
 TEMPLATE_PATH = GUIDANCE_DIR / "characterisation_template.md"
+# An institution can point this at its own (non-public) opinion template; placeholders are documented in
+# data/guidance/characterisation_template.md. data/guidance/local/ is git-ignored for that purpose.
+LOCAL_TEMPLATE_PATH = Path(os.getenv("KEVIDENCE_CHARACTERISATION_TEMPLATE", str(GUIDANCE_DIR / "local" / "characterisation_template.md")))
 GUIDANCE_PDF_CANDIDATES = ("efsa_2017_5023.pdf", "j.efsa.2017.5023.pdf", "5023.pdf", "guidance_5023.pdf")
 
 logging.getLogger("pypdf").setLevel(logging.ERROR)
@@ -1067,6 +1070,9 @@ def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optio
             "evidence": [],
         })
 
+    meta["formulations"] = [str(f).strip() for f in (meta.get("formulations") or []) if str(f).strip()]
+    component_names = [c["component"].get("name") or "" for c in components]
+    opinion = build_opinion_tables(docs, segments, meta, component_names)
     meta_out = {k: v for k, v in meta.items() if not k.startswith("_")}
     result = {
         "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
@@ -1085,9 +1091,505 @@ def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optio
         "requirements": additive_results,
         "summary": summary,
         "scope_flags": scope_flags,
+        "opinion": opinion,
     }
     result["markdown"] = render_markdown(result, catalogue)
     return result
+
+
+# ---------------------------------------------------------------------------
+# Opinion-template tables (FEEDAP characterisation section layout)
+# ---------------------------------------------------------------------------
+# The FEEDAP opinion characterisation section reports, per product/active
+# substance: specifications; batch-to-batch variation as average (range) with
+# the number of batches in []; substance-related impurities as ranges; and, in
+# Appendix A, other impurities and physico-chemical/technological properties.
+# "<" marks values below the LOQ and "-" parameters not analysed. The values
+# below are extracted as stated in the dossier, each with its source citation.
+
+UNIT_PATTERN = (r"(%\s*(?:w/w|DM)?|g/kg(?:\s*DM)?|mg/kg(?:\s*DM)?|µg/kg|μg/kg|ug/kg|ng\s*(?:WHO-?)?TEQ/kg|ng/kg|"
+                r"CFU/g|cfu/g|log10\s*CFU/g|mg/m\s*(?:3|³)|g/cm\s*(?:3|³)|g/mL|g/ml|g/L|g/l|µm|μm|ppm|ppb)")
+SOLVENTS = ["dichloromethane", "methanol", "ethanol", "acetone", "hexane", "n-hexane", "heptane", "toluene", "isopropanol",
+            "2-propanol", "ethyl acetate", "acetonitrile", "chloroform", "tetrahydrofuran", "cyclohexane", "xylene",
+            "methyl tert-butyl ether", "dimethylformamide", "pyridine", "benzene"]
+OTHER_IMPURITY_TERMS = ["lead", "cadmium", "mercury", "arsenic", "fluorine", "fluoride", "nickel", "chromium", "copper",
+                        "dioxins and dioxin-like PCBs", "dioxins", "dioxin", "dl-PCBs", "PCDD/F", "aflatoxin B1", "aflatoxins",
+                        "ochratoxin A", "zearalenone", "deoxynivalenol", "fumonisins", "T-2", "mycotoxins", "pesticides",
+                        "Salmonella", "Enterobacteriaceae", "Escherichia coli", "E. coli", "yeasts and moulds",
+                        "yeasts and filamentous fungi", "filamentous fungi", "moulds", "yeasts", "Bacillus cereus",
+                        "total aerobic count", "total viable count", "lipopolysaccharides", "endotoxins"]
+PHYS_TERMS = ["dusting potential", "bulk density", "tapped density", "density", "particle size", "particles below 10 µm",
+              "particles below 100 µm", "particles below 50 µm", "particles below 1 µm", "D10", "D50", "D90", "viscosity",
+              "vapour pressure", "pH", "solubility", "melting point", "specific weight"]
+SUBSTANCE_RELATED_CUES = re.compile(r"residual|synthes|impurit|related\s+substance|by-?product|intermediate|solvent", re.I)
+ACTIVE_CUES = re.compile(r"\bassay\b|purity|content|active\s+substance|identified|total\s+amount", re.I)
+OTHER_PARAM_CUES = re.compile(r"loss\s+on\s+drying|moisture|water\s+content|\bash\b|sulphated\s+ash|sulfated\s+ash|"
+                              r"specific\s+(optical\s+)?rotation|\bpH\b|chloride|sulphate|sulfate", re.I)
+SPEC_LINE_CUES = re.compile(r"specification|specified|composition|assay|purity|content|\bspec\b", re.I)
+METHOD_CUES = re.compile(r"\b(HPLC(?:-[A-Z]+)?|LC-MS(?:/MS)?|GC(?:-[A-Z]+)?|ICP-(?:MS|OES|AES)|AAS|titration|"
+                         r"ion[- ]exchange chromatography|Karl Fischer|IC|NMR|IR)\b")
+CELL_SPLIT_RE = re.compile(r"\s*\|\s*|\t+|\s{2,}")
+VALUE_CELL_RE = re.compile(r"^(<|≤|<=)?\s*(\d+(?:[.,]\d+)?)\s*(?:%|mg/kg|g/kg)?$")
+ND_CELL_RE = re.compile(r"^(n\.?d\.?|not\s+detected|absent|negative|<\s*LO[DQ]|below\s+LO[DQ]|<LOQ|<LOD)$", re.I)
+NA_CELL_RE = re.compile(r"^(-|–|n\.?a\.?|not\s+analy[sz]ed)$", re.I)
+
+
+def _parse_cell(cell: str) -> Optional[dict[str, Any]]:
+    cell = cell.strip()
+    m = VALUE_CELL_RE.match(cell)
+    if m:
+        return {"raw": cell, "value": float(m.group(2).replace(",", ".")), "lt": bool(m.group(1)), "na": False}
+    if ND_CELL_RE.match(cell):
+        return {"raw": cell, "value": None, "lt": True, "na": False}
+    if NA_CELL_RE.match(cell):
+        return {"raw": cell, "value": None, "lt": False, "na": True}
+    return None
+
+
+def _unit_from_label(label: str) -> str:
+    units = re.findall(UNIT_PATTERN, label)
+    return re.sub(r"\s+", " ", units[-1]).strip() if units else ""
+
+
+def _clean_label(label: str) -> str:
+    label = re.sub(r"\(\s*" + UNIT_PATTERN + r"\s*\)", "", label)
+    label = re.sub(r",\s*" + UNIT_PATTERN + r"\s*\)", ")", label)
+    return re.sub(r"\s+", " ", label).strip(" :;,-")
+
+
+def _categorise(label: str, line: str, component_names: list[str]) -> str:
+    low = f"{label} {line}".lower()
+    if any(s in low for s in SOLVENTS) or SUBSTANCE_RELATED_CUES.search(label):
+        return "substance_related"
+    if any(t.lower() in label.lower() for t in OTHER_IMPURITY_TERMS):
+        return "other_impurities"
+    if any(t.lower() in label.lower() for t in PHYS_TERMS if t != "pH") or re.search(r"\bpH\b", label):
+        return "physchem" if not OTHER_PARAM_CUES.search(label) or "density" in label.lower() else "batch_other"
+    if OTHER_PARAM_CUES.search(label):
+        return "batch_other"
+    if ACTIVE_CUES.search(label) or any(n and n.lower() in label.lower() for n in component_names):
+        return "batch_active"
+    if SUBSTANCE_RELATED_CUES.search(line):
+        return "substance_related"
+    return "other"
+
+
+def _row(label: str, unit: str, cells: list[dict[str, Any]], seg: "Segment", category: str, n_stated: Optional[int] = None,
+         source: str = "table") -> dict[str, Any]:
+    numeric = [c["value"] for c in cells if c["value"] is not None and not c["lt"]]
+    lt = [c for c in cells if c["lt"]]
+    analysed = [c for c in cells if not c["na"]]
+    return {
+        "label": label, "unit": unit, "category": category, "values": [c["raw"] for c in cells],
+        "n": n_stated or (len(analysed) if source == "table" else 0), "n_stated": bool(n_stated), "numeric": numeric, "below_loq": len(lt),
+        "lt_values": [c["value"] for c in lt if c["value"] is not None], "not_analysed": len(cells) - len(analysed),
+        "citation": cite(seg), "doc_id": seg.doc_id, "source": source,
+    }
+
+
+def _term_regex(term: str) -> re.Pattern:
+    number = r"(?:[<≤]\s*)?\d+(?:[.,]\d+)?"
+    return re.compile(
+        rf"\b{re.escape(term)}\b(?:\s*\([^)]*\))?[^0-9<≤|;]{{0,40}}?({number}(?:\s*(?:,|and|–|-|to)\s*{number})*)\s*{UNIT_PATTERN}",
+        re.I if term not in ("pH", "D10", "D50", "D90") else 0,
+    )
+
+
+NAMED_VALUE_RE = re.compile(r"(?P<name>[A-Za-z][A-Za-z0-9 ,'\-()]{2,60}?)\s*(?::|=)?\s*(?P<lt><|≤)?\s*(?P<value>\d+(?:[.,]\d+)?)\s*"
+                            + r"(?P<unit>" + UNIT_PATTERN + r")")
+NAMED_ND_RE = re.compile(r"(?P<name>[A-Za-z][A-Za-z0-9 '\-]{2,60}?)\s+(?:was\s+)?not\s+detected\s*\((?:LOD|LOQ)\s*(?P<lt>)(?P<value>\d+(?:[.,]\d+)?)\s*"
+                         + r"(?P<unit>" + UNIT_PATTERN + r")\)", re.I)
+TERM_PATTERNS = [(t, _term_regex(t)) for t in sorted(set(SOLVENTS + OTHER_IMPURITY_TERMS + PHYS_TERMS), key=len, reverse=True)]
+
+
+def extract_parameter_rows(segments: list[Segment], component_names: list[str]) -> list[dict[str, Any]]:
+    """Batch tables ("label | v1 | v2 | v3") and analyte statements ("lead < 0.5 mg/kg in three batches")."""
+    rows: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for seg in segments:
+        cells = [c for c in CELL_SPLIT_RE.split(seg.text) if c.strip()]
+        if len(cells) >= 3 and re.search(r"[A-Za-z]", cells[0]) and not BATCH_ID_RE.match(cells[0]) \
+                and not re.match(r"^(batch|lot|parameter|analyte|sample)s?\b", cells[0], re.I):
+            parsed = [_parse_cell(c) for c in cells[1:]]
+            if all(parsed) and sum(1 for p in parsed if not p["na"]) >= 2:
+                label = _clean_label(cells[0])
+                key = (seg.doc_id, label.lower())
+                if label and key not in seen:
+                    seen.add(key)
+                    rows.append(_row(label, _unit_from_label(cells[0]), parsed, seg,
+                                     _categorise(cells[0], seg.text, component_names)))
+                continue
+        count = BATCH_COUNT_RE.search(seg.text)
+        n_stated = None
+        if count:
+            raw = count.group(1).lower()
+            n_stated = NUMBER_WORDS.get(raw, int(raw) if raw.isdigit() else None)
+        taken: list[tuple[int, int]] = []
+        if SUBSTANCE_RELATED_CUES.search(seg.text):
+            body = seg.text.split(":", 1)[1] if ":" in seg.text else seg.text
+            for clause in re.split(r"[;,]", body):
+                m = NAMED_ND_RE.search(clause) or NAMED_VALUE_RE.search(clause)
+                if not m or any(t.lower() in m.group("name").lower() for t in OTHER_IMPURITY_TERMS + PHYS_TERMS):
+                    continue
+                label = _clean_label(m.group("name"))
+                key = (seg.doc_id, label.lower())
+                if not label or key in seen or len(label) > 60:
+                    continue
+                seen.add(key)
+                below = bool(m.group("lt")) or "not detected" in m.group(0).lower()
+                cell = {"raw": f"{'<' if below else ''}{m.group('value')}", "value": float(m.group("value").replace(",", ".")),
+                        "lt": below, "na": False}
+                rows.append(_row(label, re.sub(r"\s+", " ", m.group("unit")).strip(), [cell], seg, "substance_related",
+                                 n_stated, source="statement"))
+        for term, regex in TERM_PATTERNS:
+            for m in regex.finditer(seg.text):
+                if any(m.start() < e and s < m.end() for s, e in taken):
+                    continue
+                taken.append((m.start(), m.end()))
+                parts = re.split(r"\s*(?:,|and|–|-|to)\s*(?=[<≤]?\s*\d)", m.group(1))
+                parsed = [p for p in (_parse_cell(x) for x in parts) if p]
+                is_range = bool(re.search(r"\d\s*(?:–|-|to)\s*[<≤]?\s*\d", m.group(1)))
+                label = term if term[0].isupper() or term in ("pH",) else term.capitalize()
+                key = (seg.doc_id, label.lower())
+                if not parsed or key in seen:
+                    continue
+                seen.add(key)
+                row = _row(label, re.sub(r"\s+", " ", m.group(2)).strip(), parsed, seg,
+                           _categorise(term, seg.text, component_names), n_stated, source="statement")
+                if is_range:
+                    row["stated_range"] = True
+                    row["n"] = n_stated or 0
+                rows.append(row)
+    return rows
+
+
+def _fmt(v: float) -> str:
+    return f"{v:.4g}" if abs(v) < 1e5 else f"{v:.3e}"
+
+
+def format_row_value(row: dict[str, Any], average: bool) -> str:
+    """Average (range) [n] for batch-to-batch variation; range [n] otherwise. '<' = below LOQ; '-' = not analysed."""
+    n = f" [{row['n']}]" if row["n"] else " [n not stated]"
+    numeric, lts = row["numeric"], row["lt_values"]
+    if not numeric and not row["below_loq"]:
+        return "-"
+    if not numeric:
+        return (f"<{_fmt(max(lts))}" if lts else "<LOQ") + n
+    lo, hi = min(numeric), max(numeric)
+    low_txt = f"<{_fmt(max(lts))}" if row["below_loq"] and lts else ("<LOQ" if row["below_loq"] else _fmt(lo))
+    if average and not row["below_loq"] and len(numeric) > 1 and not row.get("stated_range"):
+        decimals = max((len(v.split(".")[1]) if "." in v else 0) for v in (str(x).replace(",", ".") for x in row["values"]))
+        return f"{sum(numeric) / len(numeric):.{decimals}f} ({_fmt(lo)}–{_fmt(hi)}){n}"
+    if len(numeric) == 1 and not row["below_loq"]:
+        return f"{_fmt(lo)}{n}"
+    return f"{low_txt}–{_fmt(hi)}{n}" if (row["below_loq"] or lo != hi) else f"{_fmt(lo)}{n}"
+
+
+def extract_specifications(segments: list[Segment]) -> list[dict[str, Any]]:
+    specs, seen = [], set()
+    for seg in segments:
+        if not SPEC_LINE_CUES.search(seg.text):
+            continue
+        for clause in re.split(r";", seg.text):
+            for m in SPEC_RE.finditer(clause):
+                before = clause[:m.start()]
+                label = _clean_label(re.split(r":", before)[-1]) or _clean_label(before)
+                label = re.sub(r"^(specification|composition|spec)\s*", "", label, flags=re.I).strip(" :") or "Active substance"
+                comparator = {"not less than": "≥", "min": "≥", "min.": "≥", "minimum": "≥", ">=": "≥",
+                              "not more than": "≤", "max": "≤", "max.": "≤", "maximum": "≤", "<=": "≤"}.get(m.group(1).lower(), m.group(1))
+                key = (comparator, m.group(2), m.group(3))
+                method = METHOD_CUES.search(clause)
+                if key in seen:
+                    existing = next(sp for sp in specs if (sp["comparator"], sp["raw_value"], sp["unit"]) == key)
+                    existing["also_stated"].append(f"{label} ({cite(seg)})")
+                    if method and not existing["method"]:
+                        existing["method"] = method.group(1)
+                    continue
+                seen.add(key)
+                specs.append({"label": label, "comparator": comparator, "raw_value": m.group(2), "also_stated": [],
+                              "value": float(m.group(2).replace(",", ".")),
+                              "unit": m.group(3), "text": f"{comparator} {m.group(2)} {m.group(3)}",
+                              "method": method.group(1) if method else None, "citation": cite(seg)})
+    return specs
+
+
+def _spec_compliance(rows: list[dict[str, Any]], specs: list[dict[str, Any]]) -> list[str]:
+    facts = []
+    for spec in specs:
+        labels = [spec["label"]] + [a.rsplit(" (", 1)[0] for a in spec.get("also_stated", [])]
+        words = {w for lab in labels for w in re.findall(r"[a-z]{4,}", lab.lower())}
+        for row in rows:
+            if row["category"] not in ("batch_active", "batch_other") or not row["numeric"]:
+                continue
+            row_words = set(re.findall(r"[a-z]{4,}", row["label"].lower()))
+            if not (words & row_words):
+                continue
+            if spec["comparator"] == "≥":
+                ok = sum(1 for v in row["numeric"] if v >= spec["value"])
+            elif spec["comparator"] == "≤":
+                ok = sum(1 for v in row["numeric"] if v <= spec["value"]) + row["below_loq"]
+            else:
+                continue
+            total = len(row["numeric"]) + (row["below_loq"] if spec["comparator"] == "≤" else 0)
+            facts.append(f"{row['label']}: {ok}/{total} batch values meet the specification {spec['text']} "
+                         f"({row['citation']}; specification {spec['citation']})")
+    return list(dict.fromkeys(facts))
+
+
+def _doc_formulation_map(docs: list[Document], formulations: list[str]) -> dict[str, Optional[str]]:
+    mapping: dict[str, Optional[str]] = {}
+    for doc in docs:
+        text = " ".join(doc.pages).lower()
+        counts = [(text.count(f.lower()), f) for f in formulations if f]
+        counts = [c for c in counts if c[0]]
+        mapping[doc.doc_id] = max(counts)[1] if counts else None
+    return mapping
+
+
+def _first_line(segments: list[Segment], pattern: str) -> Optional[Segment]:
+    regex = re.compile(pattern, re.I)
+    return next((s for s in segments if regex.search(s.text)), None)
+
+
+def fermentation_fields(segments: list[Segment]) -> dict[str, dict[str, Any]]:
+    """Fields the opinion template asks for on viable cells and DNA of the production strain."""
+    out: dict[str, dict[str, Any]] = {}
+    for key, cue in (("viable_cells", r"viable\s+cells|production\s+(strain|organism).{0,40}(absence|detected)"),
+                     ("dna", r"\bDNA\b")):
+        lines = [s for s in segments if re.search(cue, s.text, re.I)]
+        if not lines:
+            continue
+        text = " ".join(s.text for s in lines)
+        batches = BATCH_COUNT_RE.search(text)
+        replicate = re.search(r"\b(duplicate|triplicate|quadruplicate)\b", text, re.I)
+        sample = re.search(r"(\d+(?:[.,]\d+)?)\s*(g|gram|grams|mL)\s+(?:per\s+sample|of\s+(?:the\s+)?(?:product|sample))", text, re.I)
+        fields = {
+            "batches": batches.group(0) if batches else None,
+            "replicates": replicate.group(1) if replicate else None,
+            "sample_size": f"{sample.group(1)} {sample.group(2)} per sample" if sample else None,
+            "result": (re.search(r"(no\s+(viable\s+cells|DNA)[^.]*|not\s+detected[^.]*|absen[ct][^.]*)", text, re.I) or [None])[0],
+            "citations": sorted({cite(s) for s in lines})[:5],
+        }
+        if key == "dna":
+            primers = re.search(r"(\d+)\s*bp", text)
+            lod = re.search(r"(?:limit\s+of\s+detection|LOD)[^0-9]{0,30}(\d+(?:[.,]\d+)?)\s*(ng|pg|µg|μg)", text, re.I)
+            fields["amplicon"] = f"{primers.group(1)} bp" if primers else None
+            fields["lod"] = f"{lod.group(1)} {lod.group(2)} per gram" if lod else None
+            fields["method"] = "PCR" if re.search(r"\bPCR\b", text) else None
+        out[key] = fields
+    return out
+
+
+def build_opinion_tables(docs: list[Document], segments: list[Segment], meta: dict[str, Any],
+                         component_names: list[str]) -> dict[str, Any]:
+    formulations = [f for f in meta.get("formulations", []) if f]
+    doc_map = _doc_formulation_map(docs, formulations) if formulations else {}
+    rows = extract_parameter_rows(segments, component_names)
+    specs = extract_specifications(segments)
+    columns: dict[str, dict[str, Any]] = {}
+
+    def column(name: str, doc_ids: Optional[set[str]]) -> dict[str, Any]:
+        segs = [s for s in segments if doc_ids is None or s.doc_id in doc_ids]
+        col_rows = [r for r in rows if doc_ids is None or r["doc_id"] in doc_ids]
+        col_specs = [sp for sp in specs if doc_ids is None or sp["citation"].split()[0] in doc_ids]
+        form = _first_line(segs, r"physical\s+(form|state)|appearance|\b(powder|granul\w*|liquid|crystalline|microgranul\w*)\b")
+        return {"name": name, "rows": col_rows, "specs": col_specs, "compliance": _spec_compliance(col_rows, col_specs),
+                "physical_form": {"text": form.text[:160], "citation": cite(form)} if form else None,
+                "documents": sorted({r["doc_id"] for r in col_rows} | {sp["citation"].split()[0] for sp in col_specs})}
+
+    if formulations:
+        unattributed = {d.doc_id for d in docs if not doc_map.get(d.doc_id)}
+        table1 = column("Active substance / product", unattributed) if unattributed else None
+        for f in formulations:
+            columns[f] = column(f, {d for d, name in doc_map.items() if name == f})
+    else:
+        table1 = column(meta.get("product_name") or "Additive", None)
+    return {"table1": table1, "table2": columns, "doc_formulation_map": doc_map, "all_rows": rows, "specifications": specs,
+            "fermentation": fermentation_fields(segments)}
+
+
+# ---------------------------------------------------------------------------
+# Opinion-template rendering (§1.1.1, Appendix A, §1.1.2)
+# ---------------------------------------------------------------------------
+
+def _doc_names(result: dict[str, Any], doc_ids: set[str]) -> str:
+    names = [f"{d['doc_id']} {d['name']}" for d in result["documents"] if d["doc_id"] in doc_ids]
+    return "; ".join(names) or "[not located — Annex file names to be added]"
+
+
+def _table_rows_md(col: dict[str, Any], categories: tuple[str, ...], average: bool) -> list[tuple[str, str, str]]:
+    out = []
+    for r in col["rows"]:
+        if r["category"] in categories:
+            label = f"{r['label']} ({r['unit']})" if r["unit"] and r["unit"] not in r["label"] else r["label"]
+            out.append((label, format_row_value(r, average), r["citation"]))
+    return out
+
+
+def _table1_md(col: dict[str, Any], title: str) -> list[str]:
+    lines = [f"**Table 1:** Data on specifications, batch-to-batch variation and substance-related impurities of {title}. "
+             "The data presented are average values and (range) for batch-to-batch variation and ranges for all other "
+             "parameters. The number of batches analysed per parameter or group of parameters is indicated in [].", "",
+             "| Parameter | Value | Source |", "|---|---|---|", "| **Specifications**⁽¹⁾ | | |"]
+    specs = col["specs"]
+    lines += [f"| {_md_escape(sp['label'])}{(' (also stated as: ' + _md_escape(', '.join(sp['also_stated'])) + ')') if sp.get('also_stated') else ''}"
+              f" | {_md_escape(sp['text'])} | {sp['citation']} |" for sp in specs] or \
+             ["| Active substance (units) | **[not located]** | — |"]
+    lines.append("| **Batch-to-batch variation** | | |")
+    b2b = _table_rows_md(col, ("batch_active", "batch_other"), True)
+    lines += [f"| {_md_escape(a)} | {_md_escape(b)} | {c} |" for a, b, c in b2b] or ["| Active substance (units) | **[not located]** | — |"]
+    lines.append("| **Substance-related impurities** | | |")
+    imp = _table_rows_md(col, ("substance_related",), False)
+    lines += [f"| {_md_escape(a)} | {_md_escape(b)} | {c} |" for a, b, c in imp] or ["| Residual solvents / synthesis impurities (units) | **[not located]** | — |"]
+    methods = sorted({sp["method"] for sp in specs if sp.get("method")})
+    lines += ["", "Abbreviations: DM: dry matter.  ",
+              f"⁽¹⁾ Method of analysis: {', '.join(methods) if methods else '[not located]'} // specifications set in the authorising "
+              "regulation, where applicable: [to be completed].  ",
+              "<: below the limit of quantification; -: not analysed.", ""]
+    return lines
+
+
+def _table2_md(result: dict[str, Any], cols: dict[str, dict[str, Any]], title: str) -> list[str]:
+    names = list(cols)
+    head = "| | " + " | ".join(_md_escape(n) for n in names) + " |"
+    sep = "|---|" + "---|" * len(names)
+    lines = [f"**Table 2:** Data on the specifications, batch-to-batch variation and substance-related impurities of preparations "
+             f"containing {title}. The data presented are average values and (range) for batch-to-batch variation and ranges "
+             "for all other parameters. The number of batches analysed per parameter or group of parameters is indicated in [].",
+             "", head, sep]
+
+    def section(label: str, categories: tuple[str, ...], average: bool, spec: bool = False):
+        lines.append(f"| **{label}** |" + " |" * len(names))
+        labels: list[str] = []
+        per_col: dict[str, dict[str, str]] = {}
+        for n in names:
+            per_col[n] = {}
+            if spec:
+                for sp in cols[n]["specs"]:
+                    per_col[n].setdefault(sp["label"], sp["text"])
+            else:
+                for a, b, _c in _table_rows_md(cols[n], categories, average):
+                    per_col[n].setdefault(a, b)
+            for k in per_col[n]:
+                if k not in labels:
+                    labels.append(k)
+        if not labels:
+            lines.append("| **[not located]** |" + " |" * len(names))
+        for k in labels:
+            lines.append(f"| {_md_escape(k)} | " + " | ".join(_md_escape(per_col[n].get(k, "-")) for n in names) + " |")
+
+    section("Specifications⁽¹⁾", (), False, spec=True)
+    lines.append("| **Physical form** | " + " | ".join(
+        _md_escape(cols[n]["physical_form"]["text"]) if cols[n]["physical_form"] else "**[not located]**" for n in names) + " |")
+    section("Batch-to-batch variation", ("batch_active", "batch_other"), True)
+    section("Substance-related impurities", ("substance_related",), False)
+    lines += ["", "Abbreviations: DM: dry matter.  ", "⁽¹⁾ Method of analysis: [to be completed].  ",
+              "<: below the limit of quantification; -: not analysed.", ""]
+    unattributed = [d for d, f in result["opinion"]["doc_formulation_map"].items() if not f]
+    if unattributed:
+        lines += [f"*Documents not attributed to a preparation (name not found in the document): {', '.join(unattributed)}.*", ""]
+    return lines
+
+
+def _opinion_111_md(result: dict[str, Any]) -> str:
+    op = result["opinion"]
+    meta = result["meta"]
+    active = next((c for c in result["components"] if re.search(r"active", c["component"].get("role") or "", re.I)),
+                  result["components"][0] if result["components"] else None)
+    active_name = (active["component"].get("name") or active["component"].get("cas")) if active else "[active substance]"
+    t1, t2 = op["table1"], op["table2"]
+    all_cols = ([t1] if t1 else []) + list(t2.values())
+    specs = [sp for col in all_cols for sp in col["specs"]]
+    spec_txt = "; ".join(f"{sp['label']} {sp['text']}" for sp in specs) or "**[specification not located]**"
+    rows = [r for col in all_cols for r in col["rows"]]
+    b2b_docs = {r["doc_id"] for r in rows if r["category"] in ("batch_active", "batch_other")}
+    imp_docs = {r["doc_id"] for r in rows if r["category"] == "substance_related"}
+    app_docs = {r["doc_id"] for r in rows if r["category"] in ("other_impurities", "physchem", "other")}
+    tables = "Table 1" + (" and Table 2" if t2 and t1 else "") if t1 else ("Table 2" if t2 else "Table 1")
+    lines = [f"The specifications of the feed additive are: {_md_escape(spec_txt)}.", "",
+             (f"Current authorisation (as entered by the scientific officer): {_md_escape(meta['authorisation'])}. "
+              "**[If authorised: state the authorised minimum content.]**" if meta.get("authorisation") else
+              "The additive is currently authorised with a minimum content of **[to be completed, or delete if this is a new application]**."),
+             "",
+             f"The data provided by the applicant on the batch-to-batch variation[^b2b] and substance-related impurities[^imp] "
+             f"of the additive are reported in {tables}. Data on other impurities and physico-chemical and technological "
+             f"properties[^phys] are reported in Appendix A.", ""]
+    if t1:
+        lines += _table1_md(t1, f"the product/active substance {active_name}")
+    if t2:
+        lines += _table2_md(result, t2, active_name)
+    facts = [f for col in all_cols for f in col["compliance"]]
+    flags = [f["message"] for r in result["requirements"] for f in r.get("flags", [])]
+    lines += ["**Facts located for the scientific officer's conclusion** (not a conclusion):", ""]
+    lines += [f"- {_md_escape(f)}" for f in facts] or ["- No batch values could be compared automatically with a specification."]
+    solvent_rows = [r for r in rows if r["category"] == "substance_related" and any(s in r["label"].lower() for s in SOLVENTS)]
+    if solvent_rows:
+        lines.append("- Residual solvents reported: " + "; ".join(f"{r['label']} ({r['unit']}) {format_row_value(r, False)} ({r['citation']})"
+                                                                  for r in solvent_rows)
+                     + " — compare with the VICH GL18 limits cited in guidance §2.1.4.")
+    else:
+        lines.append("- No residual-solvent results located (guidance §2.1.4 requires residual solvents to be identified and quantified).")
+    lines += [f"- ⚠ {_md_escape(f)}" for f in dict.fromkeys(flags)]
+    gaps = [r for r in result["requirements"] if r["guidance_section"].startswith("2.1") and r["status"] in ("gap", "partial")]
+    lines += [f"- Open point §{r['guidance_section']} {r['title']}: {_md_escape('; '.join(r['missing'][:2]))}" for r in gaps]
+    lines += ["", "> **[Scientific officer to conclude]** on compliance with the specifications (set by the applicant or in the "
+              "authorising regulation), on whether the microbial contamination and impurity levels raise concern, and on residual "
+              "solvents relative to the VICH limits — or to identify levels that warrant monitoring during manufacturing.", ""]
+    if "fermentation" in meta.get("production_types", []):
+        ferm = op["fermentation"]
+        lines += ["**Production strain in the final product (fermentation products):**", ""]
+        vc, dna = ferm.get("viable_cells"), ferm.get("dna")
+
+        def field(d, k):
+            return _md_escape(d.get(k)) if d and d.get(k) else "**[not located]**"
+        lines += [f"- Viable cells of the production strain: batches {field(vc, 'batches')}; replicates {field(vc, 'replicates')}; "
+                  f"sample size {field(vc, 'sample_size')}; result {field(vc, 'result')}"
+                  + (f" ({', '.join(vc['citations'])})" if vc else "") + ".",
+                  f"- DNA of the production strain: method {field(dna, 'method')}; batches {field(dna, 'batches')}; replicates "
+                  f"{field(dna, 'replicates')}; sample size {field(dna, 'sample_size')}; amplicon {field(dna, 'amplicon')}; "
+                  f"LOD {field(dna, 'lod')}; result {field(dna, 'result')}" + (f" ({', '.join(dna['citations'])})" if dna else "") + ".",
+                  "", "*Guidance §2.1.4 requires the absence of production organisms to be confirmed and, for GMM or strains carrying "
+                  "AMR genes, the absence of their DNA to be demonstrated. The methodology details (replicates, sample size, LOD) follow "
+                  "the EFSA Scientific Committee requirements referenced by the opinion template, not the 2017 guidance.*", ""]
+    lines += [f"[^b2b]: Batch-to-batch variation: {_doc_names(result, b2b_docs)}",
+              f"[^imp]: Substance-related impurities / residual solvents: {_doc_names(result, imp_docs)}",
+              f"[^phys]: Other impurities and physical properties: {_doc_names(result, app_docs)}"]
+    return "\n".join(lines)
+
+
+def _appendix_a_md(result: dict[str, Any]) -> str:
+    op = result["opinion"]
+    cols = ([op["table1"]] if op["table1"] else []) + list(op["table2"].values())
+    lines = ["**Table A.1:** Other impurities and physico-chemical and technological properties of the additive "
+             "(ranges; number of batches in []). <: below the limit of quantification; -: not analysed.", "",
+             "| Group | Parameter | Value | Product | Source |", "|---|---|---|---|---|"]
+    group_names = {"other_impurities": "Other impurities", "physchem": "Physico-chemical / technological", "other": "Other parameters"}
+    count = 0
+    for col in cols:
+        for r in col["rows"]:
+            if r["category"] in group_names:
+                count += 1
+                label = f"{r['label']} ({r['unit']})" if r["unit"] and r["unit"] not in r["label"] else r["label"]
+                lines.append(f"| {group_names[r['category']]} | {_md_escape(label)} | {_md_escape(format_row_value(r, False))} | "
+                             f"{_md_escape(col['name'])} | {r['citation']} |")
+    if not count:
+        lines.append("| — | **[no values located]** | | | |")
+    lines += ["", "**Technological properties (stability, homogeneity) — evidence located:**", ""]
+    tech = [r for r in result["requirements"] if r["guidance_section"].startswith("2.4") and r["status"] != "not_applicable"]
+    for r in tech:
+        subs = [sb for sb in r.get("sub_items", []) if sb["located"] and sb.get("snippet")]
+        ev = "; ".join(f"[{sb['citations'][0]}] {sb['snippet'][:140]}" for sb in subs[:2]) or "**[not located]**"
+        lines.append(f"- §{r['guidance_section']} {r['title']} — {_status_md(r['status'])}: {_md_escape(ev)}")
+    return "\n".join(lines)
+
+
+def _opinion_112_md(result: dict[str, Any]) -> str:
+    if "fermentation" not in result["meta"].get("production_types", []):
+        return "*Not applicable unless the additive is, or is produced by, a microorganism.*"
+    return ("**[Outside this chemical-characterisation MVP — to be completed by the scientific officer.]** Characterisation of the "
+            "production strain (deposition, taxonomic identification by WGS, genetic modification, antimicrobial resistance genes and "
+            "susceptibility, toxins and virulence factors, antimicrobial activity) follows the FEEDAP microorganism guidance "
+            "(EFSA Journal 2018;16(3):5206) referred to in guidance §2.2.1.2 and §2.2.2.2.")
 
 
 # ---------------------------------------------------------------------------
@@ -1254,8 +1756,10 @@ def _grounding_section_md(result: dict[str, Any], catalogue: dict[str, Any]) -> 
     return "\n".join(lines)
 
 
-def render_markdown(result: dict[str, Any], catalogue: dict[str, Any], template_path: Path = TEMPLATE_PATH) -> str:
-    template = template_path.read_text(encoding="utf-8")
+def render_markdown(result: dict[str, Any], catalogue: dict[str, Any], template_path: Optional[Path] = None) -> str:
+    if template_path is None:
+        template_path = LOCAL_TEMPLATE_PATH if LOCAL_TEMPLATE_PATH.exists() else TEMPLATE_PATH
+    template = re.sub(r"<!--.*?-->\s*", "", template_path.read_text(encoding="utf-8"), flags=re.S)  # authoring notes
     meta = result["meta"]
     by_section: dict[str, list[str]] = {}
     for res in result["requirements"]:
@@ -1281,6 +1785,9 @@ def render_markdown(result: dict[str, Any], catalogue: dict[str, Any], template_
         "GAP_ANALYSIS": _gap_table_md(result),
         "GROUNDING": _grounding_section_md(result, catalogue),
         "CAVEATS": caveats,
+        "OPINION_111": _opinion_111_md(result),
+        "APPENDIX_A": _appendix_a_md(result),
+        "OPINION_112": _opinion_112_md(result),
     }
     for section in catalogue["template_sections"]:
         token = section["token"]

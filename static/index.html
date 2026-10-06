@@ -295,6 +295,7 @@
           <div><label for="charProductName">Additive / product name</label><input id="charProductName" placeholder="e.g., trade name of the additive"></div>
           <div><label for="charApplicant">Applicant</label><input id="charApplicant" placeholder="Optional"></div>
           <div><label for="charDossierRef">Dossier / question reference</label><input id="charDossierRef" placeholder="e.g., FEED-2024-XXXXX / EFSA-Q-2024-XXXXX"></div>
+          <div><label for="charAuthorisation">Current authorisation (if any)</label><input id="charAuthorisation" placeholder="e.g., authorised as 2b… with minimum content of …; or new application"></div>
           <div><label for="charForm">Physical form (§2.1.5)</label><select id="charForm"><option value="">Not stated</option><option value="solid">Solid</option><option value="liquid">Liquid</option></select></div>
           <div><label for="charAdditiveType">Additive type (exemptions in §2.4.1.2, §2.4.2)</label><select id="charAdditiveType"><option value="">Not stated</option><option value="none_of_these">None of these</option><option value="flavouring_compound">Flavouring compound</option><option value="silage_additive">Silage additive</option><option value="colourant">Colourant (feed / ornamental birds or fish)</option></select></div>
         </div>
@@ -302,6 +303,8 @@
         <div class="check-row" id="charRoutes"><label><input type="checkbox" value="feed"> Feedingstuffs</label><label><input type="checkbox" value="premixture"> Premixtures</label><label><input type="checkbox" value="water"> Water for drinking</label></div>
         <label>Production type — sets the minimum impurity set of §2.1.4</label>
         <div class="check-row" id="charProduction"><label><input type="checkbox" value="chemical_synthesis"> Chemical synthesis</label><label><input type="checkbox" value="fermentation"> Fermentation</label><label><input type="checkbox" value="plant_derived"> Plant-derived</label><label><input type="checkbox" value="animal_derived"> Animal-derived</label><label><input type="checkbox" value="mineral"> Mineral / trace-element compound</label></div>
+        <label for="charFormulations" style="margin-top:12px">Preparations / formulations under application (one per line — gives Table 2 with one column each)</label>
+        <textarea id="charFormulations" style="min-height:60px" placeholder="e.g., Product A 50%&#10;Product B 10% (leave empty for a single product: Table 1 only)"></textarea>
         <h3>Components</h3>
         <p class="muted">Enter each active substance and other component (carriers, formulants) of the product. Leave empty to auto-detect components from valid CAS numbers in the documents.</p>
         <table class="sample-table comp-table"><thead><tr><th>Name</th><th>CAS No</th><th>Role</th><th></th></tr></thead><tbody id="charComponents"></tbody></table>
@@ -889,6 +892,7 @@ function characterisationMeta() {
   return {
     product_name: fieldValue('charProductName'), applicant: fieldValue('charApplicant'), dossier_ref: fieldValue('charDossierRef'),
     product_form: fieldValue('charForm'), additive_type: fieldValue('charAdditiveType'),
+    authorisation: fieldValue('charAuthorisation'), formulations: fieldValue('charFormulations').split('\n').map(s => s.trim()).filter(Boolean),
     routes: checkedValues('charRoutes'), production_types: checkedValues('charProduction'), components
   };
 }
@@ -959,7 +963,7 @@ function renderCharacterisation() {
     <table class="sample-table"><thead><tr><th>§</th><th>Requirement</th><th>Scope</th><th>Status</th><th>Missing / to clarify</th></tr></thead><tbody>
     ${rows.filter(r => r.status !== 'not_applicable').map(r => `<tr><td>${escapeHtml(r.guidance_section)}</td><td>${escapeHtml(r.title)}<br><span class="muted">${escapeHtml(r.id)}</span></td><td>${escapeHtml(r.scope)}</td><td class="status-${escapeHtml(r.status)}">${escapeHtml(STATUS_TEXT[r.status] || r.status)}</td><td>${(r.missing || []).slice(0, 4).map(escapeHtml).join('<br>') || '—'}</td></tr>`).join('')}
     </tbody></table>
-    <h3>Characterisation (EFSA FEEDAP Section 2 structure)</h3>
+    <h3>Characterisation draft (FEEDAP opinion layout) and evidence map</h3>
     <div class="actions"><button class="secondary" id="charViewRendered">Rendered</button><button class="ghost" id="charViewSource">Markdown source</button></div>
     <div id="charMarkdownView" class="md-view">${renderMarkdown(c.markdown || '')}</div>`;
   $('charViewRendered').addEventListener('click', () => { $('charMarkdownView').className = 'md-view'; $('charMarkdownView').innerHTML = renderMarkdown(c.markdown || ''); });
@@ -968,6 +972,7 @@ function renderCharacterisation() {
 }
 function inlineMarkdown(text) {
   return escapeHtml(text)
+    .replace(/\[\^([A-Za-z0-9_-]+)\]/g, '<sup>[$1]</sup>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')

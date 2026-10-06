@@ -6,3 +6,4 @@ __pycache__/
 server.log
 *.db
 .DS_Store
+data/guidance/local/

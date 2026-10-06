@@ -2504,6 +2504,11 @@ def _char_meta(raw: str) -> dict:
         {k: str(c.get(k) or "").strip()[:200] for k in ("name", "cas", "role")}
         for c in components[:20] if isinstance(c, dict)
     ]
+    formulations = meta.get("formulations") or []
+    if isinstance(formulations, str):
+        formulations = formulations.splitlines()
+    meta["formulations"] = [str(f).strip()[:100] for f in formulations[:10] if str(f).strip()]
+    meta["authorisation"] = str(meta.get("authorisation") or "").strip()[:300]
     return meta
 
 
