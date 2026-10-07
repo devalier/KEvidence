@@ -1,7 +1,7 @@
 <!--
 KEvidence step 0 output template.
 Placeholders ({{NAME}}) are filled by characterisation.render_markdown():
-  PRODUCT_NAME, HEADER, OPINION_111 (characterisation of the additive: specifications, Table 1/Table 2, facts for the
+  PRODUCT_NAME, HEADER, DETECTED (what was identified from the documents), OPINION_111 (characterisation of the additive: specifications, Table 1/Table 2, facts for the
   conclusion, production-strain paragraphs for fermentation products), APPENDIX_A (other impurities, physico-chemical and
   technological properties), OPINION_112 (production microorganism; outside the MVP), GAP_ANALYSIS, DOCUMENT_REGISTER,
   S2_1 ... S2_6 (evidence map against guidance Sections 2.1-2.6), GROUNDING, CAVEATS.
@@ -12,6 +12,10 @@ KEVIDENCE_CHARACTERISATION_TEMPLATE to its path; it may use any subset of the pl
 # Characterisation of the additive — {{PRODUCT_NAME}}
 
 {{HEADER}}
+
+## Identified from the uploaded documents
+
+{{DETECTED}}
 
 ## 1.1.1 Characterisation of the additive
 

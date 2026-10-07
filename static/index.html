@@ -194,6 +194,9 @@
   .sample-table th, .sample-table td { border-bottom: 1px solid var(--surface2); padding: 9px 7px; text-align: left; vertical-align: top; }
   .sample-table th { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
   .sample-table a { color: var(--accent); font-weight: 700; }
+  details.panel > summary { cursor: pointer; list-style: revert; }
+  details.panel[open] > summary { margin-bottom: 12px; }
+  .detected-table td:first-child { color: var(--text2); width: 30%; }
   .check-row { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 0; }
   .check-row label { display: inline-flex; align-items: center; gap: 6px; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--text); font-size: 13px; margin: 0; }
   .check-row input { width: auto; }
@@ -285,12 +288,24 @@
     <section id="characterisation" class="tab-content">
       <div class="panel">
         <h2>0. Substance / product characterisation</h2>
-        <p class="help">Characterise a feed additive — and, for products, mixtures and formulations, <strong>each component</strong> — before hazard identification. KEvidence reads the applicant's documents (uploads or URLs: technical dossier sections, specifications, certificates of analysis, study reports), locates the evidence for each requirement of the <strong>FEEDAP Guidance on the identity, characterisation and conditions of use of feed additives</strong> (EFSA Journal 2017;15(10):5023), and produces a characterisation in Markdown following Section 2 of the guidance, with a data-gap analysis. This MVP covers <strong>chemical characterisation</strong>; production-strain characterisation is out of scope.</p>
+        <p class="help">Upload the applicant's documents (technical dossier sections, specifications, certificates of analysis, study reports). KEvidence identifies the additive and its components from them, drafts the characterisation in the FEEDAP opinion layout (§1.1.1, Table 1/2, Appendix A) and lists the data gaps against the <strong>FEEDAP Guidance on the identity, characterisation and conditions of use of feed additives</strong> (EFSA Journal 2017;15(10):5023). MVP: chemical characterisation, including plant extracts by their constituents; production-strain characterisation is out of scope.</p>
         <div id="charGuidanceStatus" class="muted">Loading guidance grounding status…</div>
       </div>
 
       <div class="panel">
-        <h3>Product</h3>
+        <h3>Step 1 — Add the applicant's documents (confidential)</h3>
+        <div class="grid">
+          <div><label for="charFiles">Upload documents</label><input id="charFiles" type="file" multiple accept=".pdf,.docx,.xlsx,.xlsm,.csv,.tsv,.txt,.md,.json,.html,.htm"><div id="charFileList" class="muted" style="margin-top:6px"></div></div>
+          <div><label for="charUrls">…or document URLs (one per line)</label><textarea id="charUrls" placeholder="https://… (PDF, DOCX, XLSX or an HTML page linking to them)"></textarea></div>
+        </div>
+        <h3>Step 2 — Run</h3>
+        <div class="actions"><button class="primary" id="charAnalyseBtn" disabled>Characterise from documents</button><span class="muted" id="charRunHint" style="align-self:center">Add at least one document or URL first.</span></div>
+        <div class="actions"><button class="secondary" id="charDownloadBtn" disabled>Download Markdown</button><button class="secondary" id="charCopyBtn" disabled>Copy Markdown</button><button class="ghost" id="charUseIdentityBtn" disabled>Use identity in problem formulation</button></div>
+        <div class="warning-box">Documents are processed in memory for one request and are not stored. Identification, extraction and gap analysis run locally (no LLM). Scanned PDFs need OCR first. Dossier portals rendered by JavaScript (e.g. Open EFSA) cannot be read by URL — download the documents and upload them.</div>
+      </div>
+
+      <details class="panel" id="charOptional">
+        <summary><strong>Optional details</strong> <span class="muted">— not needed. Leave blank and KEvidence identifies them from the documents; fill in only to correct or complete what it detected, then run again.</span></summary>
         <div class="grid">
           <div><label for="charProductName">Additive / product name</label><input id="charProductName" placeholder="e.g., trade name of the additive"></div>
           <div><label for="charApplicant">Applicant</label><input id="charApplicant" placeholder="Optional"></div>
@@ -306,23 +321,13 @@
         <label for="charFormulations" style="margin-top:12px">Preparations / formulations under application (one per line — gives Table 2 with one column each)</label>
         <textarea id="charFormulations" style="min-height:60px" placeholder="e.g., Product A 50%&#10;Product B 10% (leave empty for a single product: Table 1 only)"></textarea>
         <h3>Components</h3>
-        <p class="muted">Enter each active substance and other component (carriers, formulants) of the product. Leave empty to auto-detect components from valid CAS numbers in the documents.</p>
+        <p class="muted">Enter each active substance and other component (carriers, formulants) of the product. Leave empty and KEvidence identifies them from the documents (product name, CAS numbers, constituent/marker specifications).</p>
         <table class="sample-table comp-table"><thead><tr><th>Name</th><th>CAS No</th><th>Role</th><th></th></tr></thead><tbody id="charComponents"></tbody></table>
         <div class="actions"><button class="ghost" id="charAddComponentBtn">+ Add component</button></div>
-      </div>
+        <div class="check-row"><label><input type="checkbox" id="charAllowLlm"> Also draft section narratives with the external LLM (sends extracted dossier excerpts to the OpenAI API — leave unticked for confidential dossiers unless approved)</label></div>
+      </details>
 
-      <div class="panel">
-        <h3>Applicant documents (confidential)</h3>
-        <div class="grid">
-          <div><label for="charFiles">Upload documents</label><input id="charFiles" type="file" multiple accept=".pdf,.docx,.xlsx,.xlsm,.csv,.tsv,.txt,.md,.json,.html,.htm"><div id="charFileList" class="muted" style="margin-top:6px"></div></div>
-          <div><label for="charUrls">Document URLs (one per line)</label><textarea id="charUrls" placeholder="https://… (PDF, DOCX, XLSX or an HTML page linking to them)"></textarea></div>
-        </div>
-        <div class="check-row"><label><input type="checkbox" id="charAllowLlm"> Draft section narratives with the external LLM (sends extracted dossier excerpts to the OpenAI API)</label></div>
-        <div class="warning-box">Documents are processed in memory for one request and are not stored by KEvidence. Extraction and gap analysis are deterministic and run locally. Leave LLM drafting unticked for confidential dossiers unless its use is approved. Scanned PDFs need OCR first. Dossier portals rendered by JavaScript (e.g. Open EFSA) cannot be read by URL — download the documents and upload them.</div>
-        <div class="actions"><button class="primary" id="charAnalyseBtn">Characterise &amp; analyse data gaps</button><button class="secondary" id="charDownloadBtn" disabled>Download Markdown</button><button class="secondary" id="charCopyBtn" disabled>Copy Markdown</button><button class="ghost" id="charUseIdentityBtn" disabled>Use identity in problem formulation</button></div>
-      </div>
-
-      <div class="panel" id="charOutput"><div class="muted">No characterisation run yet. Try the fictional demo dossier from the Guide &amp; questions tab.</div></div>
+      <div class="panel" id="charOutput"><div class="muted">No characterisation run yet. Add documents in step 1 and click <em>Characterise from documents</em>. A fictional demo dossier is available in the Guide &amp; questions tab.</div></div>
     </section>
 
     <section id="hazard-id" class="tab-content">
@@ -431,7 +436,7 @@
         <div class="manual-grid">
           <div class="manual-steps">
             <div class="manual-step"><strong>Problem formulation — define the question.</strong><span class="muted">Enter the substance/stressor, product domain, use scenario, endpoint of concern, and decision context. This pre-step frames all four Codex steps.</span></div>
-            <div class="manual-step"><strong>0. Substance characterisation — what exactly is being assessed?</strong><span class="muted">For feed additives, upload or link the applicant's documents, enter product form, routes, production type and each component, then run the analysis. KEvidence maps the evidence to each requirement of the FEEDAP identity/characterisation guidance (EFSA Journal 2017;15(10):5023), cites document and page for every value, lists data gaps, and exports the characterisation as Markdown.</span></div>
+            <div class="manual-step"><strong>0. Substance characterisation — what exactly is being assessed?</strong><span class="muted">For feed additives, upload or link the applicant's documents and click <em>Characterise from documents</em>. KEvidence identifies the additive and its components from the documents (optional details only to correct it), maps the evidence to each requirement of the FEEDAP identity/characterisation guidance (EFSA Journal 2017;15(10):5023), cites document and page for every value, lists data gaps, and exports the characterisation as Markdown.</span></div>
             <div class="manual-step"><strong>Hazard identification — can it cause harm?</strong><span class="muted">Search AOPs by chemical, key event, adverse outcome, or AOP ID, and select the pathway representing a plausible route from MIE to adverse outcome.</span></div>
             <div class="manual-step"><strong>Hazard characterisation — nature, severity, dose.</strong><span class="muted">Review KER evidence, pull reference points/HBGVs from OpenFoodTox, and set a dose-response point of departure (POD) mapped to a key event.</span></div>
             <div class="manual-step"><strong>Exposure assessment — who, how much, how often, route.</strong><span class="muted">Record concentration in food × consumption × population × use conditions, and the resulting exposure estimate.</span></div>
@@ -454,7 +459,7 @@
         <table class="sample-table">
           <thead><tr><th>Need</th><th>Use this</th><th>What to do in KEvidence</th></tr></thead>
           <tbody>
-            <tr><td>Feed additive characterisation (step 0)</td><td><a href="samples/characterisation_demo_dossier.md" download>Download fictional demo dossier</a><br><a href="api/characterisation/guidance.pdf" target="_blank" rel="noopener">FEEDAP identity/characterisation guidance (PDF)</a></td><td>Upload the demo dossier in step 0 with: solid, premixtures + feedingstuffs, chemical synthesis, flavouring compound, component "vanillin" (CAS 121-33-5). It is deliberately incomplete (3 batches instead of 5, no residual solvents, no SDS) so the gap analysis has findings.</td></tr>
+            <tr><td>Feed additive characterisation (step 0)</td><td><a href="samples/characterisation_demo_dossier.md" download>Download fictional demo dossier</a><br><a href="api/characterisation/guidance.pdf" target="_blank" rel="noopener">FEEDAP identity/characterisation guidance (PDF)</a></td><td>Upload the demo dossier in step 0 and click <em>Characterise from documents</em>; KEvidence identifies vanillin from it. For exemptions, open <em>Optional details</em> and set additive type "flavouring compound" and routes. It is deliberately incomplete (3 batches instead of 5, no residual solvents, no SDS) so the gap analysis has findings.</td></tr>
             <tr><td>NAM POD / AC50 example</td><td><a href="samples/nam_pod_examples.csv" download>Download local CSV template</a><br><a href="https://www.epa.gov/comptox-tools/exploring-toxcast-data" target="_blank" rel="noopener">EPA ToxCast/Tox21 data portal</a><br><a href="https://epa.figshare.com/articles/dataset/ToxCast_Database_invitroDB_/6062623" target="_blank" rel="noopener">EPA invitroDB on Figshare</a></td><td>Copy assay, POD type, POD value/unit, and mapped event ID into the hazard characterisation step (POD). Use the EPA bioactivity import script for larger local searches.</td></tr>
             <tr><td>OpenFoodTox reference points</td><td><a href="https://zenodo.org/records/19388272" target="_blank" rel="noopener">OpenFoodTox 3.0 on Zenodo</a><br><a href="https://zenodo.org/records/8120114" target="_blank" rel="noopener">Earlier OpenFoodTox Zenodo record</a></td><td>Download the Excel export, build the local SQLite index, then query the hazard characterisation step by substance name, CAS, EC number, or synonym.</td></tr>
             <tr><td>AOP structure and event IDs</td><td><a href="https://aopwiki.org/downloads" target="_blank" rel="noopener">AOP-Wiki quarterly downloads</a><br><a href="https://zenodo.org/records/17499488" target="_blank" rel="noopener">AOP-Wiki RDF on Zenodo</a></td><td>Use event IDs to map NAM assays to MIE/KE/AO records during hazard identification and characterisation.</td></tr>
@@ -913,7 +918,7 @@ async function loadCharacterisationGuidance() {
 async function runCharacterisation() {
   const files = $('charFiles').files;
   const urls = fieldValue('charUrls');
-  if (!files.length && !urls) { $('charOutput').innerHTML = '<div class="muted">Upload at least one document or enter a URL.</div>'; return; }
+  if (!files.length && !urls) { $('charOutput').innerHTML = '<div class="muted">Step 1: upload at least one document or enter a URL.</div>'; return; }
   const fd = new FormData();
   [...files].forEach(f => fd.append('files', f, f.name));
   fd.append('urls', urls);
@@ -930,7 +935,7 @@ async function runCharacterisation() {
   } catch (e) {
     $('charOutput').innerHTML = `<div class="muted">Characterisation failed: ${escapeHtml(e.message)}</div>`;
   } finally {
-    $('charAnalyseBtn').disabled = false;
+    updateCharRunState();
   }
 }
 function allCharacterisationResults() {
@@ -952,7 +957,21 @@ function renderCharacterisation() {
   const notes = (c.fetch_notes || []).map(n => `<li>${escapeHtml(n)}</li>`).join('');
   const docWarnings = (c.documents || []).filter(d => d.warnings?.length).map(d => `<li>${escapeHtml(d.doc_id)} ${escapeHtml(d.name)}: ${escapeHtml(d.warnings.join('; '))}</li>`).join('');
   const llm = c.llm?.requested ? `<p class="muted">LLM drafting: ${c.llm.used ? 'used — numbers in each narrative were checked against the dossier excerpts' : escapeHtml(c.llm.error || 'not used')}.</p>` : '';
-  $('charOutput').innerHTML = `<h3>Data-gap analysis — ${escapeHtml(c.meta?.product_name || 'product')}</h3>
+  const det = c.detected?.all || {};
+  const used = c.detected?.inferred_and_used || {};
+  const detRow = (label, item, key) => `<tr><td>${escapeHtml(label)}</td><td>${item ? escapeHtml(item.value ?? item) : '<strong class="status-gap">not identified</strong>'}${item && key && used[key] ? ' <span class="badge">detected — confirm</span>' : ''}</td><td>${item?.citation ? escapeHtml(item.citation) : ''}</td></tr>`;
+  const detectedHtml = `<h3>Identified from the documents</h3>
+    <table class="sample-table detected-table"><tbody>
+      ${detRow('Product / additive', det.product_name, 'product_name')}
+      ${detRow('Physical form', det.product_form, 'product_form')}
+      ${(det.production_types || []).map(t => detRow('Production type', { value: t.value.replace('_', ' '), citation: t.citation }, 'production_types')).join('') || detRow('Production type', null)}
+      ${det.authorisation_reference ? detRow('Authorising regulation referred to', det.authorisation_reference, 'authorisation') : ''}
+      ${detRow('Batches', det.batches ? { value: det.batches.ids.join(', '), citation: [...new Set(Object.values(det.batches.citations))].join(', ') } : null)}
+      ${(det.markers || []).map(m => detRow('Constituent / marker', { value: `${m.label} ${m.specification}`, citation: m.citation })).join('')}
+      ${detRow('Component(s) characterised', (c.components || []).length ? { value: c.components.map(x => `${x.component?.name || x.component?.cas} (${x.component?.role || ''})`).join('; ') } : null)}
+    </tbody></table>
+    <p class="muted">Wrong or missing? Correct it under <em>Optional details</em> and run again — entered values take precedence.</p>`;
+  $('charOutput').innerHTML = `${detectedHtml}<h3>Data-gap analysis — ${escapeHtml(c.meta?.product_name || 'product')}</h3>
     <div class="metric-grid">
       <div class="metric"><small>Not located</small><strong class="status-gap">${s.gap || 0}</strong></div>
       <div class="metric"><small>Partially addressed</small><strong class="status-partial">${s.partial || 0}</strong></div>
@@ -963,7 +982,7 @@ function renderCharacterisation() {
     <table class="sample-table"><thead><tr><th>§</th><th>Requirement</th><th>Scope</th><th>Status</th><th>Missing / to clarify</th></tr></thead><tbody>
     ${rows.filter(r => r.status !== 'not_applicable').map(r => `<tr><td>${escapeHtml(r.guidance_section)}</td><td>${escapeHtml(r.title)}<br><span class="muted">${escapeHtml(r.id)}</span></td><td>${escapeHtml(r.scope)}</td><td class="status-${escapeHtml(r.status)}">${escapeHtml(STATUS_TEXT[r.status] || r.status)}</td><td>${(r.missing || []).slice(0, 4).map(escapeHtml).join('<br>') || '—'}</td></tr>`).join('')}
     </tbody></table>
-    <h3>Characterisation draft (FEEDAP opinion layout) and evidence map</h3>
+    <h3>Characterisation draft (FEEDAP opinion layout), data gaps and evidence map</h3>
     <div class="actions"><button class="secondary" id="charViewRendered">Rendered</button><button class="ghost" id="charViewSource">Markdown source</button></div>
     <div id="charMarkdownView" class="md-view">${renderMarkdown(c.markdown || '')}</div>`;
   $('charViewRendered').addEventListener('click', () => { $('charMarkdownView').className = 'md-view'; $('charMarkdownView').innerHTML = renderMarkdown(c.markdown || ''); });
@@ -1050,7 +1069,16 @@ $('charAnalyseBtn').addEventListener('click', runCharacterisation);
 $('charDownloadBtn').addEventListener('click', downloadCharacterisation);
 $('charCopyBtn').addEventListener('click', copyCharacterisation);
 $('charUseIdentityBtn').addEventListener('click', useCharacterisedIdentity);
-$('charFiles').addEventListener('change', () => { $('charFileList').textContent = [...$('charFiles').files].map(f => `${f.name} (${Math.ceil(f.size / 1024)} kB)`).join(' · '); });
+function updateCharRunState() {
+  const ready = $('charFiles').files.length > 0 || fieldValue('charUrls').length > 0;
+  $('charAnalyseBtn').disabled = !ready;
+  $('charRunHint').textContent = ready ? 'Ready — KEvidence will identify the substance from the documents.' : 'Add at least one document or URL first.';
+}
+$('charFiles').addEventListener('change', () => {
+  $('charFileList').textContent = [...$('charFiles').files].map(f => `${f.name} (${Math.ceil(f.size / 1024)} kB)`).join(' · ');
+  updateCharRunState();
+});
+$('charUrls').addEventListener('input', updateCharRunState);
 addComponentRow();
 loadCharacterisationGuidance();
 updateContext();

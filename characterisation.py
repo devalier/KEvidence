@@ -378,7 +378,7 @@ def extract_document(name: str, content: bytes, doc_id: str = "D?", source: str 
 
 
 DOC_TYPE_RULES = [
-    ("Certificate of analysis", [r"certificate\s+of\s+analysis", r"\bCoA\b", r"analytical\s+certificate"]),
+    ("Certificate of analysis", [r"certificat(e)?\s+(of|or|d')?\s*analy", r"\bCoA\b", r"analytical\s+certificate"]),
     ("Product specification", [r"product\s+specification", r"specification\s+sheet", r"technical\s+data\s+sheet"]),
     ("Safety data sheet", [r"safety\s+data\s+sheet", r"\bSDS\b", r"\bMSDS\b"]),
     ("Batch analysis report", [r"batch\s+(analysis|analyses|to\s*-?\s*batch)", r"batch-to-batch"]),
@@ -969,10 +969,26 @@ def infer_components(segments: list[Segment]) -> list[dict[str, Any]]:
     return comps[:8]
 
 
+def _default_components(segments: list[Segment], meta: dict[str, Any]) -> list[dict[str, Any]]:
+    components = infer_components(segments)
+    product = meta.get("product_name")
+    if "plant_derived" in _meta_list(meta, "production_types") and product and \
+            not any(product.lower() in (c.get("name") or "").lower() for c in components):
+        # A plant extract is characterised as a whole, by its constituents/marker compounds (§2.1.3, §2.2.1.1).
+        source = (meta.get("_inferred") or {}).get("product_name", {}).get("citation")
+        components.insert(0, {"name": product, "cas": "", "role": "Active substance (preparation of plant origin)",
+                              "auto": True, "detected_from": source or "entered"})
+    if not components and product:
+        source = (meta.get("_inferred") or {}).get("product_name", {}).get("citation")
+        components = [{"name": product, "cas": "", "role": "Additive (identity to confirm)", "auto": True,
+                       "detected_from": source or "entered"}]
+    return components
+
+
 def evaluate_components(catalogue: dict[str, Any], segments: list[Segment], meta: dict[str, Any]) -> list[dict[str, Any]]:
     components = [c for c in meta.get("components", []) if (c.get("name") or c.get("cas"))]
     if not components:
-        components = infer_components(segments)
+        components = _default_components(segments, meta)
     component_reqs = [r for r in catalogue["requirements"] if r["scope"] == "component"]
     out = []
     single = len(components) <= 1
@@ -1013,6 +1029,141 @@ def _fermentation_flags(segments: list[Segment]) -> list[dict[str, str]]:
     return [{"citation": cite(s), "text": s.text[:200]} for s in segments if _matches(compiled, s.text)][:5]
 
 
+# ---------------------------------------------------------------------------
+# Identification from the documents (product, form, production type, markers)
+# ---------------------------------------------------------------------------
+# Scientific officers upload documents and expect KEvidence to identify what
+# they describe. Anything entered in the form takes precedence; everything
+# inferred here is labelled "detected — confirm" with its citation.
+
+COA_UNIT = r"(%|g/kg|mg/kg|µg/kg|μg/kg|ppm|ppb|CFU/g|cfu/g|mg/g|g/100\s*g)"
+COA_LINE_RE = re.compile(
+    r"^(?P<label>[^≥≤<>]*?)\s*(?P<cmp>≥|≤|>=|<=|NLT|NMT|min\.?|max\.?)\s*(?P<spec>\d+(?:[.,]\d+)?)\s*(?P<unit>" + COA_UNIT + r")"
+    r"\s+(?P<lt>[<≤])?\s*(?P<res>\d+(?:[.,]\d+)?)\s*(?P<runit>" + COA_UNIT + r")?\s*$", re.I)
+PRODUCT_NAME_RE = re.compile(r"\b([A-Z][\w-]*(?:\s+[a-z][\w-]*){0,3}\s+(?:extract|essential\s+oil|tincture|oleoresin|concentrate))\b")
+PRODUCT_LABEL_RE = re.compile(r"(?:product\s+name|trade\s*name|name\s+of\s+the\s+(?:additive|product)|designation)\s*[:|]\s*(.{3,80})", re.I)
+FORM_RULES = [("solid", re.compile(r"\b(powder|granul\w*|crystal\w*|microgranul\w*|pellet\w*|flakes?|beads?)\b", re.I)),
+              ("liquid", re.compile(r"\b(liquid|solution|syrup|emulsion|suspension)\b", re.I))]
+PRODUCTION_RULES = [
+    ("plant_derived", re.compile(r"\bextract\b|botanical|essential\s+oil|tincture|oleoresin|\b[A-Z][a-z]+aceae\b|plant\s+origin|"
+                                 r"\b(leaves|pomace|grape|herb\w*)\b", re.I)),
+    ("fermentation", re.compile(r"ferment|production\s+(strain|organism)|\b(DSM|KCCM|CGMCC|NRRL|ATCC|NCIMB)\s*\d", re.I)),
+    ("chemical_synthesis", re.compile(r"chemical(ly)?\s+synthes|synthesi[sz]ed\b|by\s+synthesis", re.I)),
+    ("mineral", re.compile(r"trace\s+elements?|\bchelate\b|\b(zinc|copper|iron|manganese|selenium|cobalt|iodine)\b.{0,30}"
+                           r"\b(oxide|sulphate|sulfate|carbonate|chloride|chelate|hydroxychloride)\b", re.I)),
+]
+AUTH_REG_RE = re.compile(r"(?:Regulation\s*\((?:EU|EC)\)\s*(?:No\.?\s*)?|\b(?:EU|EC)\s+(?:No\.?\s*)?)(\d{2,4}/\d{1,4})", re.I)
+MARKER_EXCLUDE = re.compile(r"water|moisture|loss\s+on\s+drying|\bash\b|lead|cadmium|mercury|arsenic|dioxin|salmonella|"
+                            r"enterobacter|yeast|mould|mold|coli|aerobic|density|particle|solvent|methanol|ethanol", re.I)
+
+
+def _resolve_coa_label(segments: list[Segment], i: int, inline: str) -> str:
+    """CoA tables often put the label on the preceding line(s); bilingual CoAs give the
+    translation last, so the immediately preceding lines are used."""
+    label = inline.strip(" :|")
+    if len(re.sub(r"[^A-Za-z]", "", label)) >= 2:
+        return label
+    seg = segments[i]
+    parts: list[str] = []
+    j = i - 1
+    while j >= 0 and segments[j].doc_id == seg.doc_id and segments[j].page == seg.page and len(parts) < 3:
+        text = segments[j].text.strip()
+        if COA_LINE_RE.match(text) or not re.search(r"[A-Za-z]", text):
+            break
+        parts.insert(0, text)
+        if not text[:1].islower():
+            break
+        j -= 1
+    return " ".join(parts)
+
+
+def extract_coa_lines(segments: list[Segment]) -> list[dict[str, Any]]:
+    """'Total polyphenols ≥ 80 % 81.4 %' → label, specification and result (one batch)."""
+    out = []
+    for i, seg in enumerate(segments):
+        m = COA_LINE_RE.match(seg.text)
+        if not m:
+            continue
+        label = _resolve_coa_label(segments, i, m.group("label"))
+        if not label:
+            continue
+        cmp_raw = m.group("cmp").lower().rstrip(".")
+        comparator = {"≥": "≥", ">=": "≥", "nlt": "≥", "min": "≥", "≤": "≤", "<=": "≤", "nmt": "≤", "max": "≤"}[cmp_raw]
+        out.append({"label": label, "comparator": comparator, "spec": float(m.group("spec").replace(",", ".")),
+                    "spec_raw": m.group("spec"), "unit": re.sub(r"\s+", " ", m.group("unit")),
+                    "result": float(m.group("res").replace(",", ".")), "result_raw": m.group("res"), "lt": bool(m.group("lt")),
+                    "result_unit": re.sub(r"\s+", " ", m.group("runit") or m.group("unit")), "segment": seg})
+    return out
+
+
+def _first_match(segments: list[Segment], regex: re.Pattern, group: int = 0) -> Optional[tuple[str, Segment]]:
+    for seg in segments:
+        m = regex.search(seg.text)
+        if m:
+            return m.group(group), seg
+    return None
+
+
+def infer_product(docs: list[Document], segments: list[Segment]) -> dict[str, Any]:
+    inferred: dict[str, Any] = {}
+    named = _first_match(segments, PRODUCT_LABEL_RE, 1)
+    if not named:
+        heads = [s for s in segments if s.line <= 6 and s.page == 1]
+        named = _first_match(heads, PRODUCT_NAME_RE, 1) or _first_match(segments, PRODUCT_NAME_RE, 1)
+    if named:
+        inferred["product_name"] = {"value": named[0].strip(" .:|"), "citation": cite(named[1])}
+    appearance = [s for s in segments if re.search(r"appearance|aspect|physical\s+(form|state)|form\b", s.text, re.I)]
+    for form, regex in FORM_RULES:
+        hit = _first_match(appearance + segments, regex)
+        if hit:
+            inferred["product_form"] = {"value": form, "citation": cite(hit[1]), "evidence": hit[1].text[:120]}
+            break
+    types = []
+    for ptype, regex in PRODUCTION_RULES:
+        hit = _first_match(segments, regex)
+        if hit:
+            types.append({"value": ptype, "citation": cite(hit[1]), "evidence": hit[1].text[:120]})
+    if types:
+        inferred["production_types"] = types
+    reg = next(((m.group(1), s) for s in segments if re.search(r"authori[sz]|autori[sz]|zulassung", s.text, re.I)
+                for m in [AUTH_REG_RE.search(s.text)] if m), None)
+    if reg:
+        inferred["authorisation_reference"] = {"value": f"Regulation (EU) {reg[0]}" if "/" in reg[0] else reg[0],
+                                               "citation": cite(reg[1]), "evidence": reg[1].text[:160]}
+    markers = []
+    for row in extract_coa_lines(segments):
+        if row["comparator"] == "≥" and not MARKER_EXCLUDE.search(row["label"]) and \
+                row["label"].lower() not in {m["label"].lower() for m in markers}:
+            markers.append({"label": row["label"], "specification": f"≥ {row['spec_raw']} {row['unit']}",
+                            "citation": cite(row["segment"])})
+    if markers:
+        inferred["markers"] = markers
+    batches = detect_batches(segments)
+    if batches["distinct_batch_ids"]:
+        inferred["batches"] = {"ids": batches["distinct_batch_ids"], "citations": batches["batch_id_citations"]}
+    return inferred
+
+
+def apply_inference(meta: dict[str, Any], inferred: dict[str, Any]) -> dict[str, Any]:
+    """Fill blanks in the user's input with what the documents show; record what was inferred."""
+    meta = dict(meta)
+    used: dict[str, Any] = {}
+    if not meta.get("product_name") and inferred.get("product_name"):
+        meta["product_name"] = inferred["product_name"]["value"]
+        used["product_name"] = inferred["product_name"]
+    if not meta.get("product_form") and inferred.get("product_form"):
+        meta["product_form"] = inferred["product_form"]["value"]
+        used["product_form"] = inferred["product_form"]
+    if not _meta_list(meta, "production_types") and inferred.get("production_types"):
+        meta["production_types"] = sorted({t["value"] for t in inferred["production_types"]})
+        used["production_types"] = inferred["production_types"]
+    if not meta.get("authorisation") and inferred.get("authorisation_reference"):
+        meta["authorisation"] = f"Applicant refers to an authorising regulation: {inferred['authorisation_reference']['value']}"
+        used["authorisation"] = inferred["authorisation_reference"]
+    meta["_inferred"] = used
+    return meta
+
+
 def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optional[dict[str, Any]] = None,
                     guidance_pages: Optional[list[str]] = None, fetch_notes: Optional[list[str]] = None) -> dict[str, Any]:
     catalogue = catalogue or load_catalogue()
@@ -1020,8 +1171,11 @@ def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optio
     meta = dict(meta or {})
     meta["routes"] = sorted(_meta_list(meta, "routes"))
     meta["production_types"] = sorted(_meta_list(meta, "production_types"))
+    inferred = infer_product(docs, segments)
+    meta = apply_inference(meta, inferred)
+    meta["production_types"] = sorted(_meta_list(meta, "production_types"))
     entered = [c for c in meta.get("components", []) if (c.get("name") or c.get("cas"))]
-    meta["_component_count"] = len(entered) or len(infer_components(segments))
+    meta["_component_count"] = len(entered) or len(_default_components(segments, meta))
     additive_reqs = [r for r in catalogue["requirements"] if r["scope"] == "additive"]
     additive_results = [evaluate_requirement(r, segments, meta) for r in additive_reqs]
     components = evaluate_components(catalogue, segments, meta)
@@ -1057,8 +1211,10 @@ def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optio
         })
     if not components:
         scope_flags.append({
-            "flag": "No component identified",
-            "detail": "No component was entered and no valid CAS number was found. Enter each component of the product/mixture (§2.1.3, §2.2.1.1).",
+            "flag": "Substance not identified from the documents",
+            "detail": "KEvidence found no product name, CAS number or constituent specification in the documents. Check that the "
+                      "documents contain text (scanned PDFs need OCR), or enter the product name and components under "
+                      "'Optional details' and run again (§2.1.3, §2.2.1.1).",
             "evidence": [],
         })
     unreadable = [d for d in docs if not d.char_count]
@@ -1074,7 +1230,9 @@ def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optio
     component_names = [c["component"].get("name") or "" for c in components]
     opinion = build_opinion_tables(docs, segments, meta, component_names)
     meta_out = {k: v for k, v in meta.items() if not k.startswith("_")}
+    detected = {"inferred_and_used": meta.get("_inferred", {}), "all": inferred}
     result = {
+        "detected": detected,
         "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
         "meta": meta_out,
         "catalogue": {"id": catalogue["catalogue_id"], "version": catalogue["catalogue_version"],
@@ -1122,8 +1280,10 @@ PHYS_TERMS = ["dusting potential", "bulk density", "tapped density", "density", 
               "particles below 100 µm", "particles below 50 µm", "particles below 1 µm", "D10", "D50", "D90", "viscosity",
               "vapour pressure", "pH", "solubility", "melting point", "specific weight"]
 SUBSTANCE_RELATED_CUES = re.compile(r"residual|synthes|impurit|related\s+substance|by-?product|intermediate|solvent", re.I)
-ACTIVE_CUES = re.compile(r"\bassay\b|purity|content|active\s+substance|identified|total\s+amount", re.I)
-OTHER_PARAM_CUES = re.compile(r"loss\s+on\s+drying|moisture|water\s+content|\bash\b|sulphated\s+ash|sulfated\s+ash|"
+ACTIVE_CUES = re.compile(r"\bassay\b|purity|content|active\s+substance|identified|total\s+amount|polyphenol|proanthocyan|"
+                         r"anthocyan|flavon|flavan|tannin|glucoside|catechin|resveratrol|carotenoid|terpen|saponin|alkaloid|"
+                         r"thymol|carvacrol|curcumin|marker", re.I)
+OTHER_PARAM_CUES = re.compile(r"loss\s+on\s+drying|moisture|water\s+content|^water\b|\bash\b|sulphated\s+ash|sulfated\s+ash|"
                               r"specific\s+(optical\s+)?rotation|\bpH\b|chloride|sulphate|sulfate", re.I)
 SPEC_LINE_CUES = re.compile(r"specification|specified|composition|assay|purity|content|\bspec\b", re.I)
 METHOD_CUES = re.compile(r"\b(HPLC(?:-[A-Z]+)?|LC-MS(?:/MS)?|GC(?:-[A-Z]+)?|ICP-(?:MS|OES|AES)|AAS|titration|"
@@ -1181,7 +1341,7 @@ def _row(label: str, unit: str, cells: list[dict[str, Any]], seg: "Segment", cat
     analysed = [c for c in cells if not c["na"]]
     return {
         "label": label, "unit": unit, "category": category, "values": [c["raw"] for c in cells],
-        "n": n_stated or (len(analysed) if source == "table" else 0), "n_stated": bool(n_stated), "numeric": numeric, "below_loq": len(lt),
+        "n": n_stated or (len(analysed) if source in ("table", "coa") else 0), "n_stated": bool(n_stated), "numeric": numeric, "below_loq": len(lt),
         "lt_values": [c["value"] for c in lt if c["value"] is not None], "not_analysed": len(cells) - len(analysed),
         "citation": cite(seg), "doc_id": seg.doc_id, "source": source,
     }
@@ -1206,7 +1366,20 @@ def extract_parameter_rows(segments: list[Segment], component_names: list[str]) 
     """Batch tables ("label | v1 | v2 | v3") and analyte statements ("lead < 0.5 mg/kg in three batches")."""
     rows: list[dict[str, Any]] = []
     seen: set[tuple[str, str]] = set()
+    coa_segments = set()
+    for coa in extract_coa_lines(segments):
+        seg = coa["segment"]
+        coa_segments.add((seg.doc_id, seg.page, seg.line))
+        key = (seg.doc_id, coa["label"].lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        cell = {"raw": f"{'<' if coa['lt'] else ''}{coa['result_raw']}", "value": coa["result"], "lt": coa["lt"], "na": False}
+        rows.append(_row(coa["label"], coa["result_unit"], [cell], seg, _categorise(coa["label"], seg.text, component_names),
+                         source="coa"))
     for seg in segments:
+        if (seg.doc_id, seg.page, seg.line) in coa_segments:
+            continue
         cells = [c for c in CELL_SPLIT_RE.split(seg.text) if c.strip()]
         if len(cells) >= 3 and re.search(r"[A-Za-z]", cells[0]) and not BATCH_ID_RE.match(cells[0]) \
                 and not re.match(r"^(batch|lot|parameter|analyte|sample)s?\b", cells[0], re.I):
@@ -1281,12 +1454,21 @@ def format_row_value(row: dict[str, Any], average: bool) -> str:
         decimals = max((len(v.split(".")[1]) if "." in v else 0) for v in (str(x).replace(",", ".") for x in row["values"]))
         return f"{sum(numeric) / len(numeric):.{decimals}f} ({_fmt(lo)}–{_fmt(hi)}){n}"
     if len(numeric) == 1 and not row["below_loq"]:
-        return f"{_fmt(lo)}{n}"
+        return f"{row['values'][0].strip()}{n}"
     return f"{low_txt}–{_fmt(hi)}{n}" if (row["below_loq"] or lo != hi) else f"{_fmt(lo)}{n}"
 
 
 def extract_specifications(segments: list[Segment]) -> list[dict[str, Any]]:
     specs, seen = [], set()
+    coa_seen: set[tuple[str, str, str, str]] = set()
+    for row in extract_coa_lines(segments):
+        key = (row["label"].lower(), row["comparator"], row["spec_raw"], row["unit"])
+        if key in coa_seen:
+            continue
+        coa_seen.add(key)
+        specs.append({"label": row["label"], "comparator": row["comparator"], "raw_value": row["spec_raw"], "also_stated": [],
+                      "value": row["spec"], "unit": row["unit"], "text": f"{row['comparator']} {row['spec_raw']} {row['unit']}",
+                      "method": None, "citation": cite(row["segment"]), "source": "coa"})
     for seg in segments:
         if not SPEC_LINE_CUES.search(seg.text):
             continue
@@ -1315,14 +1497,18 @@ def extract_specifications(segments: list[Segment]) -> list[dict[str, Any]]:
 
 def _spec_compliance(rows: list[dict[str, Any]], specs: list[dict[str, Any]]) -> list[str]:
     facts = []
+    generic = {"total", "content", "sum", "amount", "level", "other", "free"}
     for spec in specs:
         labels = [spec["label"]] + [a.rsplit(" (", 1)[0] for a in spec.get("also_stated", [])]
-        words = {w for lab in labels for w in re.findall(r"[a-z]{4,}", lab.lower())}
+        exact = [r for r in rows if r["label"].lower() in {lab.lower() for lab in labels}]
+        words = {w for lab in labels for w in re.findall(r"[a-z]{4,}", lab.lower())} - generic
         for row in rows:
             if row["category"] not in ("batch_active", "batch_other") or not row["numeric"]:
                 continue
-            row_words = set(re.findall(r"[a-z]{4,}", row["label"].lower()))
-            if not (words & row_words):
+            if exact:
+                if row not in exact:
+                    continue
+            elif not (words & (set(re.findall(r"[a-z]{4,}", row["label"].lower())) - generic)):
                 continue
             if spec["comparator"] == "≥":
                 ok = sum(1 for v in row["numeric"] if v >= spec["value"])
@@ -1388,12 +1574,36 @@ def build_opinion_tables(docs: list[Document], segments: list[Segment], meta: di
     specs = extract_specifications(segments)
     columns: dict[str, dict[str, Any]] = {}
 
+    def merge(col_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """One certificate of analysis per batch: combine same parameter across documents into one row."""
+        merged: dict[tuple[str, str, str], dict[str, Any]] = {}
+        out = []
+        for r in col_rows:
+            key = (r["label"].lower(), r["unit"], r["category"])
+            if r["source"] not in ("coa", "table") or key not in merged:
+                merged.setdefault(key, r)
+                out.append(r)
+                continue
+            m = merged[key]
+            if r["doc_id"] in m.get("doc_ids", {m["doc_id"]}):
+                continue
+            m.update({"values": m["values"] + r["values"], "numeric": m["numeric"] + r["numeric"],
+                      "below_loq": m["below_loq"] + r["below_loq"], "lt_values": m["lt_values"] + r["lt_values"],
+                      "not_analysed": m["not_analysed"] + r["not_analysed"], "n": m["n"] + r["n"],
+                      "doc_ids": m.get("doc_ids", {m["doc_id"]}) | {r["doc_id"]},
+                      "citation": f"{m['citation']}; {r['citation']}"})
+        return out
+
     def column(name: str, doc_ids: Optional[set[str]]) -> dict[str, Any]:
         segs = [s for s in segments if doc_ids is None or s.doc_id in doc_ids]
-        col_rows = [r for r in rows if doc_ids is None or r["doc_id"] in doc_ids]
+        col_rows = merge([dict(r) for r in rows if doc_ids is None or r["doc_id"] in doc_ids])
         col_specs = [sp for sp in specs if doc_ids is None or sp["citation"].split()[0] in doc_ids]
         form = _first_line(segs, r"physical\s+(form|state)|appearance|\b(powder|granul\w*|liquid|crystalline|microgranul\w*)\b")
-        return {"name": name, "rows": col_rows, "specs": col_specs, "compliance": _spec_compliance(col_rows, col_specs),
+        return {"name": name, "rows": col_rows, "specs": col_specs,
+                "authorisation_reference": infer_product(docs, segs).get("authorisation_reference") if segs else None,
+                "method_statement": (lambda m: {"text": m.text[:160], "citation": cite(m)} if m else None)(
+                    _first_line(segs, r"(results?\s+obtained|determined|analy[sz]ed)\s+.{0,40}(analytical\s+)?methods?|"
+                                      r"analytical\s+methods?\s+(described|as\s+described|according)")), "compliance": _spec_compliance(col_rows, col_specs),
                 "physical_form": {"text": form.text[:160], "citation": cite(form)} if form else None,
                 "documents": sorted({r["doc_id"] for r in col_rows} | {sp["citation"].split()[0] for sp in col_specs})}
 
@@ -1442,9 +1652,12 @@ def _table1_md(col: dict[str, Any], title: str) -> list[str]:
     imp = _table_rows_md(col, ("substance_related",), False)
     lines += [f"| {_md_escape(a)} | {_md_escape(b)} | {c} |" for a, b, c in imp] or ["| Residual solvents / synthesis impurities (units) | **[not located]** | — |"]
     methods = sorted({sp["method"] for sp in specs if sp.get("method")})
+    if not methods and col.get("method_statement"):
+        methods = [f"\"{col['method_statement']['text']}\" ({col['method_statement']['citation']})"]
+    reg = col.get("authorisation_reference")
     lines += ["", "Abbreviations: DM: dry matter.  ",
               f"⁽¹⁾ Method of analysis: {', '.join(methods) if methods else '[not located]'} // specifications set in the authorising "
-              "regulation, where applicable: [to be completed].  ",
+              f"regulation: {(reg['value'] + ' (as stated in ' + reg['citation'] + ' — confirm)') if reg else '[to be completed, where applicable]'}.  ",
               "<: below the limit of quantification; -: not analysed.", ""]
     return lines
 
@@ -1491,6 +1704,39 @@ def _table2_md(result: dict[str, Any], cols: dict[str, dict[str, Any]], title: s
     return lines
 
 
+def _detected_md(result: dict[str, Any]) -> str:
+    det = result.get("detected", {})
+    found, used = det.get("all", {}), det.get("inferred_and_used", {})
+    rows = ["| Element | Identified from the documents | Source | Used in this analysis |", "|---|---|---|---|"]
+
+    def add(label, item, key):
+        if not item:
+            rows.append(f"| {label} | **[not identified]** | — | — |")
+            return
+        value = item["value"] if isinstance(item, dict) else item
+        rows.append(f"| {label} | {_md_escape(value)} | {item.get('citation', '—') if isinstance(item, dict) else '—'} | "
+                    f"{'yes (detected — confirm)' if key in used else 'no — value entered by the user takes precedence'} |")
+    add("Product / additive", found.get("product_name"), "product_name")
+    add("Physical form", found.get("product_form"), "product_form")
+    types = found.get("production_types") or []
+    if types:
+        for t in types:
+            rows.append(f"| Production type | {t['value'].replace('_', ' ')} (\"{_md_escape(t['evidence'][:80])}\") | {t['citation']} | "
+                        f"{'yes (detected — confirm)' if 'production_types' in used else 'no — entered value used'} |")
+    else:
+        rows.append("| Production type | **[not identified]** | — | — |")
+    add("Authorising regulation referred to", found.get("authorisation_reference"), "authorisation")
+    batches = found.get("batches")
+    rows.append(f"| Batches | {', '.join(batches['ids'][:12]) if batches else '**[not identified]**'} | "
+                f"{', '.join(sorted(set(batches['citations'].values()))[:5]) if batches else '—'} | yes |")
+    for m in found.get("markers", []):
+        rows.append(f"| Constituent / marker with specification | {_md_escape(m['label'])} {_md_escape(m['specification'])} | {m['citation']} | yes |")
+    comps = ", ".join(f"{c['component'].get('name') or c['component'].get('cas')} ({c['component'].get('role')})" for c in result["components"])
+    rows.append(f"| Component(s) characterised | {_md_escape(comps) or '**[none]**'} | — | yes |")
+    return "\n".join(["Everything below was read from the uploaded documents. Values entered under *Optional details* override "
+                      "detected ones; confirm or correct them there and run again.", ""] + rows)
+
+
 def _opinion_111_md(result: dict[str, Any]) -> str:
     op = result["opinion"]
     meta = result["meta"]
@@ -1502,13 +1748,17 @@ def _opinion_111_md(result: dict[str, Any]) -> str:
     specs = [sp for col in all_cols for sp in col["specs"]]
     spec_txt = "; ".join(f"{sp['label']} {sp['text']}" for sp in specs) or "**[specification not located]**"
     rows = [r for col in all_cols for r in col["rows"]]
-    b2b_docs = {r["doc_id"] for r in rows if r["category"] in ("batch_active", "batch_other")}
-    imp_docs = {r["doc_id"] for r in rows if r["category"] == "substance_related"}
-    app_docs = {r["doc_id"] for r in rows if r["category"] in ("other_impurities", "physchem", "other")}
+    def docs_of(categories):
+        return {d for r in rows if r["category"] in categories for d in r.get("doc_ids", {r["doc_id"]})}
+    b2b_docs = docs_of(("batch_active", "batch_other"))
+    imp_docs = docs_of(("substance_related",))
+    app_docs = docs_of(("other_impurities", "physchem", "other"))
     tables = "Table 1" + (" and Table 2" if t2 and t1 else "") if t1 else ("Table 2" if t2 else "Table 1")
     lines = [f"The specifications of the feed additive are: {_md_escape(spec_txt)}.", "",
-             (f"Current authorisation (as entered by the scientific officer): {_md_escape(meta['authorisation'])}. "
-              "**[If authorised: state the authorised minimum content.]**" if meta.get("authorisation") else
+             (f"Current authorisation: {_md_escape(meta['authorisation'])}"
+              + (f" (detected in {result['detected']['inferred_and_used']['authorisation']['citation']} — confirm)"
+                 if result.get("detected", {}).get("inferred_and_used", {}).get("authorisation") else " (as entered)")
+              + ". **[If authorised: state the authorised minimum content.]**" if meta.get("authorisation") else
               "The additive is currently authorised with a minimum content of **[to be completed, or delete if this is a new application]**."),
              "",
              f"The data provided by the applicant on the batch-to-batch variation[^b2b] and substance-related impurities[^imp] "
@@ -1693,6 +1943,11 @@ def _components_md(result: dict[str, Any]) -> str:
                    f"*Role:* {c.get('role') or 'not stated'}" + (f" · detected from {c['detected_from']}" if c.get("detected_from") else ""), ""]
         if comp.get("cas_check"):
             blocks += [f"*CAS check:* {comp['cas_check']}", ""]
+        markers = (result.get("detected", {}).get("all", {}) or {}).get("markers", [])
+        if "plant origin" in (c.get("role") or "") and markers:
+            blocks += ["| Constituent / marker compound (§2.1.3, §2.2.1.1) | Specification | Source |", "|---|---|---|"]
+            blocks += [f"| {_md_escape(m['label'])} | {_md_escape(m['specification'])} | {m['citation']} |" for m in markers]
+            blocks.append("")
         blocks += ["| Identity element (§2.2.1.1 / §2.2.2.1) | Value as stated in the dossier | Source |", "|---|---|---|"]
         for key, label in IDENTITY_ROWS:
             v = ident.get(key)
@@ -1786,13 +2041,14 @@ def render_markdown(result: dict[str, Any], catalogue: dict[str, Any], template_
         "GROUNDING": _grounding_section_md(result, catalogue),
         "CAVEATS": caveats,
         "OPINION_111": _opinion_111_md(result),
+        "DETECTED": _detected_md(result),
         "APPENDIX_A": _appendix_a_md(result),
         "OPINION_112": _opinion_112_md(result),
     }
     for section in catalogue["template_sections"]:
         token = section["token"]
         replacements[token] = "\n".join(by_section.get(token, []))
-    replacements["S2_2"] = _components_md(result)
+    replacements["S2_2"] = "\n".join(by_section.get("S2_2", []) + [_components_md(result)])
     for token, text in narrative.items():
         if token in replacements and text.get("text"):
             flag = ("all numbers traced to dossier excerpts" if text.get("grounded")

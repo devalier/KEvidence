@@ -156,11 +156,15 @@ def test_demo_gaps_and_exemptions(catalogue):
 
 
 def test_unknown_product_attributes_give_conditional_status(catalogue):
-    meta = {"components": DEMO_META["components"]}
-    result = _demo(meta, catalogue)
-    assert _by_id(result, "G2.1.4-MIN")["status"] == "conditional"
-    assert any("Production type not entered" in m for m in _by_id(result, "G2.1.4-MIN")["missing"])
-
+    # The demo states "produced by chemical synthesis": production type is detected from the document
+    result = _demo({"components": DEMO_META["components"]}, catalogue)
+    assert result["meta"]["production_types"] == ["chemical_synthesis"]
+    assert "production_types" in result["detected"]["inferred_and_used"]
+    # Nothing in the document and nothing entered: applicability stays to be confirmed
+    doc = c.extract_document("x.txt", b"Lead < 0.5 mg/kg in three batches.", "D1")
+    res = _by_id(c.analyse_dossier([doc], {}, catalogue), "G2.1.4-MIN")
+    assert res["status"] == "conditional"
+    assert any("Production type not entered" in m for m in res["missing"])
 
 def test_fermentation_adds_fermentation_impurity_requirements(catalogue):
     meta = dict(DEMO_META, production_types=["fermentation"])
@@ -336,3 +340,68 @@ def test_local_template_override(tmp_path, catalogue):
     custom.write_text("<!-- note {{X}} -->\n# {{PRODUCT_NAME}}\n{{OPINION_111}}\n")
     md = c.render_markdown(result, catalogue, custom)
     assert md.startswith("# DemoVan 99") and "**Table 1:**" in md and "{{" not in md
+
+
+# --- Identification from documents alone (certificate of analysis of a plant extract) ----------
+
+FIXTURES = ROOT / "tests" / "fixtures"
+
+
+def _coa(name="coa.txt", text=None, doc_id="D1"):
+    raw = text if text is not None else (FIXTURES / "coa_botanical_fictional.txt").read_bytes()
+    return c.extract_document(name, raw, doc_id)
+
+
+def test_coa_alone_identifies_product_and_constituents(catalogue):
+    result = c.analyse_dossier([_coa()], {}, catalogue)
+    det = result["detected"]["all"]
+    assert det["product_name"]["value"] == "Dried berry extract"
+    assert det["product_form"]["value"] == "solid"
+    assert [t["value"] for t in det["production_types"]] == ["plant_derived"]
+    assert det["authorisation_reference"]["value"] == "Regulation (EU) 2099/999"
+    assert det["batches"]["ids"] == ["ZX1001"]
+    assert [m["label"] for m in det["markers"]] == ["Total polyphenols", "Total Proanthocyanidols",
+                                                     "Anthocyanins and anthocyanidins", "Cyanidin-3-O-glucoside"]
+    assert result["components"][0]["component"]["name"] == "Dried berry extract"
+    assert not any(f["flag"].startswith("Substance not identified") for f in result["scope_flags"])
+    assert result["documents"][0]["doc_type"] == "Certificate of analysis"
+
+
+def test_coa_specifications_results_and_gaps(catalogue):
+    result = c.analyse_dossier([_coa()], {}, catalogue)
+    rows = {r["label"]: r for r in result["opinion"]["all_rows"]}
+    assert c.format_row_value(rows["Total polyphenols"], True) == "74.2 [1]"
+    assert c.format_row_value(rows["Anthocyanins and anthocyanidins"], True) == "0.9 [1]"
+    assert rows["Water"]["category"] == "batch_other"
+    facts = result["opinion"]["table1"]["compliance"]
+    assert any(f.startswith("Total Proanthocyanidols: 1/1 batch values meet the specification ≥ 50 %") for f in facts)
+    assert not any("Total Proanthocyanidols" in f and "≥ 70 %" in f for f in facts)  # no cross-matching on "Total"
+    by_id = {r["id"]: r for r in result["requirements"]}
+    assert by_id["G2.1.3-SPEC"]["batch_check"]["detected"] == 1 and by_id["G2.1.3-SPEC"]["status"] == "partial"
+    assert by_id["G2.1.3-CONST"]["applicability"] == "yes"
+    assert by_id["G2.2.1.1-PLANT"]["status"] in ("partial", "gap")
+    assert any("Lead" in m for m in by_id["G2.1.4-MIN"]["missing"])  # plant-derived minimum impurity set
+    comp_ids = {r["id"]: r for r in result["components"][0]["requirements"]}
+    assert comp_ids["G2.2.1.1-ID"]["status"] == "not_applicable"  # CAS/IUPAC set is for chemically defined substances
+    md = result["markdown"]
+    assert "## Identified from the uploaded documents" in md
+    assert "| Total polyphenols | ≥ 70 % | D1 p.1 |" in md
+    assert "Regulation (EU) 2099/999 (as stated in D1 p.1 — confirm)" in md
+
+
+def test_one_coa_per_batch_is_merged_into_average_range(catalogue):
+    base = (FIXTURES / "coa_botanical_fictional.txt").read_text()
+    docs = [_coa(f"coa{i}.txt", base.replace("ZX1001", f"ZX100{i}").replace("74.2 %", f"{v} %").encode(), f"D{i}")
+            for i, v in enumerate(["74.2", "75.0", "73.1", "76.4", "74.8"], start=1)]
+    result = c.analyse_dossier(docs, {}, catalogue)
+    row = next(r for r in result["opinion"]["table1"]["rows"] if r["label"] == "Total polyphenols")
+    assert c.format_row_value(row, True) == "74.7 (73.1–76.4) [5]"
+    spec = next(r for r in result["requirements"] if r["id"] == "G2.1.3-SPEC")
+    assert spec["batch_check"]["detected"] == 5
+
+
+def test_user_entries_override_detection(catalogue):
+    result = c.analyse_dossier([_coa()], {"product_name": "Entered name", "production_types": ["chemical_synthesis"]}, catalogue)
+    assert result["meta"]["product_name"] == "Entered name"
+    assert result["meta"]["production_types"] == ["chemical_synthesis"]
+    assert "product_name" not in result["detected"]["inferred_and_used"]
