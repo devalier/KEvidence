@@ -2021,7 +2021,8 @@ def render_markdown(result: dict[str, Any], catalogue: dict[str, Any], template_
         by_section.setdefault(res["section"], []).append(_requirement_block(res))
     product = meta.get("product_name") or "[product name not entered]"
     header = "\n".join([
-        f"*Applicant:* {meta.get('applicant') or '[not entered]'} · *Dossier / question reference:* {meta.get('dossier_ref') or '[not entered]'}  ",
+        *([f"*Applicant:* {meta['applicant']} · *Dossier / question reference:* {meta.get('dossier_ref') or '—'}  "]
+          if meta.get("applicant") or meta.get("dossier_ref") else []),
         f"*Product form:* {meta.get('product_form') or 'not stated'} · *Routes:* {', '.join(meta.get('routes') or []) or 'not stated'} · "
         f"*Production type:* {', '.join(meta.get('production_types') or []) or 'not stated'} · *Additive type:* {meta.get('additive_type') or 'not stated'}  ",
         f"*Generated:* {result['generated_at']} by KEvidence step 0 (chemical characterisation MVP) against "
