@@ -194,6 +194,11 @@
   .sample-table th, .sample-table td { border-bottom: 1px solid var(--surface2); padding: 9px 7px; text-align: left; vertical-align: top; }
   .sample-table th { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
   .sample-table a { color: var(--accent); font-weight: 700; }
+  [hidden] { display: none !important; }
+  body.char-mode .assistant { display: none; }
+  body.char-mode .app-shell { grid-template-columns: 230px minmax(0, 1fr); }
+  @media (max-width: 1050px) { body.char-mode .app-shell { grid-template-columns: 190px minmax(0, 1fr); } }
+  details.muted > summary { cursor: pointer; }
   details.panel > summary { cursor: pointer; list-style: revert; }
   details.panel[open] > summary { margin-bottom: 12px; }
   .detected-table td:first-child { color: var(--text2); width: 30%; }
@@ -289,7 +294,7 @@
       <div class="panel">
         <h2>0. Substance / product characterisation</h2>
         <p class="help">Upload the applicant's documents (technical dossier sections, specifications, certificates of analysis, study reports). KEvidence identifies the additive and its components from them, drafts the characterisation in the FEEDAP opinion layout (§1.1.1, Table 1/2, Appendix A) and lists the data gaps against the <strong>FEEDAP Guidance on the identity, characterisation and conditions of use of feed additives</strong> (EFSA Journal 2017;15(10):5023). MVP: chemical characterisation, including plant extracts by their constituents; production-strain characterisation is out of scope.</p>
-        <div id="charGuidanceStatus" class="muted">Loading guidance grounding status…</div>
+        <details class="muted"><summary>About the guidance grounding</summary><div id="charGuidanceStatus" style="margin-top:6px">Loading guidance grounding status…</div></details>
       </div>
 
       <div class="panel">
@@ -300,7 +305,7 @@
         </div>
         <h3>Step 2 — Run</h3>
         <div class="actions"><button class="primary" id="charAnalyseBtn" disabled>Characterise from documents</button><span class="muted" id="charRunHint" style="align-self:center">Add at least one document or URL first.</span></div>
-        <div class="actions"><button class="secondary" id="charDownloadBtn" disabled>Download Markdown</button><button class="secondary" id="charCopyBtn" disabled>Copy Markdown</button><button class="ghost" id="charUseIdentityBtn" disabled>Use identity in problem formulation</button></div>
+        <div class="actions"><button class="secondary" id="charDownloadBtn" disabled>Download Markdown</button><button class="secondary" id="charCopyBtn" disabled>Copy Markdown</button></div>
         <div class="warning-box">Documents are processed in memory for one request and are not stored. Identification, extraction and gap analysis run locally (no LLM). Scanned PDFs need OCR first. Dossier portals rendered by JavaScript (e.g. Open EFSA) cannot be read by URL — download the documents and upload them.</div>
       </div>
 
@@ -308,14 +313,8 @@
         <summary><strong>Optional details</strong> <span class="muted">— not needed. Leave blank and KEvidence identifies them from the documents; fill in only to correct or complete what it detected, then run again.</span></summary>
         <div class="grid">
           <div><label for="charProductName">Additive / product name</label><input id="charProductName" placeholder="e.g., trade name of the additive"></div>
-          <div><label for="charApplicant">Applicant</label><input id="charApplicant" placeholder="Optional"></div>
-          <div><label for="charDossierRef">Dossier / question reference</label><input id="charDossierRef" placeholder="e.g., FEED-2024-XXXXX / EFSA-Q-2024-XXXXX"></div>
-          <div><label for="charAuthorisation">Current authorisation (if any)</label><input id="charAuthorisation" placeholder="e.g., authorised as 2b… with minimum content of …; or new application"></div>
           <div><label for="charForm">Physical form (§2.1.5)</label><select id="charForm"><option value="">Not stated</option><option value="solid">Solid</option><option value="liquid">Liquid</option></select></div>
-          <div><label for="charAdditiveType">Additive type (exemptions in §2.4.1.2, §2.4.2)</label><select id="charAdditiveType"><option value="">Not stated</option><option value="none_of_these">None of these</option><option value="flavouring_compound">Flavouring compound</option><option value="silage_additive">Silage additive</option><option value="colourant">Colourant (feed / ornamental birds or fish)</option></select></div>
         </div>
-        <label style="margin-top:12px">Proposed routes of administration (§2.4.1, §2.4.2, §2.5.1)</label>
-        <div class="check-row" id="charRoutes"><label><input type="checkbox" value="feed"> Feedingstuffs</label><label><input type="checkbox" value="premixture"> Premixtures</label><label><input type="checkbox" value="water"> Water for drinking</label></div>
         <label>Production type — sets the minimum impurity set of §2.1.4</label>
         <div class="check-row" id="charProduction"><label><input type="checkbox" value="chemical_synthesis"> Chemical synthesis</label><label><input type="checkbox" value="fermentation"> Fermentation</label><label><input type="checkbox" value="plant_derived"> Plant-derived</label><label><input type="checkbox" value="animal_derived"> Animal-derived</label><label><input type="checkbox" value="mineral"> Mineral / trace-element compound</label></div>
         <label for="charFormulations" style="margin-top:12px">Preparations / formulations under application (one per line — gives Table 2 with one column each)</label>
@@ -327,7 +326,18 @@
         <div class="check-row"><label><input type="checkbox" id="charAllowLlm"> Also draft section narratives with the external LLM (sends extracted dossier excerpts to the OpenAI API — leave unticked for confidential dossiers unless approved)</label></div>
       </details>
 
+      <div class="panel" id="charQuestions" hidden>
+        <h3>Two questions that change which requirements apply</h3>
+        <p class="muted">Documents rarely state these clearly. Answer them and run again; leave them blank and the affected requirements stay marked “applicability to confirm”.</p>
+        <label>1. How will the additive be administered? (§2.4.1 stability, §2.4.2 homogeneity, §2.5.1 conditions of use)</label>
+        <div class="check-row" id="charRoutes"><label><input type="checkbox" value="feed"> In feedingstuffs</label><label><input type="checkbox" value="premixture"> Via premixtures</label><label><input type="checkbox" value="water"> In water for drinking</label></div>
+        <label for="charAdditiveType">2. Is it one of the additive types the guidance exempts from some studies? (§2.4.1.2, §2.4.2)</label>
+        <select id="charAdditiveType" style="max-width:420px"><option value="">Not answered</option><option value="none_of_these">None of these</option><option value="flavouring_compound">Flavouring compound</option><option value="silage_additive">Silage additive</option><option value="colourant">Colourant (feed / ornamental birds or fish)</option></select>
+        <div class="actions"><button class="primary" id="charRerunBtn">Run again with these answers</button></div>
+      </div>
+
       <div class="panel" id="charOutput"><div class="muted">No characterisation run yet. Add documents in step 1 and click <em>Characterise from documents</em>. A fictional demo dossier is available in the Guide &amp; questions tab.</div></div>
+      <div class="actions" id="charNext" hidden><button class="ghost" id="charUseIdentityBtn">Continue with this substance in problem formulation (hazard workflow) →</button></div>
     </section>
 
     <section id="hazard-id" class="tab-content">
@@ -525,6 +535,7 @@ function parseValueUnit(text) {
 }
 function showTab(tabId) {
   state.activeTab = tabId;
+  document.body.classList.toggle('char-mode', tabId === 'characterisation');
   steps.forEach(s => s.classList.toggle('active', s.dataset.tab === tabId));
   tabs.forEach(t => t.classList.toggle('active', t.id === tabId));
 }
@@ -895,9 +906,9 @@ function characterisationMeta() {
     role: tr.querySelector('.char-comp-role').value
   })).filter(c => c.name || c.cas);
   return {
-    product_name: fieldValue('charProductName'), applicant: fieldValue('charApplicant'), dossier_ref: fieldValue('charDossierRef'),
+    product_name: fieldValue('charProductName'),
     product_form: fieldValue('charForm'), additive_type: fieldValue('charAdditiveType'),
-    authorisation: fieldValue('charAuthorisation'), formulations: fieldValue('charFormulations').split('\n').map(s => s.trim()).filter(Boolean),
+    formulations: fieldValue('charFormulations').split('\n').map(s => s.trim()).filter(Boolean),
     routes: checkedValues('charRoutes'), production_types: checkedValues('charProduction'), components
   };
 }
@@ -987,7 +998,9 @@ function renderCharacterisation() {
     <div id="charMarkdownView" class="md-view">${renderMarkdown(c.markdown || '')}</div>`;
   $('charViewRendered').addEventListener('click', () => { $('charMarkdownView').className = 'md-view'; $('charMarkdownView').innerHTML = renderMarkdown(c.markdown || ''); });
   $('charViewSource').addEventListener('click', () => { $('charMarkdownView').className = ''; $('charMarkdownView').innerHTML = `<pre class="md-source">${escapeHtml(c.markdown || '')}</pre>`; });
-  ['charDownloadBtn', 'charCopyBtn', 'charUseIdentityBtn'].forEach(id => { $(id).disabled = false; });
+  ['charDownloadBtn', 'charCopyBtn'].forEach(id => { $(id).disabled = false; });
+  $('charQuestions').hidden = false;
+  $('charNext').hidden = false;
 }
 function inlineMarkdown(text) {
   return escapeHtml(text)
@@ -1066,6 +1079,7 @@ function useCharacterisedIdentity() {
 }
 $('charAddComponentBtn').addEventListener('click', () => addComponentRow());
 $('charAnalyseBtn').addEventListener('click', runCharacterisation);
+$('charRerunBtn').addEventListener('click', runCharacterisation);
 $('charDownloadBtn').addEventListener('click', downloadCharacterisation);
 $('charCopyBtn').addEventListener('click', copyCharacterisation);
 $('charUseIdentityBtn').addEventListener('click', useCharacterisedIdentity);
