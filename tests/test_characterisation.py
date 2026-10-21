@@ -433,15 +433,29 @@ def test_domain_files_live_under_the_domain_directory(feed_bundle):
     assert feed_bundle["template"].exists()
 
 
-def test_wgs_statement_is_the_bundled_document(feed_bundle):
-    src = _wgs(feed_bundle)
-    assert src["role"] == "supporting"
-    assert len(src["pages"]) == src["catalogue"]["guidance"]["expected_pages"] == 14
-    assert _compact(src["catalogue"]["guidance"]["title_check_phrase"]) in _compact(" ".join(src["pages"]))
+SUPPORTING_IDS = ["efsa-2024-8912-wgs", "efsa-2023-8323-qps-amr", "efsa-2026-9823-qps", "efsa-2017-5022-consumer"]
 
 
-def test_every_wgs_entry_is_anchored_and_verbatim_on_cited_page(feed_bundle):
-    src = _wgs(feed_bundle)
+def _source(bundle, catalogue_id):
+    return next(s for s in bundle["sources"] if s["catalogue"]["catalogue_id"] == catalogue_id)
+
+
+def test_domain_lists_every_supporting_source(feed_bundle):
+    assert [s["catalogue"]["catalogue_id"] for s in feed_bundle["sources"][1:]] == SUPPORTING_IDS
+    assert {s["role"] for s in feed_bundle["sources"][1:]} == {"supporting"}
+
+
+@pytest.mark.parametrize("catalogue_id", SUPPORTING_IDS)
+def test_supporting_source_is_the_bundled_document(feed_bundle, catalogue_id):
+    src = _source(feed_bundle, catalogue_id)
+    g = src["catalogue"]["guidance"]
+    assert len(src["pages"]) == g["expected_pages"]
+    assert _compact(g["title_check_phrase"]) in _compact(" ".join(src["pages"]))
+
+
+@pytest.mark.parametrize("catalogue_id", SUPPORTING_IDS)
+def test_every_supporting_entry_is_anchored_and_verbatim_on_cited_page(feed_bundle, catalogue_id):
+    src = _source(feed_bundle, catalogue_id)
     anchors = c.anchor_requirements(src["catalogue"], src["pages"])
     assert not {rid: a.get("anchors_missing") for rid, a in anchors.items() if a["status"] != "anchored_in_guidance_text"}
     problems = []
@@ -453,8 +467,13 @@ def test_every_wgs_entry_is_anchored_and_verbatim_on_cited_page(feed_bundle):
     assert not problems
 
 
+def test_entry_ids_are_unique_across_a_domain(feed_bundle):
+    ids = [e["id"] for s in feed_bundle["sources"] for e in s["catalogue"]["requirements"]]
+    assert len(ids) == len(set(ids))
+
+
 def test_wgs_thresholds_are_quoted_not_paraphrased(feed_bundle):
-    entries = {e["id"]: e for e in _wgs(feed_bundle)["catalogue"]["entries"]}
+    entries = {e["id"]: e for e in _source(feed_bundle, "efsa-2024-8912-wgs")["catalogue"]["entries"]}
     assert "at least 30-fold" in entries["W2.2.2-QUALITY"]["quote"]
     assert "less than 5%" in entries["W2.2.2-CONTAM"]["quote"]
     assert "> 94%" in entries["W2.5.1-BACTERIA"]["quote"]
@@ -472,4 +491,24 @@ def test_assistant_context_spans_all_sources_of_the_domain(feed_bundle):
 def test_wgs_entries_do_not_leak_into_the_gap_analysis(feed_bundle):
     result = _demo(catalogue=feed_bundle["primary"]["catalogue"], pages=feed_bundle["primary"]["pages"])
     ids = {r["id"] for r in result["requirements"]}
-    assert not any(i.startswith("W") for i in ids)
+    assert all(i.startswith("G") for i in ids)
+
+
+def test_amr_and_qps_entries_quote_their_decision_rules(feed_bundle):
+    amr = {e["id"]: e for e in _source(feed_bundle, "efsa-2023-8323-qps-amr")["catalogue"]["entries"]}
+    assert "fewer than 30 strains" in amr["A3.1.2-GENOMES"]["quote"]
+    assert "phenotypic resistance" in amr["A3.2-PRINCIPLES"]["quote"]
+    qps = {e["id"]: e for e in _source(feed_bundle, "efsa-2026-9823-qps")["catalogue"]["entries"]}
+    assert "viable cells" in qps["Q-PRODONLY"]["quote"]
+    assert "not exhaustive" in qps["Q-GENERIC-QUALIF"]["quote"]
+    cons = {e["id"]: e for e in _source(feed_bundle, "efsa-2017-5022-consumer")["catalogue"]["entries"]}
+    assert "< 1% of unidentified material" in cons["C3.2.3-PURITY"]["quote"]
+
+
+def test_assistant_routes_questions_to_the_right_supporting_source(feed_bundle):
+    ctx, ids = c.domain_context_for_question("How do I show an AMR gene is intrinsic rather than acquired?", feed_bundle)
+    assert "A3.1.1-INTRINSIC" in ids and "EFSA 2023 QPS AMR statement" in ctx
+    ctx, ids = c.domain_context_for_question("Which unidentified fraction lets a chemical skip toxicological studies?", feed_bundle)
+    assert "C3.2.3-PURITY" in ids
+    ctx, ids = c.domain_context_for_question("What does QPS status not cover?", feed_bundle)
+    assert "Q1.4-NOTCOVERED" in ids

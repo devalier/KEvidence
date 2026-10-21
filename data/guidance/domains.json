@@ -11,7 +11,10 @@
         "template": "characterisation_template.md"
       },
       "supporting": [
-        {"catalogue": "efsa_2024_8912_wgs_requirements.json"}
+        {"catalogue": "efsa_2024_8912_wgs_requirements.json"},
+        {"catalogue": "efsa_2023_8323_qps_amr_requirements.json"},
+        {"catalogue": "efsa_2026_9823_qps_requirements.json"},
+        {"catalogue": "efsa_2017_5022_consumer_requirements.json"}
       ]
     }
   ]

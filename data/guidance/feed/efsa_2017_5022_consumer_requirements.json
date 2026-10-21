@@ -1,0 +1,199 @@
+{
+  "catalogue_id": "efsa-2017-5022-consumer",
+  "catalogue_version": "0.1.0",
+  "kind": "knowledge",
+  "scope": "Parts of the FEEDAP consumer-safety guidance that bear on what must be characterised: which material is tested, identity with the commercial product, identification of metabolites and residues, the purity exemption and the QPS exemption. Grounds the assistant only. Dose-response, exposure and MRL sections are not encoded.",
+  "guidance": {
+    "title": "Guidance on the assessment of the safety of feed additives for the consumer",
+    "short_name": "FEEDAP 2017 consumer safety (5022)",
+    "author": "EFSA FEEDAP Panel",
+    "citation": "EFSA FEEDAP Panel (Rychen G et al.), 2017. Guidance on the assessment of the safety of feed additives for the consumer. EFSA Journal 2017;15(10):5022, 17 pp.",
+    "doi": "10.2903/j.efsa.2017.5022",
+    "url": "https://doi.org/10.2903/j.efsa.2017.5022",
+    "bundled_file": "efsa_2017_5022_consumer.pdf",
+    "license": "CC BY-ND 4.0 (open access; redistributed unmodified with citation)",
+    "title_check_phrase": "Guidance on the assessment of the safety of feed additives for the consumer",
+    "expected_pages": 17,
+    "page_numbering": "guidance_page is the PDF page number."
+  },
+  "entries": [
+    {
+      "id": "C-SCOPE",
+      "guidance_section": "Scope",
+      "guidance_page": 4,
+      "title": "What the consumer-safety guidance covers",
+      "requirement": "Guidance on assessing consumer safety of feed additives: studies needed (Section 2), requirements by additive (Section 3), highest safe intake and exposure (Section 4), MRLs (Section 5). Safety is assessed by comparing consumer exposure to residues with the safe intake.",
+      "quote": "The safety for the consumer is assessed by comparing the exposure of the consumer to residues in food products to this safe intake",
+      "guidance_anchors": [
+        "The safety for the consumer is assessed by comparing the exposure of the consumer to residues in food products to this safe intake"
+      ],
+      "applies_to": "all",
+      "kind": "scope"
+    },
+    {
+      "id": "C1-ACTIVE",
+      "guidance_section": "1",
+      "guidance_page": 4,
+      "title": "Test the active substance; the fermentation product must be identical to the commercial one",
+      "requirement": "Consumer-safety studies use the active substance. If it is in a fermentation product, test the fermentation product, which must be identical to the commercial one. With several active components, assess each and consider interactions; for complex mixtures that cannot be fully identified or separated, assess the whole mixture.",
+      "quote": "studies necessary to assess consumer safety should be carried out with the active substance [...] The fermentation product tested must be identical to that to be used in the commercial product [...] For complex mixtures, especially when the components cannot be fully identified/separated, the whole mixture should be assessed",
+      "guidance_anchors": [
+        "studies necessary to assess consumer safety should be carried out with the active substance",
+        "The fermentation product tested must be identical to that to be used in the commercial product",
+        "For complex mixtures, especially when the components cannot be fully identified/separated, the whole mixture should be assessed"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C1-IDENTICAL",
+      "guidance_section": "1",
+      "guidance_page": 5,
+      "title": "Published studies: evidence that the additive is identical",
+      "requirement": "When data come from publications, show that the additive used is identical to the one under application, or that conclusions still carry over. For fermentation additives this includes the production strain.",
+      "quote": "evidence must be provided that the additive used in these studies is identical to that under application [...] For additives produced by fermentation, this includes the production strain",
+      "guidance_anchors": [
+        "evidence must be provided that the additive used in these studies is identical to that under application",
+        "For additives produced by fermentation, this includes the production strain"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C1-OMISSIONS",
+      "guidance_section": "1",
+      "guidance_page": 5,
+      "title": "Justify omissions and deviations",
+      "requirement": "Applicants must justify omitted data and any deviation from the guidance.",
+      "quote": "Applicants should justify the omission from the dossier of any data or any deviations from the requirements detailed in this guidance",
+      "guidance_anchors": [
+        "Applicants should justify the omission from the dossier of any data or any deviations from the requirements detailed in this guidance"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1-AIMS",
+      "guidance_section": "2.1",
+      "guidance_page": 5,
+      "title": "Aims of ADME and residue studies",
+      "requirement": "Establish metabolic fate in laboratory and target animals; identify and quantify toxicologically relevant residues (parent and metabolites) in edible tissues and products and select the marker residue; establish kinetics of total and marker residues.",
+      "quote": "to identify and quantify residues (parent compound and metabolites) of toxicological relevance in edible tissues and products and select the marker residue when required",
+      "guidance_anchors": [
+        "to identify and quantify residues (parent compound and metabolites) of toxicological relevance in edible tissues and products and select the marker residue when required"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1.1-LABEL",
+      "guidance_section": "2.1.1",
+      "guidance_page": 5,
+      "title": "Radiolabelled test substance: justification and characterisation",
+      "requirement": "Justify the choice and molecular position of the label and describe its specific activity, radiochemical purity and stability.",
+      "quote": "A justification of the choice and the molecular position of the label should be given, its specific (radio)activity, (radio)chemical purity and stability described",
+      "guidance_anchors": [
+        "A justification of the choice and the molecular position of the label should be given, its specific (radio)activity, (radio)chemical purity and stability described"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1.1.1-METABOLITES",
+      "guidance_section": "2.1.1.1",
+      "guidance_page": 6,
+      "title": "Metabolite identification threshold",
+      "requirement": "Identify all metabolites at >= 5% of the administered dose or >= 10% of total radioactivity in the animal (whichever detects more) and give a metabolic scheme. Identification means exact structural determination.",
+      "quote": "Efforts should be made to identify all metabolites present at 5% or greater of the administered dose or 10% of total radioactivity in the animal [...] Identification refers to the exact structural determination of components",
+      "guidance_anchors": [
+        "Efforts should be made to identify all metabolites present at 5% or greater of the administered dose or 10% of total radioactivity in the animal",
+        "Identification refers to the exact structural determination of components"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1.2-MARKER",
+      "guidance_section": "2.1.2",
+      "guidance_page": 7,
+      "title": "Marker residue",
+      "requirement": "The marker residue is the residue chosen for assay whose concentration has a known relationship to total residues. Select it and give marker-to-total ratios for edible tissues and products. Consider non-extractable residues.",
+      "quote": "The marker residue is the residue selected for assay whose concentration is in a known relationship to total residues in tissues and products [...] Consideration should also be given to the amount and nature of non-extractable residues in edible tissues/products",
+      "guidance_anchors": [
+        "The marker residue is the residue selected for assay whose concentration is in a known relationship to total residues in tissues and products",
+        "Consideration should also be given to the amount and nature of non-extractable residues in edible tissues/products"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1.2.2-MARKERSTUDY",
+      "guidance_section": "2.1.2.2",
+      "guidance_page": 7,
+      "title": "Marker residue study design",
+      "requirement": "Minimum administration period 28 days (animals for fattening: the 28 days before slaughter); marker residue concentration measured with a validated analytical method of sufficient sensitivity.",
+      "quote": "The minimum administration period of the additive should be 28 days [...] Measurements of the marker residue concentration (MRC) should use a validated analytical method with sufficient sensitivity",
+      "guidance_anchors": [
+        "The minimum administration period of the additive should be 28 days",
+        "Measurements of the marker residue concentration (MRC) should use a validated analytical method with sufficient sensitivity"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1.3-RELEVANCE",
+      "guidance_section": "2.1.3",
+      "guidance_page": 7,
+      "title": "Relevance of residues",
+      "requirement": "First approach: total residues from labelled active substance are toxicologically relevant. Second step: discount the fraction incorporated into endogenous compounds and metabolites with reduced toxicological relevance. Structural alerts may help identify relevant metabolites.",
+      "quote": "total residues measured in edible tissues and products from target animals administered the (radio)labelled active substance are considered of toxicological relevance [...] Identification of toxicologically relevant metabolites can make use of structural alerts",
+      "guidance_anchors": [
+        "total residues measured in edible tissues and products from target animals administered the (radio)labelled active substance are considered of toxicological relevance",
+        "Identification of toxicologically relevant metabolites can make use of structural alerts"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C3.1-NOEXPOSURE",
+      "guidance_section": "3.1",
+      "guidance_page": 10,
+      "title": "No consumer-safety studies: no exposure, not absorbed, QPS microorganisms",
+      "requirement": "No studies are needed if target animals are not exposed (with analytical data showing the substance is not detectable in feed at feeding), if the substance is not significantly absorbed (not for additives with a measurable nanoparticle fraction), or for QPS microorganisms and, in specified cases, enzymes and amino acids from them.",
+      "quote": "Appropriate analytical data to determine that the active substance (or related substances) is not detectable in feed at the time of feeding should be provided [...] except additives with a measurable fraction of nanoparticles [...] microorganisms considered by EFSA to qualify for the qualified presumption of safety (QPS) approach to safety assessment",
+      "guidance_anchors": [
+        "Appropriate analytical data to determine that the active substance (or related substances) is not detectable in feed at the time of feeding should be provided",
+        "except additives with a measurable fraction of nanoparticles",
+        "microorganisms considered by EFSA to qualify for the qualified presumption of safety (QPS) approach to safety assessment"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C3.2.3-MICRO",
+      "guidance_section": "3.2.3",
+      "guidance_page": 11,
+      "title": "Microorganisms and fermentation products: basic toxicity set",
+      "requirement": "Provide genotoxicity/mutagenicity tests and a 90-day oral toxicity study. For xenobiotic substances, the basic set augmented as appropriate.",
+      "quote": "For microorganisms and fermentation products, a basic set of toxicity studies should be provided consisting of genotoxicity/mutagenicity tests and a subchronic (90-day) oral toxicity study",
+      "guidance_anchors": [
+        "For microorganisms and fermentation products, a basic set of toxicity studies should be provided consisting of genotoxicity/mutagenicity tests and a subchronic (90-day) oral toxicity study"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C3.2.3-PURITY",
+      "guidance_section": "3.2.3",
+      "guidance_page": 11,
+      "title": "Toxicological studies not required for highly purified non-xenobiotic chemicals",
+      "requirement": "Toxicological studies are not required for highly purified non-xenobiotic chemicals, as a guide < 1% unidentified material on a dry matter basis. Characterisation of the unidentified fraction therefore decides whether this exemption applies.",
+      "quote": "non-xenobiotic chemicals highly purified (as a guide < 1% of unidentified material on a dry matter basis)",
+      "guidance_anchors": [
+        "non-xenobiotic chemicals highly purified (as a guide < 1% of unidentified material on a dry matter basis)"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    }
+  ]
+}

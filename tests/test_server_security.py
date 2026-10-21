@@ -97,7 +97,7 @@ def test_domains_endpoint_lists_feed_only(client):
 def test_guidance_status_reports_every_source_of_the_domain(client):
     data = client.get("/api/characterisation/guidance?domain=feed").json()
     assert data["domain"]["id"] == "feed"
-    assert [s["role"] for s in data["sources"]] == ["primary", "supporting"]
+    assert [s["role"] for s in data["sources"]] == ["primary"] + ["supporting"] * 4
     assert all(s["guidance_text_loaded"] and not s["broken"] for s in data["sources"])
 
 

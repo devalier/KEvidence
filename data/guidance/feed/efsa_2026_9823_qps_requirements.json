@@ -1,0 +1,135 @@
+{
+  "catalogue_id": "efsa-2026-9823-qps",
+  "catalogue_version": "0.1.0",
+  "kind": "knowledge",
+  "scope": "Principles of the QPS approach and its qualifications as set out in the 2026 update of the QPS list. The species-level list of taxonomic units and the qualification attached to each is NOT encoded here: check a strain's species against the opinion itself. Grounds the assistant only.",
+  "guidance": {
+    "title": "Update of the list of QPS-recommended biological agents intentionally added to food or feeds as notified to EFSA",
+    "short_name": "EFSA 2026 QPS list",
+    "author": "EFSA Panel on Biological Hazards (BIOHAZ)",
+    "citation": "EFSA BIOHAZ Panel, Allende A et al., 2026. Update of the list of QPS-recommended biological agents intentionally added to food or feeds as notified to EFSA. EFSA Journal 2026;24(1):e9823, 34 pp. Adopted 3 December 2025.",
+    "doi": "10.2903/j.efsa.2026.9823",
+    "url": "https://doi.org/10.2903/j.efsa.2026.9823",
+    "bundled_file": "efsa_2026_9823_qps.pdf",
+    "license": "CC BY-ND 4.0 (open access; redistributed unmodified with citation)",
+    "title_check_phrase": "Update of the list of QPS-recommended biological agents intentionally added to food or feeds",
+    "expected_pages": 34,
+    "page_numbering": "guidance_page is the PDF page number."
+  },
+  "entries": [
+    {
+      "id": "Q-ABSTRACT",
+      "guidance_section": "Abstract",
+      "guidance_page": 1,
+      "title": "What the QPS approach is, and notable changes in this update",
+      "requirement": "QPS is a harmonised safety assessment approach for microorganisms intentionally added to food and feed: taxonomic identity, body of knowledge and safety concerns, with qualifications assessed at strain level. Bacteriophages are now eligible at species level; Bacillus thuringiensis was not recommended.",
+      "quote": "The QPS approach assesses the taxonomic identity, body of relevant knowledge and safety concerns of microorganisms intentionally added to the food and feed chain [...] Bacteriophages, previously ineligible for the QPS status, are now eligible at the species level [...] Bacillus thuringiensis was not recommended for the QPS list due to safety concerns",
+      "guidance_anchors": [
+        "The QPS approach assesses the taxonomic identity, body of relevant knowledge and safety concerns of microorganisms intentionally added to the food and feed chain",
+        "Bacteriophages, previously ineligible for the QPS status, are now eligible at the species level",
+        "Bacillus thuringiensis was not recommended for the QPS list due to safety concerns"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "Q-GENERIC-QUALIF",
+      "guidance_section": "1.3",
+      "guidance_page": 6,
+      "title": "Generic qualifications and the QPS list's coverage",
+      "requirement": "Absence of acquired genes for resistance to therapeutic antimicrobials applies to all bacterial QPS units; absence of antimycotic resistance must be proven for yeasts used as viable organisms. The QPS list is not exhaustive.",
+      "quote": "Absence of acquired genes coding for resistance to therapeutic antimicrobials for humans and animals is a generic qualification for all bacterial TUs [...] the absence of antimycotic resistance should be proven if the pertinent yeasts are to be used as viable organisms in the food and/or feed chain [...] the QPS list is not exhaustive",
+      "guidance_anchors": [
+        "Absence of acquired genes coding for resistance to therapeutic antimicrobials for humans and animals is a generic qualification for all bacterial TUs",
+        "the absence of antimycotic resistance should be proven if the pertinent yeasts are to be used as viable organisms in the food and/or feed chain",
+        "the QPS list is not exhaustive"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "Q-PRODONLY",
+      "guidance_section": "3.2.3",
+      "guidance_page": 15,
+      "title": "'For production purposes only'",
+      "requirement": "The qualification implies the absence of viable cells of the production organism in the final product and can also apply to food and feed products based on microbial biomass. It applies to QPS yeasts used as production strains or biomass.",
+      "quote": "implies the absence of viable cells of the production organism in the final product",
+      "guidance_anchors": [
+        "implies the absence of viable cells of the production organism in the final product"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "Q1.4-DATA",
+      "guidance_section": "1.4",
+      "guidance_page": 8,
+      "title": "Data still required for a QPS strain",
+      "requirement": "A specific data package is still required, for example confirming the strain's taxonomic identification as belonging to the QPS taxonomic unit and compliance with any qualifications. Data are generally not required for antimicrobial production, toxigenicity, pathogenicity or gut microbiota effects.",
+      "quote": "Strains belonging to a QPS TU still require an assessment based on a specific data package [...] data confirming the taxonomic identification of the requested microbiological strain as belonging to the QPS TU [...] data confirming the compliance with these qualifications are required",
+      "guidance_anchors": [
+        "Strains belonging to a QPS TU still require an assessment based on a specific data package",
+        "data confirming the taxonomic identification of the requested microbiological strain as belonging to the QPS TU",
+        "data confirming the compliance with these qualifications are required"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "Q1.4-GMM",
+      "guidance_section": "1.4",
+      "guidance_page": 8,
+      "title": "QPS and genetically modified microorganisms",
+      "requirement": "QPS can extend to a GMM when the parental/recipient species qualifies and the modification raises no safety concern, also when the qualifications are met through removal of a gene of concern (e.g. AMR genes).",
+      "quote": "the QPS approach can be extended to the genetically modified strain(s) used as production strains, biomass or active agents [...] The QPS approach can also be followed if the qualifications for QPS are met due to the removal of a gene(s) of concern",
+      "guidance_anchors": [
+        "the QPS approach can be extended to the genetically modified strain(s) used as production strains, biomass or active agents",
+        "The QPS approach can also be followed if the qualifications for QPS are met due to the removal of a gene(s) of concern"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "Q1.4-NOTCOVERED",
+      "guidance_section": "1.4",
+      "guidance_page": 8,
+      "title": "Aspects QPS does not cover",
+      "requirement": "Assessed separately when applicable: user exposure, allergenicity, environmental hazards (PPPs; GMMs where legally required) and hazards from formulation or the production and purification process.",
+      "quote": "The following aspects of the EFSA risk assessment are not covered by the QPS status and have to be separately assessed [...] hazards linked to the product formulation and/or the production and purification process",
+      "guidance_anchors": [
+        "The following aspects of the EFSA risk assessment are not covered by the QPS status and have to be separately assessed",
+        "hazards linked to the product formulation and/or the production and purification process"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "Q1.4-PRESUMED",
+      "guidance_section": "1.4",
+      "guidance_page": 8,
+      "title": "Effect of QPS status",
+      "requirement": "Strains in a QPS taxonomic unit (species; family for non-bacterial viruses) that meet the qualifications are generally presumed safe for humans, animals and the environment without further studies.",
+      "quote": "Strains belonging to TUs with QPS status (species for all cases except for non-bacterial viruses for which is the family) and meeting the QPS qualifications are generally presumed safe for humans, animals and the environment without further studies",
+      "guidance_anchors": [
+        "Strains belonging to TUs with QPS status (species for all cases except for non-bacterial viruses for which is the family) and meeting the QPS qualifications are generally presumed safe for humans, animals and the environment without further studies"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "Q1.4-QUALIF",
+      "guidance_section": "1.4",
+      "guidance_page": 9,
+      "title": "Evidence needed for common qualifications",
+      "requirement": "Generic AMR qualification for QPS bacteria: show absence of acquired genes for resistance to therapeutic antimicrobials. Bacillus spp.: confirm absence of toxigenic potential. 'For production purposes only': submit data excluding viable cells in the product. GMMs: confirm the genetic modification is safe.",
+      "quote": "For Bacillus spp., the lack of toxigenic potential needs to be confirmed [...] data excluding the presence of viable cells of the microorganism in the product under assessment in the concerned technical dossier [...] For GMMs, the safety of the genetic modification needs to be confirmed",
+      "guidance_anchors": [
+        "For Bacillus spp., the lack of toxigenic potential needs to be confirmed",
+        "data excluding the presence of viable cells of the microorganism in the product under assessment in the concerned technical dossier",
+        "For GMMs, the safety of the genetic modification needs to be confirmed"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    }
+  ]
+}

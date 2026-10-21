@@ -1,0 +1,173 @@
+{
+  "catalogue_id": "efsa-2023-8323-qps-amr",
+  "catalogue_version": "0.1.0",
+  "kind": "knowledge",
+  "scope": "How EFSA interprets the QPS qualification on acquired antimicrobial resistance genes: definitions of intrinsic and acquired genes, the genome-based approach and the assessment principles. Grounds the assistant only. The copy bundled is the revised version endorsed 9 July 2025 (addendum).",
+  "guidance": {
+    "title": "Statement on how to interpret the QPS qualification on 'Acquired antimicrobial resistance genes'",
+    "short_name": "EFSA 2023 QPS AMR statement",
+    "author": "EFSA Panel on Biological Hazards (BIOHAZ)",
+    "citation": "EFSA BIOHAZ Panel, Koutsoumanis K et al., 2023. Statement on how to interpret the QPS qualification on 'Acquired antimicrobial resistance genes'. EFSA Journal 2023;21(10):8323, 10 pp. Revised version endorsed 9 July 2025.",
+    "doi": "10.2903/j.efsa.2023.8323",
+    "url": "https://doi.org/10.2903/j.efsa.2023.8323",
+    "bundled_file": "efsa_2023_8323_qps_amr.pdf",
+    "license": "CC BY-ND 4.0 (open access; redistributed unmodified with citation)",
+    "title_check_phrase": "how to interpret the QPS qualification on",
+    "expected_pages": 10,
+    "page_numbering": "guidance_page is the PDF page number."
+  },
+  "entries": [
+    {
+      "id": "A1-THERAPEUTIC",
+      "guidance_section": "1",
+      "guidance_page": 5,
+      "title": "Meaning of 'therapeutic antimicrobials'",
+      "requirement": "Antimicrobials of medical and veterinary importance for humans and animals as defined by WHO and WOAH.",
+      "quote": "refers to antimicrobials of medical and veterinary importance for humans and animals as defined by the World Health Organization (WHO) and World Organisation for Animal Health (WOAH)",
+      "guidance_anchors": [
+        "refers to antimicrobials of medical and veterinary importance for humans and animals as defined by the World Health Organization (WHO) and World Organisation for Animal Health (WOAH)"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "A1.2-GENERIC",
+      "guidance_section": "1.2",
+      "guidance_page": 5,
+      "title": "Generic QPS qualification on AMR genes",
+      "requirement": "All QPS bacterial taxonomic units carry the qualification that strains should not harbour acquired antimicrobial resistance genes to therapeutic antimicrobials. The principles may also apply to non-QPS bacteria.",
+      "quote": "the strains should not harbour any acquired antimicrobial resistance genes to therapeutic antimicrobials [...] the principles described may also apply to non-QPS bacteria",
+      "guidance_anchors": [
+        "the strains should not harbour any acquired antimicrobial resistance genes to therapeutic antimicrobials",
+        "the principles described may also apply to non-QPS bacteria"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "A1.2-MOBILITY",
+      "guidance_section": "1.2",
+      "guidance_page": 6,
+      "title": "Mobility analysis is not a basis for the assessment",
+      "requirement": "Analysis of mobile genetic elements in the WGS and transferability experiments are not considered applicable as a basis for the safety assessment of AMR genes.",
+      "quote": "are not considered applicable as a basis for the EFSA safety assessment of AMR genes",
+      "guidance_anchors": [
+        "are not considered applicable as a basis for the EFSA safety assessment of AMR genes"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "A3.1.1-ACQUIRED",
+      "guidance_section": "3.1.1",
+      "guidance_page": 7,
+      "title": "Definition of an acquired AMR gene",
+      "requirement": "A resistance gene novel for the strain, acquired by horizontal transfer, enabling survival or growth at antimicrobial concentrations higher than those inhibiting most wild-type strains of the species. It may sit in the chromosome or on a separate genetic element.",
+      "quote": "The term 'acquired' AMR gene is interpreted as a resistance gene novel for the strain under assessment, acquired through horizontal transfer [...] 'Acquired' AMR genes could be integrated in the bacterial chromosome or harboured on a separate genetic element",
+      "guidance_anchors": [
+        "The term 'acquired' AMR gene is interpreted as a resistance gene novel for the strain under assessment, acquired through horizontal transfer",
+        "'Acquired' AMR genes could be integrated in the bacterial chromosome or harboured on a separate genetic element"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "A3.1.1-INTRINSIC",
+      "guidance_section": "3.1.1",
+      "guidance_page": 7,
+      "title": "Definition of an intrinsic AMR gene",
+      "requirement": "Inherent to strains of a species; shared by the vast majority of wild-type strains of the species and restricted to the chromosome.",
+      "quote": "An AMR gene is considered 'intrinsic' when it is shared by the vast majority of wild-type strains of the same species",
+      "guidance_anchors": [
+        "An AMR gene is considered 'intrinsic' when it is shared by the vast majority of wild-type strains of the same species"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "A3.1.2-GENOMES",
+      "guidance_section": "3.1.2",
+      "guidance_page": 7,
+      "title": "Showing a gene is intrinsic: genome set",
+      "requirement": "Interrogate a sufficient number of high-quality complete genomes of the species, starting from all available in public repositories (at least ENA or SRA). Document databases and release year and reasons for exclusions. Below 30 strains, add the applicant's own. Verify species identity per the WGS statement. Isolates should be unrelated and non-clonality shown, e.g. by phylogenomics.",
+      "quote": "a sufficient number of high-quality complete genomes of strains of the single species should be interrogated [...] If fewer than 30 strains are available, it is recommended to include sequences of more strains based on the applicant's own research [...] The isolates of the same species should be epidemiologically and/or ecologically unrelated",
+      "guidance_anchors": [
+        "a sufficient number of high-quality complete genomes of strains of the single species should be interrogated",
+        "If fewer than 30 strains are available, it is recommended to include sequences of more strains based on the applicant's own research",
+        "The isolates of the same species should be epidemiologically and/or ecologically unrelated"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "A3.1.2-SEARCH",
+      "guidance_section": "3.1.2",
+      "guidance_page": 7,
+      "title": "Identity search for intrinsic status",
+      "requirement": "Identity search (e.g. BLAST) for homologues of the AMR gene across the selected genomes, with a positive control gene present in all strains of the group. In general hits with >= 80% identity and 70% of the subject length are taken into account.",
+      "quote": "A positive control gene expected to be present in all strains of the target group [...] query sequence hits with at least 80% identity",
+      "guidance_anchors": [
+        "A positive control gene expected to be present in all strains of the target group",
+        "query sequence hits with at least 80% identity"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "A3.1.2-VERDICT",
+      "guidance_section": "3.1.2",
+      "guidance_page": 8,
+      "title": "Intrinsic if on the chromosome of the vast majority of wild-type strains",
+      "requirement": "A gene is considered intrinsic if present in the chromosome of the vast majority of wild-type strains of the species. The conclusion is species- and gene-dependent and made case by case in each EFSA area. A Bacillus gene catalogue and pipeline exist.",
+      "quote": "an AMR gene can be considered 'intrinsic' if it is present in the chromosome of the vast majority of the wild-type strains of a bacterial species [...] The interpretation and conclusion will be species and gene-dependent and will be made on a case-by-case basis",
+      "guidance_anchors": [
+        "an AMR gene can be considered 'intrinsic' if it is present in the chromosome of the vast majority of the wild-type strains of a bacterial species",
+        "The interpretation and conclusion will be species and gene-dependent and will be made on a case-by-case basis"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "A3.1.2-WGS",
+      "guidance_section": "3.1.2",
+      "guidance_page": 7,
+      "title": "WGS analysis: databases and accession numbers",
+      "requirement": "The AMR assessment contains a bioinformatic analysis of the strain's WGS following the EFSA WGS statement. Two regularly updated databases are required and ENA or NCBI accession numbers are given for each hit.",
+      "quote": "EFSA requires the use of two regularly updated databases to investigate the possible presence of AMR genes in genomes [...] The ENA or NCBI protein ID or nucleotide accession numbers should be provided for each of the AMR hits",
+      "guidance_anchors": [
+        "EFSA requires the use of two regularly updated databases to investigate the possible presence of AMR genes in genomes",
+        "The ENA or NCBI protein ID or nucleotide accession numbers should be provided for each of the AMR hits"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "A3.2-PHENOTYPE",
+      "guidance_section": "3.2",
+      "guidance_page": 8,
+      "title": "Phenotypic resistance without a known mechanism",
+      "requirement": "Phenotypic resistance not linked to a known AMR mechanism is assessed case by case.",
+      "quote": "Phenotypic antimicrobial resistance not directly linked to the presence of a known AMR mechanism should on a case-by-case be assessed",
+      "guidance_anchors": [
+        "Phenotypic antimicrobial resistance not directly linked to the presence of a known AMR mechanism should on a case-by-case be assessed"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "A3.2-PRINCIPLES",
+      "guidance_section": "3.2",
+      "guidance_page": 8,
+      "title": "Principles for assessing AMR hits",
+      "requirement": "All hits for genes associated with resistance to therapeutic antimicrobials are in principle hazards needing assessment. Intrinsic: no concern. Acquired with phenotypic resistance: hazard/concern, shown by susceptibility testing with MIC against the cut-offs of the EFSA Scientific Committee guidance. Acquired without phenotypic resistance: case-by-case assessment of likelihood of expression.",
+      "quote": "Hits identifying 'intrinsic' resistance will be considered as of no concern in the frame of the EFSA risk assessment purpose [...] Any 'acquired' AMR gene with corresponding antimicrobial phenotypic resistance should be considered as a hazard/concern [...] If the presence of the 'acquired' AMR gene does not lead to phenotypic resistance, further assessment is considered necessary",
+      "guidance_anchors": [
+        "Hits identifying 'intrinsic' resistance will be considered as of no concern in the frame of the EFSA risk assessment purpose",
+        "Any 'acquired' AMR gene with corresponding antimicrobial phenotypic resistance should be considered as a hazard/concern",
+        "If the presence of the 'acquired' AMR gene does not lead to phenotypic resistance, further assessment is considered necessary"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    }
+  ]
+}
