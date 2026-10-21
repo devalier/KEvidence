@@ -1,0 +1,342 @@
+{
+  "catalogue_id": "efsa-2024-8912-wgs",
+  "catalogue_version": "0.1.0",
+  "kind": "knowledge",
+  "scope": "Reporting and quality expectations for whole genome sequence (WGS) analysis of microorganisms, as set by the EFSA statement. Grounds the assistant for production-strain and microorganism questions. It is not used for the chemical data-gap analysis, and the statement itself defines no assessment criteria.",
+  "guidance": {
+    "title": "EFSA statement on the requirements for whole genome sequence analysis of microorganisms intentionally used in the food chain",
+    "author": "European Food Safety Authority (EFSA)",
+    "citation": "EFSA (European Food Safety Authority), 2024. EFSA statement on the requirements for whole genome sequence analysis of microorganisms intentionally used in the food chain. EFSA Journal 2024;22(8):e8912, 14 pp. Adopted 28 June 2024; replaces the EFSA 2021 statement.",
+    "doi": "10.2903/j.efsa.2024.8912",
+    "url": "https://doi.org/10.2903/j.efsa.2024.8912",
+    "bundled_file": "efsa_2024_8912_wgs.pdf",
+    "license": "CC BY-ND 4.0 (open access; redistributed unmodified with citation)",
+    "title_check_phrase": "requirements for whole genome sequence analysis of microorganisms intentionally used in the food chain",
+    "expected_pages": 14,
+    "page_numbering": "guidance_page is the PDF page, which equals the journal page ('n of 14').",
+    "short_name": "EFSA 2024 WGS statement"
+  },
+  "entries": [
+    {
+      "id": "W-APPX-A",
+      "guidance_section": "Appendix A",
+      "guidance_page": 13,
+      "title": "Signed checklist of information to provide",
+      "requirement": "Appendix A is the form listing the information to submit for each of 2.1-2.6; it must be completed and signed by the applicant at submission.",
+      "quote": "This form should be duly completed and signed by the applicants at the time of submission",
+      "guidance_anchors": [
+        "This form should be duly completed and signed by the applicants at the time of submission"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2-REPORT",
+      "guidance_section": "2",
+      "guidance_page": 6,
+      "title": "Report methods, software and databases",
+      "requirement": "Applicants choose the methods but must report protocols, software (name, version, parameters), public databases/references and the outputs. Alternative approaches are acceptable if they allow proper characterisation and risk assessment.",
+      "quote": "protocols and methodologies followed, software programs (name, version and parameters), public databases/references used, as well as the outputs of the analysis should be reported [...] Alternative approaches to those described below may also be followed, provided they allow a proper characterisation and risk assessment of the microorganism",
+      "guidance_anchors": [
+        "protocols and methodologies followed, software programs (name, version and parameters), public databases/references used, as well as the outputs of the analysis should be reported",
+        "Alternative approaches to those described below may also be followed, provided they allow a proper characterisation and risk assessment of the microorganism"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2-SCOPE",
+      "guidance_section": "2",
+      "guidance_page": 5,
+      "title": "What the statement does and does not define",
+      "requirement": "The statement tells applicants how to describe and report WGS-based characterisation. It does not say when WGS data are needed and sets no assessment criteria; those come from the sectoral regulation or guidance (for feed additives, the FEEDAP microorganism guidance).",
+      "quote": "This document does not define in which cases WGS-based data are necessary [...] it neither aims at establishing assessment criteria to draw conclusions from the WGS-based analyses",
+      "guidance_anchors": [
+        "This document does not define in which cases WGS-based data are necessary",
+        "it neither aims at establishing assessment criteria to draw conclusions from the WGS-based analyses"
+      ],
+      "applies_to": "all",
+      "kind": "scope"
+    },
+    {
+      "id": "W2-TAXA",
+      "guidance_section": "2",
+      "guidance_page": 6,
+      "title": "Organisms covered",
+      "requirement": "Bacteria, yeasts, filamentous fungi and viruses (including bacteriophages). Other taxa case by case. For bacteriophages, WGS of the phage and of its replication host strain.",
+      "quote": "The microorganisms covered in the document include bacteria, yeasts, filamentous fungi and viruses (including bacteriophages) [...] For bacteriophages, WGS data of the bacteriophage itself and of the host bacterial strain in which it is replicated should be generated and used for characterisation purposes",
+      "guidance_anchors": [
+        "The microorganisms covered in the document include bacteria, yeasts, filamentous fungi and viruses (including bacteriophages)",
+        "For bacteriophages, WGS data of the bacteriophage itself and of the host bacterial strain in which it is replicated should be generated and used for characterisation purposes"
+      ],
+      "applies_to": "all",
+      "kind": "scope"
+    },
+    {
+      "id": "W2.1-SAMPLE",
+      "guidance_section": "2.1",
+      "guidance_page": 6,
+      "title": "Sample must be the strain under assessment; pure culture from master cell bank",
+      "requirement": "Samples for extraction, sequencing and analysis must correspond to the strain under assessment. Cultivate a pure culture from the master cell bank (phage preparations purified from bacterial DNA and free of other viruses). Describe the extraction protocol; extract chromosomal and extra-chromosomal material.",
+      "quote": "The samples used for nucleic acid extraction, sequencing, WGS-based data analysis and the results reported should correspond to the strain(s) under assessment and the subject of the application for authorisation [...] each microorganism should be cultivated as a pure culture from the master cell bank [...] Genomic material (both chromosomal and extra-chromosomal elements) should be extracted and subjected to analysis",
+      "guidance_anchors": [
+        "The samples used for nucleic acid extraction, sequencing, WGS-based data analysis and the results reported should correspond to the strain(s) under assessment and the subject of the application for authorisation",
+        "each microorganism should be cultivated as a pure culture from the master cell bank",
+        "Genomic material (both chromosomal and extra-chromosomal elements) should be extracted and subjected to analysis"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.2-LONGREAD",
+      "guidance_section": "2.2",
+      "guidance_page": 6,
+      "title": "Sequencing technology",
+      "requirement": "Long-read, or short-read plus long-read with hybrid assembly, is required for bacteria and for viruses with genomes of 20 kb or larger; strongly recommended for yeasts and filamentous fungi.",
+      "quote": "Approaches using long-read or a combination of short-read and long-read sequencing technologies and hybrid assembly methods are required for bacterial strains, and for viruses that have a genome of 20 kb or larger [...] This approach is also strongly recommended for yeasts and filamentous fungi",
+      "guidance_anchors": [
+        "Approaches using long-read or a combination of short-read and long-read sequencing technologies and hybrid assembly methods are required for bacterial strains, and for viruses that have a genome of 20 kb or larger",
+        "This approach is also strongly recommended for yeasts and filamentous fungi"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.2.1-LIBRARY",
+      "guidance_section": "2.2.1",
+      "guidance_page": 6,
+      "title": "Library construction",
+      "requirement": "Report the library construction protocol (fragmentation, size selection, manufacturer's instructions with version and deviations). Size selection must not lose small plasmids.",
+      "quote": "Any selection of fragments by size should ensure that small plasmids are not lost [...] The manufacturer's instructions followed, including version number, and any deviations from that method should be provided",
+      "guidance_anchors": [
+        "Any selection of fragments by size should ensure that small plasmids are not lost",
+        "The manufacturer's instructions followed, including version number, and any deviations from that method should be provided"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.2.2-CONTAM",
+      "guidance_section": "2.2.2",
+      "guidance_page": 6,
+      "title": "Read contamination",
+      "requirement": "Investigate contamination of the reads. Reads assigned to an unexpected organism should be below 5% (exceedance needs justification). Report tool, version, parameters, database, database version and access date.",
+      "quote": "Assigned reads to an unexpected organism should be less than 5% [...] Exceedance of this threshold may be acceptable if properly justified",
+      "guidance_anchors": [
+        "Assigned reads to an unexpected organism should be less than 5%",
+        "Exceedance of this threshold may be acceptable if properly justified"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.2.2-QUALITY",
+      "guidance_section": "2.2.2",
+      "guidance_page": 6,
+      "title": "Read quality and depth",
+      "requirement": "Report QC/filtering software, version, parameters and values. Usual thresholds: PHRED >= 20 per base (short reads), average PHRED >= 7 (long reads). Average read depth at least 30-fold, recommended 100-fold.",
+      "quote": "a per-base PHRED score of at least 20 for short-reads; an average PHRED score of at least 7 for long-reads [...] The average read depth achieved should be at least 30-fold with a recommended target of 100-fold",
+      "guidance_anchors": [
+        "a per-base PHRED score of at least 20 for short-reads; an average PHRED score of at least 7 for long-reads",
+        "The average read depth achieved should be at least 30-fold with a recommended target of 100-fold"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.3-ASSEMBLY",
+      "guidance_section": "2.3",
+      "guidance_page": 6,
+      "title": "De novo assembly: report assembler and processing",
+      "requirement": "Report the assembler, version and parameters, and any post-assembly processing (approach, software, version, parameters). If annotation is used, report software, version, parameters, databases, version and access date.",
+      "quote": "If a de novo assembly-based approach is taken, then the assembly including assembler software, version and parameters should be provided",
+      "guidance_anchors": [
+        "If a de novo assembly-based approach is taken, then the assembly including assembler software, version and parameters should be provided"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.3-COMPLETE",
+      "guidance_section": "2.3",
+      "guidance_page": 7,
+      "title": "Complete genome for bacteria and viruses",
+      "requirement": "A complete assembled genome is to be provided for bacteria and viruses, with a description of the method used to confirm completeness.",
+      "quote": "For bacteria and viruses, a complete assembled genome should be provided [...] The methodology used to confirm the completeness of the genome assembly should also be described",
+      "guidance_anchors": [
+        "For bacteria and viruses, a complete assembled genome should be provided",
+        "The methodology used to confirm the completeness of the genome assembly should also be described"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.3-FUNGI",
+      "guidance_section": "2.3",
+      "guidance_page": 7,
+      "title": "Yeasts and filamentous fungi without a complete assembly",
+      "requirement": "Report contig count (< 1000, otherwise justify), total length and N50 (justify if assembly size is not within +/-20% of the expected species genome size), and BUSCO completeness (ideally > 90% complete matches).",
+      "quote": "The total number of contigs should be < 1000; if a higher number is produced, a justification should be provided [...] Ideally, > 90% complete matches to BUSCO gene set from the most closely related group of yeasts/filamentous fungi should be present in the assembly",
+      "guidance_anchors": [
+        "The total number of contigs should be < 1000; if a higher number is produced, a justification should be provided",
+        "Ideally, > 90% complete matches to BUSCO gene set from the most closely related group of yeasts/filamentous fungi should be present in the assembly"
+      ],
+      "applies_to": "yeasts and filamentous fungi",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.4-REFBASED",
+      "guidance_section": "2.4",
+      "guidance_page": 7,
+      "title": "Reference-based assembly",
+      "requirement": "Allowed as an alternative to, or combined with, de novo assembly, by mapping reads to reference genome(s)/database(s). Not suitable for very divergent strains, e.g. heavily genetically modified ones.",
+      "quote": "This approach is not suitable for very divergent strains (e.g. heavily genetically modified ones)",
+      "guidance_anchors": [
+        "This approach is not suitable for very divergent strains (e.g. heavily genetically modified ones)"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.5.1-BACTERIA",
+      "guidance_section": "2.5.1",
+      "guidance_page": 7,
+      "title": "Taxonomic identification of bacteria",
+      "requirement": "Preferably dDDH and/or ANI against the type-strain genome and several closely related type strains; parental or same-lineage genomes are not acceptable as reference. Species level usually needs dDDH > 70% and ANI > 94%; phylogenomics recommended when unresolved.",
+      "quote": "The use of the genome of the parental strain and/or of strains from the same lineage is not acceptable [...] dDDH should usually reach > 70% identity and ANI should usually reach > 94% [...] A phylogenomic analysis is recommended when the ANI or dDDH analysis does not unequivocally assign the strain to a specific species",
+      "guidance_anchors": [
+        "The use of the genome of the parental strain and/or of strains from the same lineage is not acceptable",
+        "dDDH should usually reach > 70% identity and ANI should usually reach > 94%",
+        "A phylogenomic analysis is recommended when the ANI or dDDH analysis does not unequivocally assign the strain to a specific species"
+      ],
+      "applies_to": "bacteria",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.5.1-FUNGI",
+      "guidance_section": "2.5.1",
+      "guidance_page": 7,
+      "title": "Taxonomic identification of yeasts and filamentous fungi",
+      "requirement": "Phylogenomic analysis, alignment to a complete same-species reference genome, or ANI. ANI identification needs at least 99% similarity to the type material of the expected species. Report the number of orthologous genes used and their coverage of the reference genome.",
+      "quote": "identification should be done by phylogenomic analysis [...] a similarity of at least 99% should be reached when comparing the strain under assessment against the type material of the expected species",
+      "guidance_anchors": [
+        "identification should be done by phylogenomic analysis",
+        "a similarity of at least 99% should be reached when comparing the strain under assessment against the type material of the expected species"
+      ],
+      "applies_to": "yeasts and filamentous fungi",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.5.1-MAPPING",
+      "guidance_section": "2.5.1",
+      "guidance_page": 8,
+      "title": "Identification by read mapping: reporting",
+      "requirement": "Map reads to a suitable, justified reference genome (type strain or well-identified strain). Report software, version and all parameters (state if default), proportion of reads mapped, proportion of the reference covered at >= 5x depth and median depth.",
+      "quote": "The choice of the reference genome(s) needs to be well justified and reported [...] proportion of reference genome covered to at least 5× depth and median depth of mapping across the entire genome should be reported",
+      "guidance_anchors": [
+        "The choice of the reference genome(s) needs to be well justified and reported",
+        "proportion of reference genome covered to at least 5× depth and median depth of mapping across the entire genome should be reported"
+      ],
+      "applies_to": "read-mapping approaches",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.5.1-VIRUS",
+      "guidance_section": "2.5.1",
+      "guidance_page": 7,
+      "title": "Identification of viruses",
+      "requirement": "Identification by complete genome analysis, comparing the sequence against maintained and up-to-date databases.",
+      "quote": "For viruses, identification should be done by complete genome analysis and comparison of the sequence against maintained and up-to-date databases",
+      "guidance_anchors": [
+        "For viruses, identification should be done by complete genome analysis and comparison of the sequence against maintained and up-to-date databases"
+      ],
+      "applies_to": "viruses",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.5.2-GMM",
+      "guidance_section": "2.5.2",
+      "guidance_page": 8,
+      "title": "Genetic modifications",
+      "requirement": "Compare the GMM with the non-modified parental reference strain (justify any other strategy). Report intended and unintended modifications, provide alignments and a map of all insertions, deletions and substitutions (coding and non-coding), and amino acid sequence, function and metabolic role of each inserted, modified or deleted ORF.",
+      "quote": "The characterisation of the genetic modifications should be done by comparing the WGS data of the genetically modified microorganism (GMM) with that of the non-genetically modified reference strain (parental strain) [...] A map or graphic presentation should be provided with all insertions, deletions and substitutions found in the genome [...] For each inserted, modified or deleted open reading frame (ORF) the amino acid sequence, function and metabolic role should be provided",
+      "guidance_anchors": [
+        "The characterisation of the genetic modifications should be done by comparing the WGS data of the genetically modified microorganism (GMM) with that of the non-genetically modified reference strain (parental strain)",
+        "A map or graphic presentation should be provided with all insertions, deletions and substitutions found in the genome",
+        "For each inserted, modified or deleted open reading frame (ORF) the amino acid sequence, function and metabolic role should be provided"
+      ],
+      "applies_to": "genetically modified microorganisms",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.5.3-AMR",
+      "guidance_section": "2.5.3",
+      "guidance_page": 8,
+      "title": "Antimicrobial resistance genes",
+      "requirement": "When AMR genes are to be searched: at least two maintained/curated databases, minimum available coverage threshold in the database. Report hits with >= 80% identity and >= 70% subject-length coverage; report fragments covering < 70% at >= 80% identity and check whether the full gene is present.",
+      "quote": "it should be conducted against at least two maintained/curated databases [...] query sequence hits with a minimum of 80% identity (at the protein or nucleotide level as provided by the database) and 70% length coverage of the subject sequence should be reported",
+      "guidance_anchors": [
+        "it should be conducted against at least two maintained/curated databases",
+        "query sequence hits with a minimum of 80% identity (at the protein or nucleotide level as provided by the database) and 70% length coverage of the subject sequence should be reported"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.5.3-GENES",
+      "guidance_section": "2.5.3",
+      "guidance_page": 8,
+      "title": "Genes and genetic elements of concern",
+      "requirement": "Search the WGS data for genes of concern (virulence factors, clinically relevant antimicrobial resistance, harmful metabolites, clinically relevant antimicrobials, lysogeny/transduction). Tabulate hits with subject name, accession, function, identity and % subject length covered; read-mapping needs median depth >= 5x. Report strategy, software, parameters, database, version/access date.",
+      "quote": "The WGS data can be interrogated for the presence of genes of concern [...] the subject sequence (i.e. the sequence in the database) name and accession number, function of the encoded protein, sequence identity and the length percentage of the subject sequence covered should be provided [...] A minimum 5× median depth across the entire sequences should be used as a threshold",
+      "guidance_anchors": [
+        "The WGS data can be interrogated for the presence of genes of concern",
+        "the subject sequence (i.e. the sequence in the database) name and accession number, function of the encoded protein, sequence identity and the length percentage of the subject sequence covered should be provided",
+        "A minimum 5× median depth across the entire sequences should be used as a threshold"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.5.3-PHAGE",
+      "guidance_section": "2.5.3",
+      "guidance_page": 9,
+      "title": "Bacteriophages: lysogeny and transduction",
+      "requirement": "Assess absence of lysogenic activity and of ability to transduce DNA: look for lysogeny determinants, genome-packaging genes (e.g. Ter genes) and elements indicating transduction, using specific up-to-date databases.",
+      "quote": "For bacteriophages, the absence of lysogenic activity and ability to transduce (mobilise) DNA should be assessed",
+      "guidance_anchors": [
+        "For bacteriophages, the absence of lysogenic activity and ability to transduce (mobilise) DNA should be assessed"
+      ],
+      "applies_to": "bacteriophages",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.5.3-TOXIN",
+      "guidance_section": "2.5.3",
+      "guidance_page": 8,
+      "title": "Toxigenicity, pathogenicity and antimicrobial production",
+      "requirement": "Depending on the taxon, search for virulence-factor genes and metabolic pathways for toxigenicity or clinically relevant antimicrobials, against specific up-to-date databases, with the same 80% identity / 70% coverage reporting rule.",
+      "quote": "Depending on the taxon, the assessment may require the search of genes coding for known virulence factors",
+      "guidance_anchors": [
+        "Depending on the taxon, the assessment may require the search of genes coding for known virulence factors"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "W2.6-FORMATS",
+      "guidance_section": "2.6",
+      "guidance_page": 9,
+      "title": "Raw and processed data formats and file naming",
+      "requirement": "Reads as FASTQ (Species_deposit_number_sequence), assemblies as FASTA (Species_deposit_number_assembled_genome), parental reference genome for GMMs (Species_deposit_number_reference_genome), annotation as GFF/GenBank/EMBL/ASN.1, alignments as SAM/BAM. No spaces or special characters in file names.",
+      "quote": "The sequencing reads, and trimmed reads where relevant, should be submitted in FASTQ format [...] Species_deposit_number_assembled_genome [...] the use of spaces or special characters (e.g. £;!;|) in the file names should be avoided",
+      "guidance_anchors": [
+        "The sequencing reads, and trimmed reads where relevant, should be submitted in FASTQ format",
+        "Species_deposit_number_assembled_genome",
+        "the use of spaces or special characters (e.g. £;!;|) in the file names should be avoided"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    }
+  ]
+}

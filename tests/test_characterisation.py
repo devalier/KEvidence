@@ -405,3 +405,71 @@ def test_user_entries_override_detection(catalogue):
     assert result["meta"]["product_name"] == "Entered name"
     assert result["meta"]["production_types"] == ["chemical_synthesis"]
     assert "product_name" not in result["detected"]["inferred_and_used"]
+
+
+# --- Domains and the supporting WGS statement ------------------------------------------------
+
+@pytest.fixture(scope="module")
+def feed_bundle():
+    return c.load_domain_bundle("feed")
+
+
+def _wgs(bundle):
+    return next(s for s in bundle["sources"] if s["catalogue"]["catalogue_id"] == "efsa-2024-8912-wgs")
+
+
+def test_registry_lists_feed_as_default_and_rejects_unknown_domains():
+    registry = c.load_domains()
+    assert registry["default_domain"] == "feed"
+    assert [d["id"] for d in registry["domains"]] == ["feed"]
+    with pytest.raises(c.UnknownDomain):
+        c.load_domain_bundle("food")
+
+
+def test_domain_files_live_under_the_domain_directory(feed_bundle):
+    assert feed_bundle["directory"] == c.GUIDANCE_ROOT / "feed"
+    for src in feed_bundle["sources"]:
+        assert (feed_bundle["directory"] / src["catalogue"]["guidance"]["bundled_file"]).exists()
+    assert feed_bundle["template"].exists()
+
+
+def test_wgs_statement_is_the_bundled_document(feed_bundle):
+    src = _wgs(feed_bundle)
+    assert src["role"] == "supporting"
+    assert len(src["pages"]) == src["catalogue"]["guidance"]["expected_pages"] == 14
+    assert _compact(src["catalogue"]["guidance"]["title_check_phrase"]) in _compact(" ".join(src["pages"]))
+
+
+def test_every_wgs_entry_is_anchored_and_verbatim_on_cited_page(feed_bundle):
+    src = _wgs(feed_bundle)
+    anchors = c.anchor_requirements(src["catalogue"], src["pages"])
+    assert not {rid: a.get("anchors_missing") for rid, a in anchors.items() if a["status"] != "anchored_in_guidance_text"}
+    problems = []
+    for entry in src["catalogue"]["entries"]:
+        page = _compact(src["pages"][entry["guidance_page"] - 1])
+        for part in entry["quote"].split("[...]"):
+            if part.strip() and _compact(part.strip(" .")) not in page:
+                problems.append((entry["id"], entry["guidance_page"], part[:60]))
+    assert not problems
+
+
+def test_wgs_thresholds_are_quoted_not_paraphrased(feed_bundle):
+    entries = {e["id"]: e for e in _wgs(feed_bundle)["catalogue"]["entries"]}
+    assert "at least 30-fold" in entries["W2.2.2-QUALITY"]["quote"]
+    assert "less than 5%" in entries["W2.2.2-CONTAM"]["quote"]
+    assert "> 94%" in entries["W2.5.1-BACTERIA"]["quote"]
+    assert "80% identity" in entries["W2.5.3-AMR"]["quote"] and "70% length coverage" in entries["W2.5.3-AMR"]["quote"]
+
+
+def test_assistant_context_spans_all_sources_of_the_domain(feed_bundle):
+    ctx, ids = c.domain_context_for_question("What read depth does the WGS statement require?", feed_bundle)
+    assert "W2.2.2-QUALITY" in ids
+    assert "EFSA 2024 WGS statement §2.2.2" in ctx
+    ctx, ids = c.domain_context_for_question("What does the guidance require for dusting potential?", feed_bundle)
+    assert "G2.1.5-SOLID" in ids and "FEEDAP 2017 guidance (5023) §2.1.5" in ctx
+
+
+def test_wgs_entries_do_not_leak_into_the_gap_analysis(feed_bundle):
+    result = _demo(catalogue=feed_bundle["primary"]["catalogue"], pages=feed_bundle["primary"]["pages"])
+    ids = {r["id"] for r in result["requirements"]}
+    assert not any(i.startswith("W") for i in ids)

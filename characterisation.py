@@ -37,11 +37,17 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 from urllib.parse import urljoin, urlparse
 
-GUIDANCE_DIR = Path(os.getenv("KEVIDENCE_GUIDANCE_DIR", str(Path(__file__).resolve().parent / "data" / "guidance")))
+# Guidance is stored per domain: data/guidance/<domain>/ (catalogues, bundled PDFs, output template).
+# data/guidance/domains.json is the registry; a domain is only usable when it is listed there.
+GUIDANCE_ROOT = Path(os.getenv("KEVIDENCE_GUIDANCE_DIR", str(Path(__file__).resolve().parent / "data" / "guidance")))
+DOMAINS_PATH = GUIDANCE_ROOT / "domains.json"
+DEFAULT_DOMAIN = "feed"
+# Paths of the default (feed) domain, kept for callers that predate domains.
+GUIDANCE_DIR = GUIDANCE_ROOT / DEFAULT_DOMAIN
 CATALOGUE_PATH = GUIDANCE_DIR / "feedap_2017_5023_chemical_requirements.json"
 TEMPLATE_PATH = GUIDANCE_DIR / "characterisation_template.md"
 # An institution can point this at its own (non-public) opinion template; placeholders are documented in
-# data/guidance/characterisation_template.md. data/guidance/local/ is git-ignored for that purpose.
+# data/guidance/feed/characterisation_template.md. data/guidance/feed/local/ is git-ignored for that purpose.
 LOCAL_TEMPLATE_PATH = Path(os.getenv("KEVIDENCE_CHARACTERISATION_TEMPLATE", str(GUIDANCE_DIR / "local" / "characterisation_template.md")))
 GUIDANCE_PDF_CANDIDATES = ("efsa_2017_5023.pdf", "j.efsa.2017.5023.pdf", "5023.pdf", "guidance_5023.pdf")
 
@@ -94,7 +100,8 @@ def _normalise_ws(text: str) -> str:
     return re.sub(r"\s+", " ", text or "").strip()
 
 
-LIGATURES = {"ﬁ": "fi", "ﬂ": "fl", "ﬀ": "ff", "ﬃ": "ffi", "ﬄ": "ffl", "–": "-", "—": "-", "’": "'", "‘": "'"}
+LIGATURES = {"ﬁ": "fi", "ﬂ": "fl", "ﬀ": "ff", "ﬃ": "ffi", "ﬄ": "ffl", "–": "-", "—": "-", "−": "-", "’": "'", "‘": "'",
+             "\u00ad": "", "\u200b": ""}
 
 
 def _fix_ligatures(text: str) -> str:
@@ -108,13 +115,77 @@ def _compact(text: str) -> tuple[str, list[int]]:
     """Lower-case, ligature-fixed text with all whitespace removed, plus a map
     from compact positions back to positions in the ligature-fixed text.
     PDF extraction inserts spurious spaces (e.g. 'speci ﬁcation'), so anchors
-    are matched whitespace-insensitively."""
+    are matched whitespace- and hyphen-insensitively."""
     chars, index = [], []
     for i, ch in enumerate(text):
-        if not ch.isspace():
+        # Hyphens are dropped as well: PDF line breaks split words as "bac-" / "teriophages".
+        if not ch.isspace() and ch != "-":
             chars.append(ch.lower())
             index.append(i)
     return "".join(chars), index
+
+
+class UnknownDomain(KeyError):
+    """The requested domain is not in the registry, so no guidance is available to ground it."""
+
+
+def load_domains(path: Path = DOMAINS_PATH) -> dict[str, Any]:
+    with open(path, encoding="utf-8") as f:
+        registry = json.load(f)
+    ids = [d["id"] for d in registry["domains"]]
+    if len(ids) != len(set(ids)):
+        raise ValueError("Duplicate domain ids in guidance registry")
+    if registry["default_domain"] not in ids:
+        raise ValueError("default_domain is not a registered domain")
+    return registry
+
+
+def load_knowledge_catalogue(path: Path) -> dict[str, Any]:
+    """Load a supporting catalogue: verbatim-quoted guidance entries that ground the assistant
+    but do not drive the data-gap analysis. Entries share the field names of requirements."""
+    with open(path, encoding="utf-8") as f:
+        catalogue = json.load(f)
+    entries = catalogue["entries"]
+    ids = [e["id"] for e in entries]
+    if len(ids) != len(set(ids)):
+        raise ValueError(f"Duplicate entry IDs in {path.name}")
+    for entry in entries:
+        for key in ("guidance_section", "guidance_page", "quote", "guidance_anchors", "requirement", "title"):
+            if not entry.get(key):
+                raise ValueError(f"{entry['id']} is missing '{key}' (every entry must cite the guidance)")
+    catalogue["requirements"] = entries  # same shape as the primary catalogue, so anchoring is shared
+    return catalogue
+
+
+def load_pdf_pages(pdf_path: Path) -> Optional[list[str]]:
+    if not pdf_path.exists():
+        return None
+    doc = extract_document(pdf_path.name, pdf_path.read_bytes())
+    return doc.pages if doc.pages and any(p.strip() for p in doc.pages) else None
+
+
+def load_domain_bundle(domain_id: Optional[str] = None, root: Path = GUIDANCE_ROOT) -> dict[str, Any]:
+    """Everything the backend needs to ground one domain: the primary catalogue that drives the
+    gap analysis, the supporting catalogues, and the text of each bundled guidance PDF."""
+    registry = load_domains(root / "domains.json")
+    domain_id = domain_id or registry["default_domain"]
+    entry = next((d for d in registry["domains"] if d["id"] == domain_id), None)
+    if entry is None:
+        raise UnknownDomain(domain_id)
+    directory = root / entry["directory"]
+    primary_cat = load_catalogue(directory / entry["primary"]["catalogue"])
+    sources = [{"role": "primary", "catalogue": primary_cat,
+                "pages": load_pdf_pages(directory / primary_cat["guidance"]["bundled_file"])}]
+    for sup in entry.get("supporting", []):
+        cat = load_knowledge_catalogue(directory / sup["catalogue"])
+        sources.append({"role": "supporting", "catalogue": cat,
+                        "pages": load_pdf_pages(directory / cat["guidance"]["bundled_file"])})
+    return {
+        "id": entry["id"], "label": entry["label"], "directory": directory,
+        "assistant_role": entry.get("assistant_role", ""),
+        "template": directory / entry["primary"].get("template", "characterisation_template.md"),
+        "primary": sources[0], "sources": sources,
+    }
 
 
 def load_guidance_pages(guidance_dir: Path = GUIDANCE_DIR) -> Optional[list[str]]:
@@ -1199,7 +1270,8 @@ def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optio
             "detail": "Select 'fermentation' as production type so that the §2.1.4 fermentation-specific impurity requirements "
                       "(spent growth medium, absence of production organism and antimicrobial activity, LPS, DNA) are applied. "
                       "Characterisation of the production strain itself follows the FEEDAP microorganism guidance "
-                      "(EFSA Journal 2018;16(3):5206) and is outside this MVP.",
+                      "(EFSA Journal 2018;16(3):5206) and is outside this MVP; how to report WGS data is in the EFSA statement "
+                      "(EFSA Journal 2024;22(8):e8912).",
             "evidence": fermentation,
         })
     elif "fermentation" in meta["production_types"]:
@@ -1839,7 +1911,8 @@ def _opinion_112_md(result: dict[str, Any]) -> str:
     return ("**[Outside this chemical-characterisation MVP — to be completed by the scientific officer.]** Characterisation of the "
             "production strain (deposition, taxonomic identification by WGS, genetic modification, antimicrobial resistance genes and "
             "susceptibility, toxins and virulence factors, antimicrobial activity) follows the FEEDAP microorganism guidance "
-            "(EFSA Journal 2018;16(3):5206) referred to in guidance §2.2.1.2 and §2.2.2.2.")
+            "(EFSA Journal 2018;16(3):5206) referred to in guidance §2.2.1.2 and §2.2.2.2; WGS reporting expectations are in the EFSA "
+            "statement (EFSA Journal 2024;22(8):e8912).")
 
 
 # ---------------------------------------------------------------------------
@@ -2130,10 +2203,12 @@ QUESTION_STOPWORDS = {
 
 
 def guidance_context_for_question(question: str, catalogue: Optional[dict[str, Any]] = None,
-                                  guidance_pages: Optional[list[str]] = None, limit: int = 6) -> tuple[str, list[str]]:
+                                  guidance_pages: Optional[list[str]] = None, limit: int = 6,
+                                  label: str = "Guidance") -> tuple[str, list[str]]:
     """Select catalogue requirements (and guidance passages, when loaded) relevant to a question."""
     catalogue = catalogue or load_catalogue()
     words = {w for w in re.findall(r"[a-z]{4,}", question.lower())} - QUESTION_STOPWORDS
+    words |= {w.lower() for w in re.findall(r"\b[A-Z]{3}\b", question)}  # acronyms such as WGS, ANI, AMR
     scored = []
     for req in catalogue["requirements"]:
         hay = f"{req['title']} {req['requirement']} {req['quote']} {' '.join(req.get('guidance_anchors', []))}".lower()
@@ -2148,10 +2223,59 @@ def guidance_context_for_question(question: str, catalogue: Optional[dict[str, A
     parts = []
     for req in chosen:
         g = anchors[req["id"]]
-        part = (f"[{req['id']}] Guidance §{req['guidance_section']} (p.{req['guidance_page']}): {req['title']}\n"
+        part = (f"[{req['id']}] {label} §{req['guidance_section']} (p.{req['guidance_page']}): {req['title']}\n"
                 f"Requirement (paraphrase): {req['requirement']}\nVerbatim guidance quote: \"{req['quote']}\"\n"
                 f"Grounding status: {g['status']}")
         for p in g.get("passages", [])[:2]:
             part += f"\nGuidance text p.{p['page']}: \"{p['excerpt']}\""
         parts.append(part)
     return "\n\n".join(parts), [r["id"] for r in chosen]
+
+
+def domain_context_for_question(question: str, bundle: dict[str, Any], extra_terms: str = "",
+                                limit: int = 6, supporting_limit: int = 4) -> tuple[str, list[str]]:
+    """Select entries relevant to a question from every guidance source of a domain.
+
+    Each source's entries are labelled with the source's own short name so the assistant cites
+    the right document. Returns the context text and the ids of the entries chosen."""
+    parts, ids = [], []
+    for src in bundle["sources"]:
+        cat = src["catalogue"]
+        n = limit if src["role"] == "primary" else supporting_limit
+        ctx, found = guidance_context_for_question(f"{question} {extra_terms}".strip(), cat, src["pages"], n,
+                                                   label=source_short_name(cat))
+        if ctx:
+            parts.append(f"=== {cat['guidance']['citation']} ===\n\n{ctx}")
+            ids += found
+    return "\n\n".join(parts), ids
+
+
+def domain_template_path(bundle: dict[str, Any]) -> Path:
+    """Institution template (env override, then <domain>/local/) if present, else the public one."""
+    env = os.getenv("KEVIDENCE_CHARACTERISATION_TEMPLATE")
+    for candidate in ([Path(env)] if env else []) + [bundle["directory"] / "local" / "characterisation_template.md"]:
+        if candidate.exists():
+            return candidate
+    return bundle["template"]
+
+
+def source_short_name(catalogue: dict[str, Any]) -> str:
+    g = catalogue["guidance"]
+    return g.get("short_name") or f"Guidance {g['doi'].rsplit('/', 1)[-1]}"
+
+
+def source_status(src: dict[str, Any]) -> dict[str, Any]:
+    """Grounding status of one guidance source (catalogue plus bundled PDF text)."""
+    cat, pages = src["catalogue"], src["pages"]
+    anchors = anchor_requirements(cat, pages)
+    counts: dict[str, int] = {}
+    for req in cat["requirements"]:
+        key = anchors[req["id"]]["status"]
+        counts[key] = counts.get(key, 0) + 1
+    return {
+        "role": src["role"], "catalogue_id": cat["catalogue_id"], "catalogue_version": cat["catalogue_version"],
+        "guidance": cat["guidance"], "scope": cat["scope"],
+        "guidance_text_loaded": bool(pages), "guidance_pages": len(pages) if pages else 0,
+        "verification_counts": counts, "entries": len(cat["requirements"]),
+        "broken": [rid for rid, a in anchors.items() if a["status"] == "not_found_in_guidance_text"],
+    }

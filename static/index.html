@@ -46,6 +46,9 @@
   }
   h1 { font-size: 19px; font-weight: 700; }
   .subtitle { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .domain-picker { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .domain-picker label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
+  .domain-picker select { width: auto; min-width: 170px; }
   .status-pill {
     border: 1px solid rgba(251, 191, 36, 0.45);
     color: var(--warning);
@@ -246,6 +249,10 @@
       <h1>KEvidence Risk Assessment Workbench</h1>
       <div class="subtitle">Codex-aligned risk assessment: problem formulation → substance characterisation → hazard identification → hazard characterisation → exposure assessment → risk characterisation</div>
     </div>
+  </div>
+  <div class="domain-picker">
+    <label for="domainSelect">Domain</label>
+    <select id="domainSelect" aria-label="Regulatory domain used to ground the assessment"><option value="feed">Feed additives</option></select>
   </div>
   <div class="status-pill">Prototype • supports the scientific risk-assessment step of risk analysis, not risk management decisions</div>
 </header>
@@ -469,7 +476,7 @@
         <table class="sample-table">
           <thead><tr><th>Need</th><th>Use this</th><th>What to do in KEvidence</th></tr></thead>
           <tbody>
-            <tr><td>Feed additive characterisation (step 0)</td><td><a href="samples/characterisation_demo_dossier.md" download>Download fictional demo dossier</a><br><a href="api/characterisation/guidance.pdf" target="_blank" rel="noopener">FEEDAP identity/characterisation guidance (PDF)</a></td><td>Upload the demo dossier in step 0 and click <em>Characterise from documents</em>; KEvidence identifies vanillin from it. For exemptions, open <em>Optional details</em> and set additive type "flavouring compound" and routes. It is deliberately incomplete (3 batches instead of 5, no residual solvents, no SDS) so the gap analysis has findings.</td></tr>
+            <tr><td>Feed additive characterisation (step 0)</td><td><a href="samples/characterisation_demo_dossier.md" download>Download fictional demo dossier</a><br><a href="api/characterisation/guidance.pdf?domain=feed" target="_blank" rel="noopener">FEEDAP identity/characterisation guidance (PDF)</a><br><a href="api/characterisation/guidance.pdf?domain=feed&source=efsa-2024-8912-wgs" target="_blank" rel="noopener">EFSA 2024 WGS statement (PDF)</a></td><td>Upload the demo dossier in step 0 and click <em>Characterise from documents</em>; KEvidence identifies vanillin from it. For exemptions, open <em>Optional details</em> and set additive type "flavouring compound" and routes. It is deliberately incomplete (3 batches instead of 5, no residual solvents, no SDS) so the gap analysis has findings.</td></tr>
             <tr><td>NAM POD / AC50 example</td><td><a href="samples/nam_pod_examples.csv" download>Download local CSV template</a><br><a href="https://www.epa.gov/comptox-tools/exploring-toxcast-data" target="_blank" rel="noopener">EPA ToxCast/Tox21 data portal</a><br><a href="https://epa.figshare.com/articles/dataset/ToxCast_Database_invitroDB_/6062623" target="_blank" rel="noopener">EPA invitroDB on Figshare</a></td><td>Copy assay, POD type, POD value/unit, and mapped event ID into the hazard characterisation step (POD). Use the EPA bioactivity import script for larger local searches.</td></tr>
             <tr><td>OpenFoodTox reference points</td><td><a href="https://zenodo.org/records/19388272" target="_blank" rel="noopener">OpenFoodTox 3.0 on Zenodo</a><br><a href="https://zenodo.org/records/8120114" target="_blank" rel="noopener">Earlier OpenFoodTox Zenodo record</a></td><td>Download the Excel export, build the local SQLite index, then query the hazard characterisation step by substance name, CAS, EC number, or synonym.</td></tr>
             <tr><td>AOP structure and event IDs</td><td><a href="https://aopwiki.org/downloads" target="_blank" rel="noopener">AOP-Wiki quarterly downloads</a><br><a href="https://zenodo.org/records/17499488" target="_blank" rel="noopener">AOP-Wiki RDF on Zenodo</a></td><td>Use event IDs to map NAM assays to MIE/KE/AO records during hazard identification and characterisation.</td></tr>
@@ -518,7 +525,7 @@
 
 <script>
 const API_BASE = window.location.pathname.startsWith('/kevidence') ? '/kevidence/api' : '/api';
-const state = { chemical: '', context: {}, candidateAops: [], selectedAop: null, selectedAopDetail: null, assessment: null, quantitative: null, openfoodtox: null, characterisation: null, activeTab: 'problem' };
+const state = { chemical: '', context: {}, candidateAops: [], selectedAop: null, selectedAopDetail: null, assessment: null, quantitative: null, openfoodtox: null, characterisation: null, activeTab: 'problem', domain: 'feed' };
 
 const $ = id => document.getElementById(id);
 const steps = document.querySelectorAll('.step');
@@ -851,6 +858,7 @@ async function sendAssistant(prompt) {
   const charGaps = state.characterisation ? characterisationGapSummary() : [];
   const assistantContext = {
     workflow_step: state.activeTab === 'characterisation' ? 'characterisation' : '',
+    domain: state.domain,
     characterisation_product: state.characterisation?.meta?.product_name || '',
     characterisation_gaps: charGaps,
     chemical: state.chemical || '',
@@ -912,18 +920,42 @@ function characterisationMeta() {
     routes: checkedValues('charRoutes'), production_types: checkedValues('charProduction'), components
   };
 }
+async function loadDomains() {
+  try {
+    const res = await fetch(`${API_BASE}/domains`);
+    const d = await res.json();
+    let saved = '';
+    try { saved = localStorage.getItem('kevidence.domain') || ''; } catch (e) {}
+    const ids = d.domains.map(x => x.id);
+    state.domain = ids.includes(saved) ? saved : d.default;
+    $('domainSelect').innerHTML = d.domains.map(x => `<option value="${escapeHtml(x.id)}" title="${escapeHtml(x.sources.join('; '))}">${escapeHtml(x.label)}</option>`).join('');
+    $('domainSelect').value = state.domain;
+  } catch (e) { /* the static default option stays; the backend rejects unknown domains */ }
+}
+$('domainSelect').addEventListener('change', () => {
+  state.domain = $('domainSelect').value;
+  try { localStorage.setItem('kevidence.domain', state.domain); } catch (e) {}
+  // A result was grounded in the previous domain's guidance; do not leave it on screen under the new one.
+  state.characterisation = null;
+  $('charOutput').innerHTML = '<div class="muted">Domain changed. Add documents and run the characterisation again.</div>';
+  loadCharacterisationGuidance();
+});
 async function loadCharacterisationGuidance() {
   try {
-    const res = await fetch(`${API_BASE}/characterisation/guidance`);
+    const res = await fetch(`${API_BASE}/characterisation/guidance?domain=${encodeURIComponent(state.domain)}`);
     const g = await res.json();
-    const anchored = g.verification_counts?.anchored_in_guidance_text || 0;
-    const total = (g.requirements || []).length;
-    const broken = (g.requirements || []).filter(r => r.grounding?.status === 'not_found_in_guidance_text').map(r => r.id);
-    $('charGuidanceStatus').innerHTML = `<span class="badge">Grounding</span>${escapeHtml(g.guidance?.citation || '')}
-      <br><span class="badge">${g.guidance_text_loaded ? 'Guidance text loaded' : 'Guidance text NOT loaded'}</span>${anchored}/${total} catalogue requirements anchored verbatim in the guidance text${broken.length ? ` — <strong class="status-gap">review: ${broken.map(escapeHtml).join(', ')}</strong>` : ''}.
-      <a href="${API_BASE}/characterisation/guidance.pdf" target="_blank" rel="noopener" style="color:var(--accent)">Open guidance PDF</a>`;
+    if (!res.ok) throw new Error(g.detail || `HTTP ${res.status}`);
+    const rows = (g.sources || []).map(s => {
+      const anchored = s.verification_counts?.anchored_in_guidance_text || 0;
+      const broken = s.broken || [];
+      const role = s.role === 'primary' ? 'Drives the data-gap analysis' : 'Grounds the assistant';
+      return `<div style="margin-top:6px"><span class="badge">${escapeHtml(role)}</span>${escapeHtml(s.guidance?.citation || '')}
+        <br><span class="badge">${s.guidance_text_loaded ? 'Guidance text loaded' : 'Guidance text NOT loaded'}</span>${anchored}/${s.entries} entries anchored verbatim in the guidance text${broken.length ? ` — <strong class="status-gap">review: ${broken.map(escapeHtml).join(', ')}</strong>` : ''}.
+        <a href="${API_BASE}/characterisation/guidance.pdf?domain=${encodeURIComponent(state.domain)}&source=${encodeURIComponent(s.catalogue_id)}" target="_blank" rel="noopener" style="color:var(--accent)">Open PDF</a></div>`;
+    }).join('');
+    $('charGuidanceStatus').innerHTML = `<span class="badge">Domain</span>${escapeHtml(g.domain?.label || state.domain)}${rows}`;
   } catch (e) {
-    $('charGuidanceStatus').textContent = 'Guidance status unavailable.';
+    $('charGuidanceStatus').textContent = `Guidance status unavailable: ${e.message}`;
   }
 }
 async function runCharacterisation() {
@@ -935,6 +967,7 @@ async function runCharacterisation() {
   fd.append('urls', urls);
   fd.append('meta', JSON.stringify(characterisationMeta()));
   fd.append('allow_external_llm', $('charAllowLlm').checked ? 'true' : 'false');
+  fd.append('domain', state.domain);
   $('charOutput').innerHTML = '<div class="muted">Reading documents and mapping evidence to the guidance…</div>';
   $('charAnalyseBtn').disabled = true;
   try {
@@ -1094,7 +1127,7 @@ $('charFiles').addEventListener('change', () => {
 });
 $('charUrls').addEventListener('input', updateCharRunState);
 addComponentRow();
-loadCharacterisationGuidance();
+loadDomains().then(loadCharacterisationGuidance);
 updateContext();
 </script>
 </body>

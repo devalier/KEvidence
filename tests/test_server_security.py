@@ -84,3 +84,49 @@ def test_basic_auth_when_configured(client, monkeypatch):
     good = base64.b64encode(b"officer:s3cret").decode()
     ok = client.get("/api/health", headers={"Authorization": f"Basic {good}"})
     assert ok.status_code == 200 and ok.headers["x-frame-options"] == "DENY"
+
+
+# --- Domain routing for step 0 grounding ---------------------------------------------------
+
+def test_domains_endpoint_lists_feed_only(client):
+    data = client.get("/api/domains").json()
+    assert data["default"] == "feed"
+    assert [d["id"] for d in data["domains"]] == ["feed"]
+
+
+def test_guidance_status_reports_every_source_of_the_domain(client):
+    data = client.get("/api/characterisation/guidance?domain=feed").json()
+    assert data["domain"]["id"] == "feed"
+    assert [s["role"] for s in data["sources"]] == ["primary", "supporting"]
+    assert all(s["guidance_text_loaded"] and not s["broken"] for s in data["sources"])
+
+
+@pytest.mark.parametrize("path", [
+    "/api/characterisation/guidance?domain=food",
+    "/api/characterisation/guidance.pdf?domain=food",
+    "/api/characterisation/guidance.pdf?domain=../feed",
+])
+def test_unknown_domain_is_rejected_not_defaulted(client, path):
+    assert client.get(path).status_code == 400
+
+
+def test_unknown_source_pdf_is_404_and_known_sources_serve_pdf(client):
+    assert client.get("/api/characterisation/guidance.pdf?domain=feed&source=nope").status_code == 404
+    for source in ("", "efsa-2024-8912-wgs"):
+        r = client.get(f"/api/characterisation/guidance.pdf?domain=feed&source={source}")
+        assert r.status_code == 200 and r.content.startswith(b"%PDF")
+
+
+def test_analyse_rejects_unknown_domain(client):
+    r = client.post("/api/characterisation/analyse", data={"urls": "x", "domain": "food"})
+    assert r.status_code == 400
+
+
+def test_chat_in_an_unloaded_domain_refuses_instead_of_answering_from_feed(client, monkeypatch):
+    def boom(*a, **k):
+        raise AssertionError("LLM must not be called without grounding")
+    monkeypatch.setattr(server.llm.chat.completions, "create", boom)
+    r = client.post("/api/chat", json={"message": "What are the batch requirements?",
+                                       "context": {"workflow_step": "characterisation", "domain": "food"}})
+    body = r.json()
+    assert body["no_data"] is True and "food" in body["answer"]

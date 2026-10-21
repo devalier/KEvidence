@@ -1,0 +1,18 @@
+{
+  "default_domain": "feed",
+  "domains": [
+    {
+      "id": "feed",
+      "label": "Feed additives",
+      "directory": "feed",
+      "assistant_role": "EFSA scientific officers assessing feed additives",
+      "primary": {
+        "catalogue": "feedap_2017_5023_chemical_requirements.json",
+        "template": "characterisation_template.md"
+      },
+      "supporting": [
+        {"catalogue": "efsa_2024_8912_wgs_requirements.json"}
+      ]
+    }
+  ]
+}
