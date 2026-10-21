@@ -433,7 +433,9 @@ def test_domain_files_live_under_the_domain_directory(feed_bundle):
     assert feed_bundle["template"].exists()
 
 
-SUPPORTING_IDS = ["efsa-2024-8912-wgs", "efsa-2023-8323-qps-amr", "efsa-2026-9823-qps", "efsa-2017-5022-consumer"]
+SUPPORTING_IDS = ["efsa-2024-8912-wgs", "efsa-2023-8323-qps-amr", "efsa-2026-9823-qps", "efsa-2017-5022-consumer",
+                  "efsa-2017-5021-target-species", "efsa-2018-5206-microorganisms", "efsa-2019-5648-environment",
+                  "efsa-2021-6340-renewal", "vich-gl18r2"]
 
 
 def _source(bundle, catalogue_id):
@@ -512,3 +514,139 @@ def test_assistant_routes_questions_to_the_right_supporting_source(feed_bundle):
     assert "C3.2.3-PURITY" in ids
     ctx, ids = c.domain_context_for_question("What does QPS status not cover?", feed_bundle)
     assert "Q1.4-NOTCOVERED" in ids
+
+
+# --- Workflow-step tagging --------------------------------------------------------------------
+
+def test_entries_default_to_characterisation_and_every_step_has_entries(feed_bundle):
+    all_entries = [e for src in feed_bundle["sources"] for e in src["catalogue"]["requirements"]]
+    for e in all_entries:
+        assert set(c.entry_steps(e)) <= set(c.WORKFLOW_STEPS), e["id"]
+    for step in c.WORKFLOW_STEPS:
+        assert any(step in c.entry_steps(e) for e in all_entries), step
+
+
+def test_step_filter_limits_context_to_tagged_entries(feed_bundle):
+    ctx, ids = c.domain_context_for_question("How are age classes and consumption data used in the exposure assessment?", feed_bundle, step="exposure")
+    assert "C4.3.1-CONSUMPTION" in ids and "G2.1-FINAL" not in ids
+    ctx, ids = c.domain_context_for_question("When can an MRL be set and what withdrawal time?", feed_bundle, step="risk-char")
+    assert "C5-MRL" in ids
+    ctx, ids = c.domain_context_for_question("What uncertainty factor gives the ADI from a NOAEL?", feed_bundle, step="hazard-char")
+    assert "C4.2-HBGV" in ids
+    # the same exposure question is not answered from the characterisation step
+    _, ids = c.domain_context_for_question("How are age classes and consumption data used in the exposure assessment?", feed_bundle, step="characterisation")
+    assert "C4.3.1-CONSUMPTION" not in ids
+
+
+def test_renewal_and_first_application_batch_rules_are_both_available(feed_bundle):
+    _, ids = c.domain_context_for_question("How recent must batch data be and how many batches?", feed_bundle, step="characterisation")
+    assert "R2.2-BATCHES" in ids
+    entries = {e["id"]: e for s_ in feed_bundle["sources"] for e in s_["catalogue"]["requirements"]}
+    assert "not older than one year" in entries["R2.2-BATCHES"]["quote"]
+
+
+def test_feed_intake_table_rows_are_verbatim(feed_bundle):
+    src = _source(feed_bundle, "efsa-2017-5021-target-species")
+    entry = next(e for e in src["catalogue"]["entries"] if e["id"] == "T4-FEEDINTAKE")
+    assert len(entry["guidance_anchors"]) == 16
+    page = _compact(src["pages"][entry["guidance_page"] - 1])
+    assert all(_compact(row) in page for row in entry["guidance_anchors"])
+
+
+# --- Structured datasets ----------------------------------------------------------------------
+
+def test_qps_dataset_matches_the_opinion_tables(feed_bundle):
+    qps = feed_bundle["datasets"]["qps"]
+    assert qps["partial"] is True
+    assessed = [t for t in qps["taxa"] if "table6_page" in t]
+    assert len(assessed) == 31
+    assert sum(t["qps"] == "no" for t in assessed) == 23 and sum(t["qps"] == "yes" for t in assessed) == 8
+    src = _source(feed_bundle, "efsa-2026-9823-qps")
+    text = " ".join(_compact(p) for p in src["pages"])
+    for t in qps["taxa"]:
+        assert _compact(t["taxon"]) in text, t["taxon"]
+        for q in t["qualifications"]:
+            assert _compact(q) in text, (t["taxon"], q)
+
+
+def test_qps_lookup_reports_status_and_never_infers_from_absence(feed_bundle):
+    qps = feed_bundle["datasets"]["qps"]
+    hit = c.qps_lookup("Is Bacillus sonorensis QPS?", qps)
+    assert hit and hit[0]["qps"] == "yes" and any("bacitracin" in q for q in hit[0]["qualifications"])
+    assert c.qps_lookup("Is B. thuringiensis acceptable?", qps)[0]["qps"] == "no"
+    assert c.qps_lookup("Agrobacterium radiobacter or Rhizobium radiobacter", qps)[0]["qps"] == "yes"
+    assert c.qps_lookup("E. coli strain", qps)[0]["kind"] == "excluded_group"
+    assert c.qps_lookup("Bacillus subtilis", qps) == []          # absent, not 'not QPS'
+    ctx = c.dataset_context("Is Lactiplantibacillus plantarum on the QPS list?", feed_bundle)
+    assert "PARTIAL" in ctx and "says nothing" in ctx
+
+
+def test_mic_dataset_rows_are_verbatim_and_looked_up_by_species(feed_bundle):
+    mic = feed_bundle["datasets"]["mic"]
+    src = _source(feed_bundle, "efsa-2018-5206-microorganisms")
+    page = _compact(src["pages"][mic["source"]["page"] - 1])
+    assert len(mic["taxa"]) == 18 and all(_compact(r["source_row"]) in page for r in mic["taxa"])
+    rows = c.mic_lookup("MIC cut-off for Lactiplantibacillus plantarum tetracycline", mic)
+    assert rows[0]["taxon"].startswith("Lactobacillus plantarum") and rows[0]["mg_per_l"]["tetracycline"] == 32
+    assert c.mic_lookup("Enterococcus faecium", mic)[0]["mg_per_l"]["ampicillin"] == 2
+    assert c.mic_lookup("Bacillus subtilis", mic)[0]["taxon"] == "Bacillus"
+    assert "128" in c.format_mic_rows(c.mic_lookup("Lentilactobacillus buchneri", mic), mic)
+
+
+def test_vich_dataset_matches_the_guideline_tables(feed_bundle):
+    vich = feed_bundle["datasets"]["vich"]
+    assert (len(vich["class1_avoid"]), len(vich["class2_limit"]), len(vich["class3_low_toxic_potential"]), len(vich["no_pde"])) == (5, 31, 27, 10)
+    src = _source(feed_bundle, "vich-gl18r2")
+    text = " ".join(_compact(p) for p in src["pages"])
+    for x in vich["class1_avoid"]:
+        assert _compact(f"{x['solvent']} {x['limit_ppm']}") in text
+    for x in vich["class2_limit"]:
+        assert _compact(x["solvent"]) in text
+        assert abs(x["pde_mg_per_day"] * 100 - x["limit_ppm"]) <= 5
+    for name in vich["class3_low_toxic_potential"] + vich["no_pde"]:
+        assert _compact(name) in text, name
+    by = {x["solvent"]: x for x in vich["class2_limit"]}
+    assert by["Methanol"]["limit_ppm"] == 3000 and by["Toluene"]["pde_mg_per_day"] == 8.9
+
+
+def _solvent_row(label, unit, numeric, below_loq=0):
+    return {"category": "substance_related", "label": label, "unit": unit, "numeric": numeric, "below_loq": below_loq,
+            "values": [str(x) for x in numeric], "citation": "D1 p.3"}
+
+
+def test_vich_solvent_checks_compare_with_option_1(feed_bundle):
+    vich = feed_bundle["datasets"]["vich"]
+    rows = [_solvent_row("Methanol", "mg/kg", [1200.0, 900.0]), _solvent_row("Methanol (residual)", "mg/kg", [4000.0]),
+            _solvent_row("Benzene", "mg/kg", [3.0]), _solvent_row("Ethanol", "%", [0.4]), _solvent_row("Toluene", "mg/kg", [], below_loq=3),
+            _solvent_row("Hexane", "furlongs", [5.0]), _solvent_row("Isooctane", "ppm", [10.0]), _solvent_row("Cyclohexane", "g/kg", [2.0])]
+    got = {(c_["label"]): c_ for c_ in c.vich_solvent_checks(rows, vich)}
+    assert got["Methanol"]["status"] == "within_option1" and got["Methanol"]["max_ppm"] == 1200
+    assert got["Methanol (residual)"]["status"] == "exceeds_option1"
+    assert got["Benzene"]["status"] == "exceeds_option1" and got["Benzene"]["vich_class"] == "1"
+    assert got["Ethanol"]["status"] == "within_option1" and got["Ethanol"]["max_ppm"] == 4000      # 0.4 % = 4000 ppm <= 5000
+    assert got["Toluene"]["status"] == "below_loq"
+    assert got["Hexane"]["status"] == "unit_not_converted"
+    assert got["Isooctane"]["status"] == "no_limit"
+    assert got["Cyclohexane"]["status"] == "within_option1"        # 2 g/kg = 2000 ppm vs 3880
+    # cyclohexane must not be read as hexane
+    assert got["Cyclohexane"]["solvent"] == "Cyclohexane"
+    assert "Option 1 assumes 10 g" in c.format_vich_check(got["Methanol"])
+    assert c.vich_solvent_checks([{"category": "other", "label": "Methanol", "unit": "mg/kg", "numeric": [1.0]}], vich) == []
+
+
+def test_solvent_checks_flow_into_the_dossier_result_and_markdown(feed_bundle):
+    text = "### 2.1.4 Impurities\nResidual solvents, three batches:\nBatch No. | B1 | B2 | B3\nMethanol (residual solvent, mg/kg) | 3500 | 120 | 80\n"
+    doc = c.extract_document("coa.md", text.encode(), "D1")
+    res = c.analyse_dossier([doc], DEMO_META, feed_bundle["primary"]["catalogue"], feed_bundle["primary"]["pages"], datasets=feed_bundle["datasets"])
+    methanol = [x for x in res["solvent_checks"] if x["solvent"] == "Methanol"]
+    assert methanol and methanol[0]["status"] == "exceeds_option1" and methanol[0]["max_ppm"] == 3500
+    assert "exceeds the Option 1 limit 3000 ppm" in res["markdown"]
+    assert c.analyse_dossier([doc], DEMO_META, feed_bundle["primary"]["catalogue"], feed_bundle["primary"]["pages"])["solvent_checks"] == []
+
+
+def test_retrieval_is_selective(feed_bundle):
+    _, ids = c.domain_context_for_question("How is the margin of safety calculated?", feed_bundle)
+    assert "C4.2-MOS" in ids and len(ids) <= 4
+    _, ids = c.domain_context_for_question("What read depth does the WGS statement require?", feed_bundle)
+    assert ids[0] == "W2.2.2-QUALITY" and len(ids) <= 8
+    assert c.domain_context_for_question("zzzz qqqq", feed_bundle) == ("", [])

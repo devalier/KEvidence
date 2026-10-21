@@ -1,0 +1,363 @@
+{
+  "dataset_id": "feedap-2018-5206-mic-cutoffs",
+  "dataset_version": "0.1.0",
+  "unit": "mg/L",
+  "catalogue_id": "efsa-2018-5206-microorganisms",
+  "source": {
+    "table": "Table 2: Microbiological cut-off values (mg/L)",
+    "page": 8,
+    "column_order_note": "Column order taken from the rendered table (the PDF text layer lists the headers in reverse). null = n.r. (not required)."
+  },
+  "rule": "Susceptible if growth is inhibited at a concentration equal to or lower than the cut-off (S <= cut-off); resistant if it grows above it (R > cut-off).",
+  "fallback": "For bacteria not listed, use the rows for Corynebacterium and other Gram-positive (Gram-positive) or Enterobacteriaceae (Gram-negative).",
+  "footnotes": {
+    "obligate homofermentative lactobacilli": "including L. delbrueckii, L. helveticus",
+    "obligate heterofermentative lactobacilli": "including L. fermentum",
+    "tetracycline for L. buchneri": 128,
+    "facultative heterofermentative lactobacilli": "including the homofermentative species L. salivarius"
+  },
+  "taxa": [
+    {
+      "taxon": "Lactobacillus obligate homofermentative",
+      "source_row": "2 2 16 16 16 1 4 4 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 2.0,
+        "vancomycin": 2.0,
+        "gentamicin": 16.0,
+        "kanamycin": 16.0,
+        "streptomycin": 16.0,
+        "erythromycin": 1.0,
+        "clindamycin": 4.0,
+        "tetracycline": 4.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Lactobacillus acidophilus group",
+      "source_row": "1 2 16 64 16 1 4 4 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 1.0,
+        "vancomycin": 2.0,
+        "gentamicin": 16.0,
+        "kanamycin": 64.0,
+        "streptomycin": 16.0,
+        "erythromycin": 1.0,
+        "clindamycin": 4.0,
+        "tetracycline": 4.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Lactobacillus obligate heterofermentative",
+      "source_row": "2 n.r. 16 64 64 1 4 8(c) 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 2.0,
+        "vancomycin": null,
+        "gentamicin": 16.0,
+        "kanamycin": 64.0,
+        "streptomycin": 64.0,
+        "erythromycin": 1.0,
+        "clindamycin": 4.0,
+        "tetracycline": 8.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Lactobacillus reuteri",
+      "source_row": "2 n.r. 8 64 64 1 4 32 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 2.0,
+        "vancomycin": null,
+        "gentamicin": 8.0,
+        "kanamycin": 64.0,
+        "streptomycin": 64.0,
+        "erythromycin": 1.0,
+        "clindamycin": 4.0,
+        "tetracycline": 32.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Lactobacillus facultative heterofermentative",
+      "source_row": "4 n.r. 16 64 64 1 4 8 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 4.0,
+        "vancomycin": null,
+        "gentamicin": 16.0,
+        "kanamycin": 64.0,
+        "streptomycin": 64.0,
+        "erythromycin": 1.0,
+        "clindamycin": 4.0,
+        "tetracycline": 8.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Lactobacillus plantarum/pentosus",
+      "source_row": "2 n.r. 16 64 n.r. 1 4 32 8 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 2.0,
+        "vancomycin": null,
+        "gentamicin": 16.0,
+        "kanamycin": 64.0,
+        "streptomycin": null,
+        "erythromycin": 1.0,
+        "clindamycin": 4.0,
+        "tetracycline": 32.0,
+        "chloramphenicol": 8.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Lactobacillus rhamnosus",
+      "source_row": "4 n.r. 16 64 32 1 4 8 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 4.0,
+        "vancomycin": null,
+        "gentamicin": 16.0,
+        "kanamycin": 64.0,
+        "streptomycin": 32.0,
+        "erythromycin": 1.0,
+        "clindamycin": 4.0,
+        "tetracycline": 8.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Lactobacillus casei/paracasei",
+      "source_row": "4 n.r. 32 64 64 1 4 4 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 4.0,
+        "vancomycin": null,
+        "gentamicin": 32.0,
+        "kanamycin": 64.0,
+        "streptomycin": 64.0,
+        "erythromycin": 1.0,
+        "clindamycin": 4.0,
+        "tetracycline": 4.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Bifidobacterium",
+      "source_row": "2 2 64 n.r. 128 1 1 8 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 2.0,
+        "vancomycin": 2.0,
+        "gentamicin": 64.0,
+        "kanamycin": null,
+        "streptomycin": 128.0,
+        "erythromycin": 1.0,
+        "clindamycin": 1.0,
+        "tetracycline": 8.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Pediococcus",
+      "source_row": "4 n.r. 16 64 64 1 1 8 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 4.0,
+        "vancomycin": null,
+        "gentamicin": 16.0,
+        "kanamycin": 64.0,
+        "streptomycin": 64.0,
+        "erythromycin": 1.0,
+        "clindamycin": 1.0,
+        "tetracycline": 8.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Leuconostoc",
+      "source_row": "2 n.r. 16 16 64 1 1 8 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 2.0,
+        "vancomycin": null,
+        "gentamicin": 16.0,
+        "kanamycin": 16.0,
+        "streptomycin": 64.0,
+        "erythromycin": 1.0,
+        "clindamycin": 1.0,
+        "tetracycline": 8.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Lactococcus lactis",
+      "source_row": "2 4 32 64 32 1 1 4 8 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 2.0,
+        "vancomycin": 4.0,
+        "gentamicin": 32.0,
+        "kanamycin": 64.0,
+        "streptomycin": 32.0,
+        "erythromycin": 1.0,
+        "clindamycin": 1.0,
+        "tetracycline": 4.0,
+        "chloramphenicol": 8.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Streptococcus thermophilus",
+      "source_row": "2 4 32 n.r. 64 2 2 4 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 2.0,
+        "vancomycin": 4.0,
+        "gentamicin": 32.0,
+        "kanamycin": null,
+        "streptomycin": 64.0,
+        "erythromycin": 2.0,
+        "clindamycin": 2.0,
+        "tetracycline": 4.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Bacillus",
+      "source_row": "n.r. 4 4 8 8 4 4 8 8 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": null,
+        "vancomycin": 4.0,
+        "gentamicin": 4.0,
+        "kanamycin": 8.0,
+        "streptomycin": 8.0,
+        "erythromycin": 4.0,
+        "clindamycin": 4.0,
+        "tetracycline": 8.0,
+        "chloramphenicol": 8.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Propionibacterium",
+      "source_row": "2 4 64 64 64 0.5 0.25 2 2 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 2.0,
+        "vancomycin": 4.0,
+        "gentamicin": 64.0,
+        "kanamycin": 64.0,
+        "streptomycin": 64.0,
+        "erythromycin": 0.5,
+        "clindamycin": 0.25,
+        "tetracycline": 2.0,
+        "chloramphenicol": 2.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Enterococcus faecium",
+      "source_row": "2 4 32 1,024 128 4 4 4 16 4 n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 2.0,
+        "vancomycin": 4.0,
+        "gentamicin": 32.0,
+        "kanamycin": 1024.0,
+        "streptomycin": 128.0,
+        "erythromycin": 4.0,
+        "clindamycin": 4.0,
+        "tetracycline": 4.0,
+        "chloramphenicol": 16.0,
+        "tylosin": 4.0,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Corynebacterium and other Gram-positive",
+      "source_row": "1 4 4 16 8 1 4 2 4 n.r. n.r. n.r. n.r.",
+      "mg_per_l": {
+        "ampicillin": 1.0,
+        "vancomycin": 4.0,
+        "gentamicin": 4.0,
+        "kanamycin": 16.0,
+        "streptomycin": 8.0,
+        "erythromycin": 1.0,
+        "clindamycin": 4.0,
+        "tetracycline": 2.0,
+        "chloramphenicol": 4.0,
+        "tylosin": null,
+        "ciprofloxacin": null,
+        "colistin": null,
+        "fosfomycin": null
+      }
+    },
+    {
+      "taxon": "Enterobacteriaceae",
+      "source_row": "8 n.r. 2 8 16 n.r. n.r. 8 n.r. n.r. 0.06 2 8",
+      "mg_per_l": {
+        "ampicillin": 8.0,
+        "vancomycin": null,
+        "gentamicin": 2.0,
+        "kanamycin": 8.0,
+        "streptomycin": 16.0,
+        "erythromycin": null,
+        "clindamycin": null,
+        "tetracycline": 8.0,
+        "chloramphenicol": null,
+        "tylosin": null,
+        "ciprofloxacin": 0.06,
+        "colistin": 2.0,
+        "fosfomycin": 8.0
+      }
+    }
+  ]
+}

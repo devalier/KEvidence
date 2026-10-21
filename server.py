@@ -2248,8 +2248,13 @@ async def chat(body: dict):
         raise HTTPException(400, "message is required")
 
     workbench_context = body.get("context") if isinstance(body.get("context"), dict) else {}
-    if workbench_context.get("workflow_step") == "characterisation":
+    step = workbench_context.get("workflow_step")
+    if step == "characterisation":
         return characterisation_chat(query, workbench_context)
+    if step in STEP_GUIDANCE_STEPS:
+        guided = step_guidance_chat(query, workbench_context, step)
+        if guided:
+            return guided
     selected_aop_id = _safe_int(
         workbench_context.get("selected_aop_id")
         or workbench_context.get("aop_id")
@@ -2538,7 +2543,13 @@ Rules:
 4. Entries from the EFSA WGS statement describe what applicants should report and the usual thresholds; the statement itself says it defines
    no assessment criteria and does not say when WGS data are needed. Do not present its thresholds as pass/fail criteria for a conclusion.
 5. When a dossier gap summary is supplied, relate your answer to it, but do not assume dossier content beyond it.
-6. Do not draw safety or efficacy conclusions; characterisation supports, but is not, the risk assessment."""
+6. Do not draw safety or efficacy conclusions; characterisation supports, but is not, the risk assessment.
+7. Dataset blocks (QPS cycle taxa, MIC cut-offs, VICH solvent limits) were extracted from the guidance documents. The QPS dataset is PARTIAL:
+   never say a species is not QPS because it is absent from it; say it is not in the dataset and the full QPS list must be checked.
+   State VICH Option 1 limits together with their 10 g/day basis.
+8. The guidance entries come from several documents with different dates. Where two entries differ (e.g. the age limit on batch data in a first
+   application versus a renewal), state both and say which situation each applies to; do not merge them.
+9. Workflow step in use: {step}. Prefer entries for that step but cite whichever supplied entry answers the question."""
 
 
 def _char_domain(domain: Optional[str]) -> dict:
@@ -2602,6 +2613,7 @@ async def characterisation_guidance(domain: str = ""):
     status = charmod.guidance_status(primary["catalogue"], bundle["directory"])
     status["domain"] = {"id": bundle["id"], "label": bundle["label"]}
     status["sources"] = [charmod.source_status(s) for s in bundle["sources"]]
+    status["datasets"] = charmod.datasets_status(bundle)
     return status
 
 
@@ -2686,12 +2698,23 @@ def characterisation_chat(query: str, workbench_context: dict) -> dict:
     if not isinstance(gap_summary, list):
         gap_summary = []
     gap_terms = " ".join(f"{g.get('id', '')} {g.get('title', '')}" for g in gap_summary[:30] if isinstance(g, dict))
-    guidance_ctx, ids = charmod.domain_context_for_question(query, bundle)
+    guidance_ctx, ids = charmod.domain_context_for_question(query, bundle, step="characterisation")
     if (not ids or re.search(r"\bgaps?\b|missing|dossier", query, re.I)) and gap_terms:
         # Questions about "the gaps" are answered from the requirements behind the current gap list.
-        guidance_ctx, ids = charmod.domain_context_for_question(query, bundle, extra_terms=gap_terms, limit=8)
+        guidance_ctx, ids = charmod.domain_context_for_question(query, bundle, extra_terms=gap_terms, limit=8, step="characterisation")
+    dataset_ctx = charmod.dataset_context(query, bundle)
+    if dataset_ctx:
+        guidance_ctx = f"{guidance_ctx}\n\n{dataset_ctx}".strip()
     names = [charmod.source_short_name(s["catalogue"]) for s in bundle["sources"]]
     if not guidance_ctx:
+        _, elsewhere = charmod.domain_context_for_question(query, bundle)
+        if elsewhere:
+            steps_hit = sorted({st for src in bundle["sources"] for e in src["catalogue"]["requirements"] if e["id"] in elsewhere
+                                for st in charmod.entry_steps(e) if st != "characterisation"})
+            names_map = {"hazard-char": "2. Hazard characterisation", "exposure": "3. Exposure assessment", "risk-char": "4. Risk characterisation"}
+            return {"answer": "The guidance that answers this is grounded in another step. Open " +
+                              " or ".join(names_map[x] for x in steps_hit if x in names_map) + " and ask the assistant there.",
+                    "sources": [], "guidance_requirements": [], "no_data": True}
         return {
             "answer": f"I could not match this question to the guidance loaded for {bundle['label']} ({'; '.join(names)}). "
                       "In step 0 I only answer from that guidance — try naming the topic (e.g. batches, impurities, "
@@ -2708,7 +2731,7 @@ def characterisation_chat(query: str, workbench_context: dict) -> dict:
             f"Dossier gap summary{(' for ' + str(product)) if product else ''}:\n"
             f"{chr(10).join(lines) if lines else 'No dossier analysed yet.'}\n\n---\n\nQuestion: {query}")
     system = CHAR_SYSTEM_PROMPT.format(
-        role=bundle["assistant_role"] or "scientific officers", domain=bundle["label"],
+        role=bundle["assistant_role"] or "scientific officers", domain=bundle["label"], step="characterisation",
         sources="\n".join(f"- {s['catalogue']['guidance']['citation']}" for s in bundle["sources"]))
     try:
         resp = llm.chat.completions.create(
@@ -2721,6 +2744,53 @@ def characterisation_chat(query: str, workbench_context: dict) -> dict:
     except Exception as e:
         return {"answer": f"I encountered an error querying the LLM: {str(e)}", "sources": [], "guidance_requirements": ids}
     return {"answer": answer, "sources": [], "guidance_requirements": ids}
+
+
+STEP_GUIDANCE_STEPS = ("hazard-char", "exposure", "risk-char")
+STEP_LABELS = {"hazard-char": "2. Hazard characterisation", "exposure": "3. Exposure assessment", "risk-char": "4. Risk characterisation"}
+
+
+def step_guidance_chat(query: str, workbench_context: dict, step: str) -> Optional[dict]:
+    """Answer from the domain's guidance entries tagged for this workflow step. Returns None when no entry
+    matches, so the caller can fall back to the AOP-grounded assistant."""
+    try:
+        bundle = _char_domain(str(workbench_context.get("domain") or "")[:40])
+    except HTTPException:
+        return None
+    guidance_ctx, ids = charmod.domain_context_for_question(query, bundle, step=step)
+    dataset_ctx = charmod.dataset_context(query, bundle)
+    if not ids and not dataset_ctx:
+        return None
+    if dataset_ctx:
+        guidance_ctx = f"{guidance_ctx}\n\n{dataset_ctx}".strip()
+    lines = [f"Workflow step: {STEP_LABELS[step]}"]
+    for key, label in (("chemical", "Substance"), ("exposure_estimate", "Exposure estimate"), ("route", "Route"), ("population", "Population/species")):
+        if workbench_context.get(key):
+            lines.append(f"{label}: {str(workbench_context[key])[:300]}")
+    user = (f"Guidance entries ({bundle['label']}, entries for this step):\n\n{guidance_ctx}\n\n---\n\n"
+            f"Workbench context:\n{chr(10).join(lines)}\n\n---\n\nQuestion: {query}")
+    system = CHAR_SYSTEM_PROMPT.format(
+        role=bundle["assistant_role"] or "scientific officers", domain=bundle["label"], step=STEP_LABELS[step],
+        sources="\n".join(f"- {s['catalogue']['guidance']['citation']}" for s in bundle["sources"]))
+    try:
+        resp = llm.chat.completions.create(
+            model=LLM_MODEL, temperature=0.1, max_tokens=1200,
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
+        answer = resp.choices[0].message.content
+    except Exception as e:
+        return {"answer": f"I encountered an error querying the LLM: {str(e)}", "sources": [], "guidance_requirements": ids}
+    return {"answer": answer, "sources": [], "guidance_requirements": ids}
+
+
+@app.get("/api/qps")
+async def qps_lookup_endpoint(q: str = "", domain: str = ""):
+    """Taxa of the bundled QPS cycle dataset (PARTIAL, not the QPS list) that are named in q."""
+    bundle = _char_domain(domain)
+    qps = bundle["datasets"].get("qps")
+    if not qps:
+        raise HTTPException(404, "No QPS dataset for this domain")
+    hits = charmod.qps_lookup(q[:500], qps)
+    return {"query": q[:500], "partial": True, "note": charmod.QPS_PARTIAL_NOTE, "coverage": qps["coverage"], "matches": hits}
 
 
 # Serve frontend

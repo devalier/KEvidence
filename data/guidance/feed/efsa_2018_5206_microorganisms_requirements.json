@@ -1,0 +1,406 @@
+{
+  "catalogue_id": "efsa-2018-5206-microorganisms",
+  "catalogue_version": "0.1.0",
+  "kind": "knowledge",
+  "scope": "FEEDAP guidance on characterising microorganisms used as feed additives or production organisms (identification, antimicrobial susceptibility and production, toxigenicity, genetic modification, absence of production strain and its DNA, gut effects, compatibility, outcomes). The 2018 requirements may be superseded in part by the 2025 EFSA Scientific Committee guidance (not bundled); check before relying on a figure. Cut-off values are in feedap_2018_5206_mic_cutoffs.json. Grounds the assistant only.",
+  "guidance": {
+    "title": "Guidance on the characterisation of microorganisms used as feed additives or as production organisms",
+    "short_name": "FEEDAP 2018 microorganisms (5206)",
+    "author": "EFSA FEEDAP Panel",
+    "citation": "EFSA FEEDAP Panel (Rychen G et al.), 2018. Guidance on the characterisation of microorganisms used as feed additives or as production organisms. EFSA Journal 2018;16(3):5206, 24 pp.",
+    "doi": "10.2903/j.efsa.2018.5206",
+    "url": "https://doi.org/10.2903/j.efsa.2018.5206",
+    "bundled_file": "efsa_2018_5206_microorganisms.pdf",
+    "license": "CC BY-ND 4.0 (open access; redistributed unmodified with citation)",
+    "title_check_phrase": "Guidance on the characterisation of microorganisms used as feed additives or as production organisms",
+    "expected_pages": 24,
+    "page_numbering": "guidance_page is the PDF page number."
+  },
+  "entries": [
+    {
+      "id": "M-SCOPE",
+      "guidance_section": "Scope",
+      "guidance_page": 4,
+      "title": "What the microorganism guidance covers",
+      "requirement": "Characterisation of microbial strains in feed additives containing viable microorganisms (active agents) or produced by fermentation (production strains), including GMMs. For fermentation products only aspects linked to the production organism are covered; other product aspects follow the identity/characterisation guidance. Bacteria, yeasts and filamentous fungi; other groups case by case. Feed additives with viable GMMs are out of scope.",
+      "quote": "For fermentation products, only those aspects directly linked to the production organism, including the safety aspects of the genetic modifications where relevant, are considered [...] Feed additives in which viable GMMs are present, intentionally or unintentionally, are out of the scope of this document",
+      "guidance_anchors": [
+        "For fermentation products, only those aspects directly linked to the production organism, including the safety aspects of the genetic modifications where relevant, are considered",
+        "Feed additives in which viable GMMs are present, intentionally or unintentionally, are out of the scope of this document"
+      ],
+      "applies_to": "all",
+      "kind": "scope"
+    },
+    {
+      "id": "M1-QPS",
+      "guidance_section": "1",
+      "guidance_page": 5,
+      "title": "QPS route for feed additive microorganisms",
+      "requirement": "To use the QPS approach, establish the taxonomic status unequivocally, with the species on the QPS list, and comply with qualifications in the most recent QPS statement or opinion. Such strains are presumed safe for target species, consumers and the environment without specific studies. It can extend to a GM production strain when the recipient qualifies and the molecular characterisation raises no concern, but presence of production-strain DNA must be assessed in all products from GMMs.",
+      "quote": "its taxonomic status should be unequivocally established, and be a species included in the QPS list [...] any qualification set in the most recent QPS statement/opinion should be complied with [...] presence of DNA from the production strain must be assessed in all products made with GMMs",
+      "guidance_anchors": [
+        "its taxonomic status should be unequivocally established, and be a species included in the QPS list",
+        "any qualification set in the most recent QPS statement/opinion should be complied with",
+        "presence of DNA from the production strain must be assessed in all products made with GMMs"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "characterisation",
+        "risk-char"
+      ]
+    },
+    {
+      "id": "M2.1-DEPOSIT",
+      "guidance_section": "2.1",
+      "guidance_page": 6,
+      "title": "Deposition in a culture collection",
+      "requirement": "Deposit the strain in an internationally recognised culture collection with International Depositary Authority status under the Budapest Treaty (preferably in the EU), maintained for the authorised period. A valid deposit certificate stating the accession number must be provided.",
+      "quote": "having acquired the status of International Depositary Authority under the Budapest Treaty [...] A valid certificate of deposition from the collection, which shall specify the accession number under which the strain is held, must be provided",
+      "guidance_anchors": [
+        "having acquired the status of International Depositary Authority under the Budapest Treaty",
+        "A valid certificate of deposition from the collection, which shall specify the accession number under which the strain is held, must be provided"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.1-HISTORY",
+      "guidance_section": "2.1",
+      "guidance_page": 6,
+      "title": "Origin and strain history",
+      "requirement": "Report the origin of the organism and the history of modifications, including mutagenesis steps made during strain development; any genetic modification is characterised under section 2.5.",
+      "quote": "The origin of the organism and history of modifications, including mutagenesis steps performed during the development of the strain, shall be reported",
+      "guidance_anchors": [
+        "The origin of the organism and history of modifications, including mutagenesis steps performed during the development of the strain, shall be reported"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.1-METHOD",
+      "guidance_section": "2.1",
+      "guidance_page": 6,
+      "title": "Identification method by organism group",
+      "requirement": "Bacteria and yeasts: WGS-based identification (bacteria by phylogenomics or ANI, or 16S rRNA / housekeeping genes against databases; yeasts by phylogenomic analysis). Filamentous fungi: phylogenomics when WGS is available, otherwise 18S rRNA and/or ITS and other genes such as tubulin. If the strain cannot be assigned to a species, give its phylogenetic position relative to the closest relatives.",
+      "quote": "The organism under assessment should be identified unambiguously at species level [...] Whole genome sequence (WGS) analysis is required for the characterisation of bacteria [...] When WGS is available, identification should be made by a phylogenomic analysis comparing the genome against available related genomes [...] its phylogenetic position with respect to the closest relatives should be provided",
+      "guidance_anchors": [
+        "The organism under assessment should be identified unambiguously at species level",
+        "Whole genome sequence (WGS) analysis is required for the characterisation of bacteria",
+        "When WGS is available, identification should be made by a phylogenomic analysis comparing the genome against available related genomes",
+        "its phylogenetic position with respect to the closest relatives should be provided"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.1-TAXONOMY",
+      "guidance_section": "2.1",
+      "guidance_page": 5,
+      "title": "Taxonomic information",
+      "requirement": "Provide genus, species and strain name or code.",
+      "quote": "The following taxonomic information needs to be provided for the microorganism: genus, species and strain name or code",
+      "guidance_anchors": [
+        "The following taxonomic information needs to be provided for the microorganism: genus, species and strain name or code"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.1.1-WGS",
+      "guidance_section": "2.1.1",
+      "guidance_page": 6,
+      "title": "WGS: scope and minimum information",
+      "requirement": "WGS (chromosomes and plasmids) is required for bacterial and yeast strains used as products or production strains and recommended for filamentous fungi. Minimum information: DNA extraction method, sequencing strategy and instrument, assembly method, sequence quality measures (e.g. Phred, reads, coverage, N50, k-mer), FASTA files, total contig length versus expected genome size, annotation protocol, and for fungi annotation quality (e.g. BUSCO). The 2024 EFSA WGS statement gives current reporting detail.",
+      "quote": "Whole genome sequence analysis (including chromosome(s) and extra-chromosomal genetic elements, e.g. plasmids) is required for bacterial and yeast strains intended for use either as products or production strains [...] the total length of contigs relative to the expected genome size",
+      "guidance_anchors": [
+        "Whole genome sequence analysis (including chromosome(s) and extra-chromosomal genetic elements, e.g. plasmids) is required for bacterial and yeast strains intended for use either as products or production strains",
+        "the total length of contigs relative to the expected genome size"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.2-AMR",
+      "guidance_section": "2.2",
+      "guidance_page": 7,
+      "title": "Antimicrobial susceptibility: two data sets",
+      "requirement": "For bacteria used as viable cells or production organisms: microbial feed additives should not add to the pool of AMR genes in gut bacteria or increase the spread of AMR. Provide (1) phenotypic MICs and (2) a WGS search for known AMR genes. Intrinsic resistance is not a safety concern; acquired resistance needs further investigation.",
+      "quote": "Microbial feed additives should not add to the pool of antimicrobial resistance (AMR) genes already present in the gut bacterial population or otherwise increase the spread of AMR [...] Intrinsic AMR is not considered a safety concern [...] Phenotypic testing based on determination of a minimum inhibitory concentration (MIC) for a selected group of antimicrobials",
+      "guidance_anchors": [
+        "Microbial feed additives should not add to the pool of antimicrobial resistance (AMR) genes already present in the gut bacterial population or otherwise increase the spread of AMR",
+        "Intrinsic AMR is not considered a safety concern",
+        "Phenotypic testing based on determination of a minimum inhibitory concentration (MIC) for a selected group of antimicrobials"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.2.1-MIC",
+      "guidance_section": "2.2.1",
+      "guidance_page": 7,
+      "title": "MIC method and cut-offs",
+      "requirement": "Determine MICs (mg/L) for the Table 2 antimicrobials with serial twofold dilution in agar or broth, with quality control strains, to a recognised standard (EUCAST, CLSI, ISO). Diffusion methods are not acceptable except in justified cases. Susceptible if growth is inhibited at or below the cut-off, resistant above it. For unlisted bacteria use the Corynebacterium/other Gram-positive row (Gram-positive) or Enterobacteriaceae row (Gram-negative). Cut-off values are in feedap_2018_5206_mic_cutoffs.json.",
+      "quote": "MICs should be determined using serial twofold dilution procedures in agar or broth, including relevant quality control strains [...] Qualitative or semi-quantitative methods to determine MIC indirectly, such as diffusion methods, are not acceptable except in specific and justified circumstances [...] susceptible when its growth is inhibited at a concentration of a specific antimicrobial equal to or lower than the established cut-off value",
+      "guidance_anchors": [
+        "MICs should be determined using serial twofold dilution procedures in agar or broth, including relevant quality control strains",
+        "Qualitative or semi-quantitative methods to determine MIC indirectly, such as diffusion methods, are not acceptable except in specific and justified circumstances",
+        "susceptible when its growth is inhibited at a concentration of a specific antimicrobial equal to or lower than the established cut-off value"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.2.2-AMRGENES",
+      "guidance_section": "2.2.2",
+      "guidance_page": 10,
+      "title": "WGS search for AMR genes",
+      "requirement": "Interrogate the WGS against up-to-date databases (e.g. CARD, ARG-ANNOT, ResFinder). Present a table of complete genes coding for resistance with at least gene identification, protein function, percent identity and e-value.",
+      "quote": "The table should include at least the gene identification, function of the encoded protein, percentage of identity and e-value",
+      "guidance_anchors": [
+        "The table should include at least the gene identification, function of the encoded protein, percentage of identity and e-value"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.2.3-INTERPRET",
+      "guidance_section": "2.2.3",
+      "guidance_page": 9,
+      "title": "Interpreting MIC and gene results",
+      "requirement": "A MIC above the cut-off needs genomic follow-up: no linked known AMR gene means no further study; a phenotype directly linked to a known AMR gene is a hazard. If AMR genes for critically or highly important antimicrobials are found, determine MICs and compare with literature: at or below reference values, assess the likelihood the gene becomes active; above reference values is a hazard.",
+      "quote": "If no known AMR gene is identified that can be linked to the phenotype, no further studies are required [...] If the phenotypic resistance can be directly related to the presence of a known AMR gene, this is considered as a hazard [...] If MIC > (reference values), this is considered as a hazard",
+      "guidance_anchors": [
+        "If no known AMR gene is identified that can be linked to the phenotype, no further studies are required",
+        "If the phenotypic resistance can be directly related to the presence of a known AMR gene, this is considered as a hazard",
+        "If MIC > (reference values), this is considered as a hazard"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.3-ANTIMICROBIAL",
+      "guidance_section": "2.3",
+      "guidance_page": 9,
+      "title": "Antimicrobial production",
+      "requirement": "Unless the strain qualifies for QPS or belongs to a unit known not to make relevant antimicrobials, test the inhibitory activity of culture supernatants against reference strains (e.g. E. coli ATCC 25922, S. aureus ATCC 25923, B. subtilis ATCC 6633). Identify any inhibitory substance; where activity exists show absence of carry-over into the final product using industrial-scale (or justified pilot-scale) samples, stating the process stage. Declare any clinically relevant antimicrobials used in manufacture.",
+      "quote": "tests should be made to assess the inhibitory activity of culture supernatants against reference strains known to be susceptible to a range of antibiotics [...] the absence of carry over into the final product should be demonstrated [...] Applicants should declare whether any antimicrobial(s) of clinical relevance are used during the manufacturing of the product",
+      "guidance_anchors": [
+        "tests should be made to assess the inhibitory activity of culture supernatants against reference strains known to be susceptible to a range of antibiotics",
+        "the absence of carry over into the final product should be demonstrated",
+        "Applicants should declare whether any antimicrobial(s) of clinical relevance are used during the manufacturing of the product"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.4-TOXIGENICITY",
+      "guidance_section": "2.4",
+      "guidance_page": 9,
+      "title": "Toxigenicity and pathogenicity: bacteria",
+      "requirement": "Provide toxigenicity and virulence information for active agents and production strains, including the history of use of the strain or close relatives, from updated literature searches. Document any development step aimed at reducing toxigenicity. ",
+      "quote": "Information relating to toxigenicity and virulence for humans and target species should be provided for active agents and production strains, including history of use of the strain or any close relative",
+      "guidance_anchors": [
+        "Information relating to toxigenicity and virulence for humans and target species should be provided for active agents and production strains, including history of use of the strain or any close relative"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.4.1-BACILLUS",
+      "guidance_section": "2.4.1.2",
+      "guidance_page": 10,
+      "title": "Bacillus species",
+      "requirement": "Outside the B. cereus group, test culture supernatants for cytotoxicity on epithelial cell lines (preferably Vero cells). Using B. cereus group strains is unadvisable; if proposed, search the WGS for enterotoxin genes (nhe, hbl, cytK) and cereulide synthase (ces) and demonstrate non-functionality of any similar gene. Strains with toxigenic potential are not safe.",
+      "quote": "a cytotoxicity test should be made to determine whether the strain produces high levels of non-ribosomal synthesised peptides [...] Strains with toxigenic potential are not considered safe",
+      "guidance_anchors": [
+        "a cytotoxicity test should be made to determine whether the strain produces high levels of non-ribosomal synthesised peptides",
+        "Strains with toxigenic potential are not considered safe"
+      ],
+      "applies_to": "Bacillus",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.4.1-EFAECIUM",
+      "guidance_section": "2.4.1.1",
+      "guidance_page": 10,
+      "title": "Enterococcus faecium",
+      "requirement": "Determine the ampicillin MIC: above 2 mg/L the strain is not considered safe. At or below 2 mg/L, search the genome for IS16, hylEfm and esp: none detected means safe; one or more detected means hazardous.",
+      "quote": "If the MIC > 2 mg/L, the strain is not considered safe [...] If one or more of the three genetic elements are detected, then the strain is considered hazardous",
+      "guidance_anchors": [
+        "If the MIC > 2 mg/L, the strain is not considered safe",
+        "If one or more of the three genetic elements are detected, then the strain is considered hazardous"
+      ],
+      "applies_to": "Enterococcus faecium",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.4.1-VIRULENCE",
+      "guidance_section": "2.4.1",
+      "guidance_page": 10,
+      "title": "Bacteria outside QPS: virulence genes in the WGS",
+      "requirement": "Search the WGS against specific up-to-date databases (e.g. VFDB, PAI DB, MvirDB, CGE) and tabulate complete genes for recognised virulence factors (toxins, invasion and adhesion factors) with gene identification, protein function, % identity and e-value. Hits may trigger phenotypic tests such as cytotoxicity. If pathogenicity cannot be excluded for viable microorganisms, tolerance and toxicological studies may be needed. QPS strains, E. faecium and Bacillus (specific tests) are exceptions.",
+      "quote": "For bacterial strains belonging to a species not included in the QPS list, WGS analysis should be used to identify genes coding for known virulence factors [...] The presence of genes encoding virulence factors may trigger further phenotypic testing",
+      "guidance_anchors": [
+        "For bacterial strains belonging to a species not included in the QPS list, WGS analysis should be used to identify genes coding for known virulence factors",
+        "The presence of genes encoding virulence factors may trigger further phenotypic testing"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.4.2-EUKARYOTES",
+      "guidance_section": "2.4.2",
+      "guidance_page": 11,
+      "title": "Eukaryotic microorganisms",
+      "requirement": "Assess potential pathogenicity and ability to make harmful metabolites by a literature search on the species or close relatives; with WGS, search for known toxigenicity pathways. Where known compounds are identified, analyse to exclude them or show their concentration in the additive is not of concern.",
+      "quote": "Where known compounds are identified, analyses should be made to exclude their presence or demonstrate that their concentration in the additive is not of concern",
+      "guidance_anchors": [
+        "Where known compounds are identified, analyses should be made to exclude their presence or demonstrate that their concentration in the additive is not of concern"
+      ],
+      "applies_to": "yeasts and fungi",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.5-GMM",
+      "guidance_section": "2.5",
+      "guidance_page": 11,
+      "title": "Genetic modification: description",
+      "requirement": "For GMMs per Directive 2001/18/EC describe the purpose, traits and phenotype changes, inserted sequences (donor taxonomy, sequence, annotation, physical map, encoded protein sequence and function; designed sequences: rationale, map, database similarity), deletions and base substitutions or frameshifts with the expected effect.",
+      "quote": "The purpose of the genetic modification should be described",
+      "guidance_anchors": [
+        "The purpose of the genetic modification should be described"
+      ],
+      "applies_to": "genetically modified microorganisms",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.5.2-DELETIONS",
+      "guidance_section": "2.5.2",
+      "guidance_page": 12,
+      "title": "Deletions and substitutions",
+      "requirement": "Describe intentionally deleted sequences with the intended effect, and intentionally introduced base substitutions or frameshifts with their expected effect.",
+      "quote": "A description of the intentionally deleted sequence(s) should be provided, together with an explanation of the intended effect",
+      "guidance_anchors": [
+        "A description of the intentionally deleted sequence(s) should be provided, together with an explanation of the intended effect"
+      ],
+      "applies_to": "genetically modified microorganisms",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.5.3-ABSENCE",
+      "guidance_section": "2.5.3",
+      "guidance_page": 13,
+      "title": "Absence of unintended sequences of concern",
+      "requirement": "Test experimentally for absence of unintended sequences of concern (e.g. AMR genes) from vectors, helper plasmids and replicons used in construction, by Southern analysis or PCR with appropriate controls; Southern positive control at 1-10 copies of the target per genome.",
+      "quote": "The absence of any sequence of concern (such as AMR genes) not intended to be present in the GMM should be tested experimentally [...] Positive control shall be loaded in a concentration corresponding to 1–10 copies of the target fragment per genome of the production strain",
+      "guidance_anchors": [
+        "The absence of any sequence of concern (such as AMR genes) not intended to be present in the GMM should be tested experimentally",
+        "Positive control shall be loaded in a concentration corresponding to 1–10 copies of the target fragment per genome of the production strain"
+      ],
+      "applies_to": "genetically modified microorganisms",
+      "kind": "requirement"
+    },
+    {
+      "id": "M2.5.3-STRUCTURE",
+      "guidance_section": "2.5.3",
+      "guidance_page": 12,
+      "title": "Genetic modification: structure from WGS",
+      "requirement": "Use WGS for bacteria and yeasts (recommended for fungi) with a map of all modified regions, listing ORFs inserted/modified/deleted (amino acid sequence, function, metabolic role), highlighting introduced genes of concern (toxic metabolites, clinically relevant antimicrobials, AMR) and the role of non-coding elements, ideally by comparison with the parental or recipient strain. Without WGS (fungi) describe all steps, the vector and the process.",
+      "quote": "The characterisation of the structure of the genetic modification should be done using WGS data for bacteria and yeasts [...] Introduced genes of concern should be highlighted",
+      "guidance_anchors": [
+        "The characterisation of the structure of the genetic modification should be done using WGS data for bacteria and yeasts",
+        "Introduced genes of concern should be highlighted"
+      ],
+      "applies_to": "genetically modified microorganisms",
+      "kind": "requirement"
+    },
+    {
+      "id": "M3.1-ABSENCE",
+      "guidance_section": "3.1",
+      "guidance_page": 13,
+      "title": "Fermentation products: absence of viable production strain",
+      "requirement": "Describe the removal/inactivation steps. Show absence of viable cells by a culture-based method (cultivation-independent methods are not acceptable), allowing recovery of stressed cells (minimal selective pressure and/or at least twice the normal incubation time) and, for spore formers, germination then culture. Analyse at least 1 g or mL from a sample of at least 10 g or mL; at least nine samples from at least three independent batches, industrial scale (pilot scale only if justified and representative); include a low-count spiked positive control (e.g. 10-1,000 cells per plate). With several formulations from one production scheme, test at least the upstream intermediate; with different schemes, each formulation.",
+      "quote": "Cultivation-independent methods are not acceptable [...] at least nine samples obtained from a minimum of three independent batches of product should be analysed [...] the absence should be demonstrated in a volume corresponding to at least 1 g or mL of product, obtained from a sample of at least 10 g or mL of product",
+      "guidance_anchors": [
+        "Cultivation-independent methods are not acceptable",
+        "at least nine samples obtained from a minimum of three independent batches of product should be analysed",
+        "the absence should be demonstrated in a volume corresponding to at least 1 g or mL of product, obtained from a sample of at least 10 g or mL of product"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M3.2-DNA",
+      "guidance_section": "3.2",
+      "guidance_page": 14,
+      "title": "Fermentation products: DNA of the production strain",
+      "requirement": "Applies to products from GM production strains and to non-GM strains carrying acquired AMR genes. Test by PCR for a strain-specific fragment (no larger than the smallest AMR gene if AMR genes are present; at most 1 kb for a GMM without AMR genes); extract DNA from at least 1 g or mL; at least three independent batches, each in triplicate; extraction suitable for all cellular forms (e.g. spores); include positive, spiked-dilution (limit of detection), spiked-extract and no-template controls; the detection threshold should be 10 ng DNA per g or mL of product or lower.",
+      "quote": "The presence of DNA from the production strain should be tested in the product by PCR, targeting a fragment specific for this strain [...] At least three independent batches of product should be sampled, each analysed in triplicate [...] detection threshold of 10 ng of DNA per gram or mL of product or lower",
+      "guidance_anchors": [
+        "The presence of DNA from the production strain should be tested in the product by PCR, targeting a fragment specific for this strain",
+        "At least three independent batches of product should be sampled, each analysed in triplicate",
+        "detection threshold of 10 ng of DNA per gram or mL of product or lower"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M4.1-GUT",
+      "guidance_section": "4.1",
+      "guidance_page": 14,
+      "title": "Impact on gut microbiota: when required",
+      "requirement": "Required when the tolerance test indicates digestive tract disturbance, when an adverse effect on the microbiota is otherwise anticipated, for ionophoric coccidiostats, and for additives designed to reduce enteropathogens. Assessed by overgrowth or shedding of potentially pathogenic microorganisms.",
+      "quote": "the impact on gut microbiota is assessed by examining whether the use of the additive results in an overgrowth or shedding of potentially pathogenic microorganisms",
+      "guidance_anchors": [
+        "the impact on gut microbiota is assessed by examining whether the use of the additive results in an overgrowth or shedding of potentially pathogenic microorganisms"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M4.2-COMPAT",
+      "guidance_section": "4.2",
+      "guidance_page": 15,
+      "title": "Compatibility with additives showing antimicrobial activity",
+      "requirement": "In dry feed, no interaction is assumed. Where interaction is possible (water, wet or liquid feed) test viability at the lowest microbial dose and the maximum dose of the antimicrobial additive. In vitro, determine the MIC of the antimicrobial additive; if it exceeds four times the maximum concentration in feed or water, compatibility is assumed, otherwise an in vivo study is needed.",
+      "quote": "If the MIC is greater than four times the maximum concentration of the antimicrobial in feed/water, compatibility is assumed and no in vivo tests are required",
+      "guidance_anchors": [
+        "If the MIC is greater than four times the maximum concentration of the antimicrobial in feed/water, compatibility is assumed and no in vivo tests are required"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M4.2-INVIVO",
+      "guidance_section": "4.2",
+      "guidance_page": 16,
+      "title": "Compatibility: in vivo study",
+      "requirement": "Compare microbial additive alone against additive plus the antimicrobial product in a short-term target-species study; enumerate each strain by strain-specific, cultivation-based counts in gut contents (vegetative cells and spores for spore formers). Compatible if counts are similar within 0.5 log. Performance data alone are insufficient.",
+      "quote": "Compatibility is demonstrated between the two groups if the gastrointestinal counts of vegetative cells (and spores when present) are similar (within 0.5 log order)",
+      "guidance_anchors": [
+        "Compatibility is demonstrated between the two groups if the gastrointestinal counts of vegetative cells (and spores when present) are similar (within 0.5 log order)"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "M5-OUTCOMES",
+      "guidance_section": "5",
+      "guidance_page": 16,
+      "title": "Outcomes of the microorganism assessment",
+      "requirement": "QPS strains: no hazard or risk identified for target species, consumers and the environment (user safety always separately). Non-QPS viable bacteria carrying acquired AMR genes, or pathogenic, virulent, toxigenic or antimicrobial-producing strains, represent a risk. For fermentation products from non-QPS strains with acquired AMR genes, the product is a risk if DNA covering the complete genes is detected; it is not if absence of production-strain DNA is shown. Toxigenic or antimicrobial-producing production strains represent a risk for susceptible target species.",
+      "quote": "bacterial strains carrying acquired genes that confer resistance to relevant antimicrobial(s) are considered to represent a risk for target species and those exposed to the additive [...] if the absence of DNA from the production strain can be shown in the additive, this is not considered a risk",
+      "guidance_anchors": [
+        "bacterial strains carrying acquired genes that confer resistance to relevant antimicrobial(s) are considered to represent a risk for target species and those exposed to the additive",
+        "if the absence of DNA from the production strain can be shown in the additive, this is not considered a risk"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "characterisation",
+        "risk-char"
+      ]
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   "catalogue_id": "efsa-2017-5022-consumer",
   "catalogue_version": "0.1.0",
   "kind": "knowledge",
-  "scope": "Parts of the FEEDAP consumer-safety guidance that bear on what must be characterised: which material is tested, identity with the commercial product, identification of metabolites and residues, the purity exemption and the QPS exemption. Grounds the assistant only. Dose-response, exposure and MRL sections are not encoded.",
+  "scope": "Parts of the FEEDAP consumer-safety guidance that bear on what must be characterised: which material is tested, identity with the commercial product, identification of metabolites and residues, the purity exemption and the QPS exemption. Grounds the assistant only. ",
   "guidance": {
     "title": "Guidance on the assessment of the safety of feed additives for the consumer",
     "short_name": "FEEDAP 2017 consumer safety (5022)",
@@ -194,6 +194,227 @@
       ],
       "applies_to": "all",
       "kind": "requirement"
+    },
+    {
+      "id": "C4.1-SAFEDOSE",
+      "guidance_section": "4.1",
+      "guidance_page": 12,
+      "title": "Safe dose: NOAEL or BMDL, lowest value",
+      "requirement": "The safe dose comes from the dose-response of toxicological or pharmacological effects, usually a NOAEL in mg/kg bw per day. Where only a LOAEL exists or dose spacing is wide, calculate a benchmark dose (BMDL5 continuous, BMDL10 quantal). Use the lowest NOAEL from all studies; justify any deviation.",
+      "quote": "The safe dose is derived from the dose response of toxicological or pharmacological effects and usually expressed as a NOAEL [...] In principle, the lowest NOAEL should be taken. Any deviation from this principle should be fully justified",
+      "guidance_anchors": [
+        "The safe dose is derived from the dose response of toxicological or pharmacological effects and usually expressed as a NOAEL",
+        "In principle, the lowest NOAEL should be taken. Any deviation from this principle should be fully justified"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char"
+      ]
+    },
+    {
+      "id": "C4.2-HBGV",
+      "guidance_section": "4.2",
+      "guidance_page": 12,
+      "title": "Highest safe intake: health-based guidance value",
+      "requirement": "The highest safe intake is a health-based guidance value (ADI, or UL for nutrients) = reference point (NOAEL, BMDL, LOAEL) / uncertainty factor. Default UF 100 (10x10) given genotoxicity, a chronic and reproduction studies; extra factor 2 if a subchronic NOAEL replaces a chronic one; UF <= 10 may be used with human data.",
+      "quote": "The health-based guidance value (mg of active substance per kg bw per day) is derived by dividing the selected reference point (e.g. NOAEL, BMDL, LOAEL) by an appropriate UF [...] The overall default UF of 100 (10x10 for inter- and intraspecies extrapolation) is normally used in calculating the ADI from laboratory animal data [...] If the NOAEL of a subchronic study has to be used in place of that of a chronic study, an additional UF of 2 should be applied",
+      "guidance_anchors": [
+        "The health-based guidance value (mg of active substance per kg bw per day) is derived by dividing the selected reference point (e.g. NOAEL, BMDL, LOAEL) by an appropriate UF",
+        "The overall default UF of 100 (10x10 for inter- and intraspecies extrapolation) is normally used in calculating the ADI from laboratory animal data",
+        "If the NOAEL of a subchronic study has to be used in place of that of a chronic study, an additional UF of 2 should be applied"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char",
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C4.2-MOS",
+      "guidance_section": "4.2",
+      "guidance_page": 13,
+      "title": "Margin of safety when no health-based guidance value can be set",
+      "requirement": "For an additive that is not genotoxic, or is genotoxic and carcinogenic, and for which no health-based guidance value can be established, the margin of safety may be used: lowest NOAEL (usually from a 90-day study) divided by dietary exposure to the toxicologically relevant residue.",
+      "quote": "The MOS is calculated as the ratio between the lowest NOAEL usually from a 90-day subchronic toxicity study and the dietary exposure of consumers to the toxicologically relevant residue",
+      "guidance_anchors": [
+        "The MOS is calculated as the ratio between the lowest NOAEL usually from a 90-day subchronic toxicity study and the dietary exposure of consumers to the toxicologically relevant residue"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C4.2-PROXIMITY",
+      "guidance_section": "4.2",
+      "guidance_page": 12,
+      "title": "An ADI applies only with a comparable residue pattern",
+      "requirement": "An ADI normally needs consumers to be exposed to residues comparable to those formed in the laboratory animal used to derive it; if metabolic proximity cannot be shown, test the target-species metabolites toxicologically.",
+      "quote": "If metabolic proximity between the laboratory animal used for deriving the ADI and the target species cannot be demonstrated, additional toxicological studies with the metabolites specific to the target species should be done",
+      "guidance_anchors": [
+        "If metabolic proximity between the laboratory animal used for deriving the ADI and the target species cannot be demonstrated, additional toxicological studies with the metabolites specific to the target species should be done"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char",
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C4.3.1-CONSUMPTION",
+      "guidance_section": "4.3.1",
+      "guidance_page": 13,
+      "title": "Consumption data and commodities",
+      "requirement": "Consumption comes from the EFSA Comprehensive European Food Consumption Database (latest survey per country and age class), converted to raw agricultural commodity equivalents. Age classes: infants <12 months, toddlers 12-<36 months, other children 36 months-<10 years, adolescents 10-<18, adults 18-<65, elderly 65-<75, very elderly >=75. Commodities: meat, fat, liver, other offals (including kidney), milk, eggs, honey, fish and seafood; mammals and poultry separately for meat, fat, liver and offals.",
+      "quote": "Consumption of edible tissues and products as derived from the EFSA Comprehensive European Food Consumption Database [...] Infants: < 12 months old [...] meat, fat, liver, other offals (including kidney), milk, eggs, honey, fish and seafood",
+      "guidance_anchors": [
+        "Consumption of edible tissues and products as derived from the EFSA Comprehensive European Food Consumption Database",
+        "Infants: < 12 months old",
+        "meat, fat, liver, other offals (including kidney), milk, eggs, honey, fish and seafood"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure"
+      ]
+    },
+    {
+      "id": "C4.3.2-RESIDUES",
+      "guidance_section": "4.3.2",
+      "guidance_page": 13,
+      "title": "Residue data used for exposure",
+      "requirement": "The dossier must allow estimating total relevant residues per commodity: arithmetic mean + 2 SD, or the highest single value with fewer than six animals. For multispecies use, the species with the highest residue per tissue represents poultry, mammals and fish. Meat is 80% muscle + 20% fat (mammals) or 90% muscle + 10% skin+fat (poultry).",
+      "quote": "the arithmetic mean plus two standard deviations or the highest single value in case of less than six animals [...] the value for the species with the highest concentration of residues in a given tissue of poultry, mammals and fish will be taken as representative [...] mammals 80% muscle and 20% fat, poultry 90% muscle and 10% fat (skin + fat)",
+      "guidance_anchors": [
+        "the arithmetic mean plus two standard deviations or the highest single value in case of less than six animals",
+        "the value for the species with the highest concentration of residues in a given tissue of poultry, mammals and fish will be taken as representative",
+        "mammals 80% muscle and 20% fat, poultry 90% muscle and 10% fat (skin + fat)"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure"
+      ]
+    },
+    {
+      "id": "C4.3.3-ACUTE",
+      "guidance_section": "4.3.3",
+      "guidance_page": 14,
+      "title": "Percentiles and acute exposure",
+      "requirement": "Report the mean and the higher percentile (usually P95) of individual exposures per dietary survey and age class. Acute exposure is assessed for all available surveys, per commodity (RAC), on consuming days only.",
+      "quote": "the higher percentile (usually the 95th percentile) exposures based on the consuming days only will be calculated for each food commodity, dietary survey and age class separately [...] acute exposure will be assessed for all dietary surveys available and will be carried out for each RAC value separately",
+      "guidance_anchors": [
+        "the higher percentile (usually the 95th percentile) exposures based on the consuming days only will be calculated for each food commodity, dietary survey and age class separately",
+        "acute exposure will be assessed for all dietary surveys available and will be carried out for each RAC value separately"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure"
+      ]
+    },
+    {
+      "id": "C4.3.3-CHRONIC",
+      "guidance_section": "4.3.3",
+      "guidance_page": 13,
+      "title": "Chronic exposure: survey eligibility",
+      "requirement": "Chronic exposure assessments do not use dietary surveys with only one reporting day per individual, as these cannot assess repeated exposure. Per individual, total relevant residues are combined with average daily consumption of each commodity, summed and standardised by body weight.",
+      "quote": "dietary surveys with only one reporting day per individual will not be considered as they are not adequate to assess repeated exposure",
+      "guidance_anchors": [
+        "dietary surveys with only one reporting day per individual will not be considered as they are not adequate to assess repeated exposure"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure"
+      ]
+    },
+    {
+      "id": "C4.3.4-OUTCOME",
+      "guidance_section": "4.3.4",
+      "guidance_page": 14,
+      "title": "Outcome when exposure exceeds the safe level",
+      "requirement": "If consumer exposure at the highest proposed feed concentration exceeds the highest safe level, reduce exposure: lower the feed concentration and/or introduce a withdrawal period and MRLs.",
+      "quote": "If the highest proposed feed concentration of an additive would result in a consumer exposure exceeding the highest safe level, measures to reduce consumer exposure should be taken",
+      "guidance_anchors": [
+        "If the highest proposed feed concentration of an additive would result in a consumer exposure exceeding the highest safe level, measures to reduce consumer exposure should be taken"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C5-MRL",
+      "guidance_section": "5",
+      "guidance_page": 14,
+      "title": "When MRLs and withdrawal periods are needed",
+      "requirement": "MRLs and a withdrawal period may be needed when residues could harm human health; generally no MRL without a withdrawal time; no MRL can be set without a health-based guidance value. An experimental withdrawal up to 12 h counts as practical zero-day withdrawal.",
+      "quote": "MRLs are generally not considered necessary if a withdrawal time is not required [...] In principle, the MRL cannot be set in the absence of such a value [...] An experimental withdrawal up to 12 h is considered a practical zero-day withdrawal",
+      "guidance_anchors": [
+        "MRLs are generally not considered necessary if a withdrawal time is not required",
+        "In principle, the MRL cannot be set in the absence of such a value",
+        "An experimental withdrawal up to 12 h is considered a practical zero-day withdrawal"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C5.1-LOQ",
+      "guidance_section": "5.1",
+      "guidance_page": 16,
+      "title": "MRL analytical method",
+      "requirement": "An analytical method of sufficient sensitivity must exist before an MRL can be set; its limit of quantification should be at least three times lower than the MRL.",
+      "quote": "The limit of quantification of the method should be at least three times lower than the MRL",
+      "guidance_anchors": [
+        "The limit of quantification of the method should be at least three times lower than the MRL"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C5.1-MRLCALC",
+      "guidance_section": "5.1",
+      "guidance_page": 14,
+      "title": "Calculating MRLs: variability",
+      "requirement": "MRLs are set per tissue/product from marker residue data; variability is normally reflected by the 95% confidence limit of the mean, or the highest individual value when it cannot be calculated. The process is iterative: choose the shortest withdrawal time with dietary intake of total residues below the health-based guidance value, derive MRLs, and lower them if the intake implied by the MRLs exceeds it.",
+      "quote": "Variability is normally reflected by using the 95% confidence limit of the mean",
+      "guidance_anchors": [
+        "Variability is normally reflected by using the 95% confidence limit of the mean"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C5.3-EXTRAPOLATE",
+      "guidance_section": "5.3",
+      "guidance_page": 16,
+      "title": "Extrapolating MRLs",
+      "requirement": "If feed levels are essentially similar, MRLs extrapolate within physiologically similar species (Table 1), to horses when MRLs exist for a major ruminant and pigs, and to other minor food-producing species except fish when identical MRLs were derived in cattle, pigs and chicken.",
+      "quote": "to horses when MRLs for a major ruminant and pigs exist [...] to all other minor species of food-producing animals except fish if identical MRLs were derived in tissues of cattle, pigs and chicken",
+      "guidance_anchors": [
+        "to horses when MRLs for a major ruminant and pigs exist",
+        "to all other minor species of food-producing animals except fish if identical MRLs were derived in tissues of cattle, pigs and chicken"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
     }
   ]
 }

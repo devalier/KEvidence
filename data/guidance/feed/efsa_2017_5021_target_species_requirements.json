@@ -1,0 +1,151 @@
+{
+  "catalogue_id": "efsa-2017-5021-target-species",
+  "catalogue_version": "0.1.0",
+  "kind": "knowledge",
+  "scope": "FEEDAP guidance on safety of feed additives for target species: when safety is presumed, the safe-concentration calculation and default feed intakes, TTC for flavourings, and the parts of the tolerance-study design (test item, margin of safety) that bear on characterisation. Study design, endpoints, sample size and reporting are not encoded. Grounds the assistant only.",
+  "guidance": {
+    "title": "Guidance on the assessment of the safety of feed additives for the target species",
+    "short_name": "FEEDAP 2017 target species (5021)",
+    "author": "EFSA FEEDAP Panel",
+    "citation": "EFSA FEEDAP Panel (Rychen G et al.), 2017. Guidance on the assessment of the safety of feed additives for the target species. EFSA Journal 2017;15(10):5021, 19 pp.",
+    "doi": "10.2903/j.efsa.2017.5021",
+    "url": "https://doi.org/10.2903/j.efsa.2017.5021",
+    "bundled_file": "efsa_2017_5021_target_species.pdf",
+    "license": "CC BY-ND 4.0 (open access; redistributed unmodified with citation)",
+    "title_check_phrase": "Guidance on the assessment of the safety of feed additives for the target species",
+    "expected_pages": 19,
+    "page_numbering": "guidance_page is the PDF page number."
+  },
+  "entries": [
+    {
+      "id": "T2-PRESUMED",
+      "guidance_section": "2",
+      "guidance_page": 5,
+      "title": "Safety for target animals presumed without studies",
+      "requirement": "No studies where target animals are not exposed (with analytical data showing the active substance is not detectable in feed at feeding), for silage additives that do not substantially raise normal constituents, for QPS microorganisms, for authorised nutritional additives, and for unauthorised nutritional additives that are sufficiently purified (unidentified fraction <= 1% of dry matter at up to 1,000 mg additive/kg feed; higher inclusion rates need higher purity, e.g. 0.1% at 10,000 mg/kg) or are produced by a QPS or QPS-recipient GM production organism.",
+      "quote": "Appropriate analytical data to determine that the active substance (or related substances) is not detectable in feed at the time of feeding should be provided [...] A product will be considered as sufficiently purified if the unidentified fraction would not contribute to more than 1% (in dry matter (DM)) when the inclusion rate does not exceed 1,000 mg additive/kg complete feed",
+      "guidance_anchors": [
+        "Appropriate analytical data to determine that the active substance (or related substances) is not detectable in feed at the time of feeding should be provided",
+        "A product will be considered as sufficiently purified if the unidentified fraction would not contribute to more than 1% (in dry matter (DM)) when the inclusion rate does not exceed 1,000 mg additive/kg complete feed"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "characterisation",
+        "hazard-char"
+      ]
+    },
+    {
+      "id": "T3-IDENTICAL",
+      "guidance_section": "3",
+      "guidance_page": 5,
+      "title": "Literature studies: identity with the additive under application",
+      "requirement": "The analysis must establish that the active substance/agent in literature studies is identical to that under application, or still allows conclusions on it; for fermentation additives identity includes the production strain; for mixtures the search covers all components.",
+      "quote": "the active substance(s)/ agent(s) in literature studies is (are) identical to that under application or, if not, would still allow conclusions on the additive under application to be made [...] for additives produced by fermentation, identity includes the production strain",
+      "guidance_anchors": [
+        "the active substance(s)/ agent(s) in literature studies is (are) identical to that under application or, if not, would still allow conclusions on the additive under application to be made",
+        "for additives produced by fermentation, identity includes the production strain"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "T4-FEEDINTAKE",
+      "guidance_section": "4",
+      "guidance_page": 7,
+      "title": "Default daily feed intake by species (Table 1)",
+      "requirement": "Default feed intake (g DM/kg bw; body weight kg; kg DM/day): chicken for fattening 79 (2; 0.158); laying hen 53 (2; 0.106); turkey for fattening 59 (3; 0.176); piglet 44 (20; 0.88); pig for fattening 37 (60; 2.20); lactating sow 30 (175; 5.28); veal calf on milk replacer 19 (100; 1.89); cattle for fattening 20 (400; 8.0); dairy cow 31 (650; 20.0); sheep/goat 20 (60; 1.2); horse 20 (400; 8.0); rabbit 50 (2; 0.1); salmon 18 (0.12; 0.0021); dog 17 (15; 0.250); cat 20 (3; 0.060); ornamental fish 5 (0.012; 0.000054). For other species the applicant proposes values.",
+      "quote": "Chicken for fattening 79 2 0.158 [...] Laying hen 53 2 0.106 [...] Turkey for fattening 59 3 0.176 [...] Piglet 44 20 0.88 [...] Pig for fattening 37 60 2.20 [...] Sow lactating 30 175 5.28 [...] Veal calf (milk replacer) 19 100 1.89 [...] Cattle for fattening 20 400 8.0 [...] Dairy cow 31 650 20.0 [...] Sheep/goat 20 60 1.2 [...] Horse 20 400 8.0 [...] Rabbit 50 2 0.1 [...] Salmon 18 0.12 0.0021 [...] Dog 17 15 0.250 [...] Cat 20 3 0.060 [...] Ornamental fish 5 0.012 0.000054",
+      "guidance_anchors": [
+        "Chicken for fattening 79 2 0.158",
+        "Laying hen 53 2 0.106",
+        "Turkey for fattening 59 3 0.176",
+        "Piglet 44 20 0.88",
+        "Pig for fattening 37 60 2.20",
+        "Sow lactating 30 175 5.28",
+        "Veal calf (milk replacer) 19 100 1.89",
+        "Cattle for fattening 20 400 8.0",
+        "Dairy cow 31 650 20.0",
+        "Sheep/goat 20 60 1.2",
+        "Horse 20 400 8.0",
+        "Rabbit 50 2 0.1",
+        "Salmon 18 0.12 0.0021",
+        "Dog 17 15 0.250",
+        "Cat 20 3 0.060",
+        "Ornamental fish 5 0.012 0.000054"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure"
+      ]
+    },
+    {
+      "id": "T4-SAFECONC",
+      "guidance_section": "4",
+      "guidance_page": 6,
+      "title": "Maximum safe concentration in feed from a laboratory NOAEL or BMDL",
+      "requirement": "Safe daily dose = NOAEL or BMDL (mg/kg bw) / uncertainty factor 100. Maximum safe concentration in feed (mg/kg complete feed, as-is) = ((NOAEL/100) / default feed intake in g DM per kg bw) x 1000 x 0.88 (0.945 for veal-calf milk replacer). Does not apply to viable microorganisms. The factor may be adjusted for metabolic considerations or study quality.",
+      "quote": "the NOAEL or BMDL, expressed in mg/kg BW, is divided by an uncertainty factor of 100 [...] assuming 88% DM for complete feed and 94.5% for milk replacers",
+      "guidance_anchors": [
+        "the NOAEL or BMDL, expressed in mg/kg BW, is divided by an uncertainty factor of 100",
+        "assuming 88% DM for complete feed and 94.5% for milk replacers"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char",
+        "exposure"
+      ]
+    },
+    {
+      "id": "T4-TTC",
+      "guidance_section": "4",
+      "guidance_page": 7,
+      "title": "TTC for flavourings without toxicity data",
+      "requirement": "Only for flavouring additives that can be assigned a Cramer class: maximum acceptable concentrations in complete feed of 0.3-1.5 mg/kg (class I), 0.1-0.5 (class II) and 0.02-0.08 (class III), derived with the default feed intakes.",
+      "quote": "could be applied to flavouring additives only for which a Cramer structural class can be assigned [...] Substances in Cramer class I would result in a maximum acceptable concentration in complete feed (mg/kg feed) between 0.3 and 1.5",
+      "guidance_anchors": [
+        "could be applied to flavouring additives only for which a Cramer structural class can be assigned",
+        "Substances in Cramer class I would result in a maximum acceptable concentration in complete feed (mg/kg feed) between 0.3 and 1.5"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char"
+      ]
+    },
+    {
+      "id": "T5-AIM",
+      "guidance_section": "5",
+      "guidance_page": 7,
+      "title": "Tolerance study aim and margin of safety",
+      "requirement": "Tolerance studies in target species are required when safety cannot be shown by the other routes. They give a limited short-term toxicity evaluation and a margin of safety: the highest tolerated concentration in feed divided by the highest proposed use level.",
+      "quote": "The aim of the tolerance study is to provide a limited evaluation of short-term toxicity and a margin of safety [...] Margin of safety: ratio of the highest tolerated additive concentration in feed and the highest use level proposed",
+      "guidance_anchors": [
+        "The aim of the tolerance study is to provide a limited evaluation of short-term toxicity and a margin of safety",
+        "Margin of safety: ratio of the highest tolerated additive concentration in feed and the highest use level proposed"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char",
+        "risk-char"
+      ]
+    },
+    {
+      "id": "T5.1-TESTITEM",
+      "guidance_section": "5.1",
+      "guidance_page": 8,
+      "title": "Tolerance study test item and certificate of analysis",
+      "requirement": "Tolerance studies use the additive under application (concentrated forms allowed for e.g. enzymes and microorganisms; other deviations justified). Provide a certificate of analysis of the test item and confirm the active substance concentration in feed or water by analysis.",
+      "quote": "Tolerance studies should be based on the additive(s) for which application is made [...] A certificate of analysis of the test item used in the study should be provided",
+      "guidance_anchors": [
+        "Tolerance studies should be based on the additive(s) for which application is made",
+        "A certificate of analysis of the test item used in the study should be provided"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    }
+  ]
+}

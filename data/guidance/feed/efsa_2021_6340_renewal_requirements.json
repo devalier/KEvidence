@@ -1,0 +1,179 @@
+{
+  "catalogue_id": "efsa-2021-6340-renewal",
+  "catalogue_version": "0.1.0",
+  "kind": "knowledge",
+  "scope": "FEEDAP guidance on renewing the authorisation of feed additives. Encoded: the general principles, the Section II (identity and characterisation) requirements that differ from a first application, and the renewal rules for residue and consumer-safety data. Section III target-species, user and environment content and sections 3-4 are not encoded. Grounds the assistant only.",
+  "guidance": {
+    "title": "Guidance on the renewal of the authorisation of feed additives",
+    "short_name": "FEEDAP 2021 renewal (6340)",
+    "author": "EFSA FEEDAP Panel",
+    "citation": "EFSA FEEDAP Panel (Bampidis V et al.), 2021. Guidance on the renewal of the authorisation of feed additives. EFSA Journal 2021;19(1):6340, 14 pp.",
+    "doi": "10.2903/j.efsa.2021.6340",
+    "url": "https://doi.org/10.2903/j.efsa.2021.6340",
+    "bundled_file": "efsa_2021_6340_renewal.pdf",
+    "license": "CC BY-ND 4.0 (open access; redistributed unmodified with citation)",
+    "title_check_phrase": "Guidance on the renewal of the authorisation of feed additives",
+    "expected_pages": 14,
+    "page_numbering": "guidance_page is the PDF page number."
+  },
+  "entries": [
+    {
+      "id": "R1-IDENTICAL",
+      "guidance_section": "1",
+      "guidance_page": 5,
+      "title": "Published studies and omissions",
+      "requirement": "Reasons must be given for omitted data. Literature studies can be used if the active substance/agent is identical to that under application, or the conclusions still carry over, with a read-across justification.",
+      "quote": "Reasons must be given for the omission from the dossier of any data prescribed there [...] a justification for read-across should be given",
+      "guidance_anchors": [
+        "Reasons must be given for the omission from the dossier of any data prescribed there",
+        "a justification for read-across should be given"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "R1-OBJECTIVES",
+      "guidance_section": "1",
+      "guidance_page": 4,
+      "title": "Objectives of a renewal",
+      "requirement": "Demonstrate (i) that the additive on the market complies with the existing authorisation and (ii) that, on current knowledge, it remains safe under the approved conditions for target species, consumers, users and the environment.",
+      "quote": "the demonstration of compliance of the additive placed in the market with the conditions of the existing authorisation [...] the additive remains safe under the approved conditions for the target species, the consumers, the users and the environment",
+      "guidance_anchors": [
+        "the demonstration of compliance of the additive placed in the market with the conditions of the existing authorisation",
+        "the additive remains safe under the approved conditions for the target species, the consumers, the users and the environment"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "R2-STANDALONE",
+      "guidance_section": "2",
+      "guidance_page": 5,
+      "title": "Stand-alone dossier; mark new, updated and previously submitted parts",
+      "requirement": "Each dossier is stand-alone and follows the Regulation (EC) No 429/2008 numbering. All studies must refer to the same additive. Where content repeats an earlier assessed application, indicate (e.g. by colours) which parts were already submitted, which are updated and which are new.",
+      "quote": "All studies submitted should clearly refer to the same additive (active substance/agent) as the one subject to the application for renewal of the authorisation [...] the applicant should clearly indicate (e.g. by using different colours) which parts of the dossier were already submitted, which are updated or modified and which are new",
+      "guidance_anchors": [
+        "All studies submitted should clearly refer to the same additive (active substance/agent) as the one subject to the application for renewal of the authorisation",
+        "the applicant should clearly indicate (e.g. by using different colours) which parts of the dossier were already submitted, which are updated or modified and which are new"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "R2.1-VARIATIONS",
+      "guidance_section": "2.1",
+      "guidance_page": 5,
+      "title": "Summary: authorisation copy and list of variations",
+      "requirement": "Provide a copy of the original authorisation (with modifications or last renewal), a summary of new identity and safety information since then, and a list of all variations in manufacturing process, composition, purity or activity compared with the authorised additive.",
+      "quote": "a list of all variations (e.g. any changes in the manufacturing process, composition, purity or activity in comparison with the authorised additive) since the original authorisation or the last renewal of the authorisation",
+      "guidance_anchors": [
+        "a list of all variations (e.g. any changes in the manufacturing process, composition, purity or activity in comparison with the authorised additive) since the original authorisation or the last renewal of the authorisation"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "R2.2-BATCHES",
+      "guidance_section": "2.2",
+      "guidance_page": 6,
+      "title": "Renewal batch data: recency and number",
+      "requirement": "Analytical data not older than one year before submission, from at least five batches for composition and three for purity. If too few batches were made in the previous year, use the five (composition) / three (purity) most recent batches. This differs from the 'within the last 5 years' rule of the 2017 identity guidance.",
+      "quote": "Recent (not older than one year from the date of submission of the application) analytical data from at least five batches for the composition of the additive and three for the purity should be provided [...] the data should refer to the five (composition)/three (purity) most recent batches",
+      "guidance_anchors": [
+        "Recent (not older than one year from the date of submission of the application) analytical data from at least five batches for the composition of the additive and three for the purity should be provided",
+        "the data should refer to the five (composition)/three (purity) most recent batches"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "R2.2-CHANGES",
+      "guidance_section": "2.2",
+      "guidance_page": 6,
+      "title": "Changes in manufacturing, composition, purity or activity",
+      "requirement": "Describe any change in detail and reflect it in the data. If physico-chemical properties are affected, provide additional data on physical properties (dusting potential, particle size distribution), stability and/or homogeneity; where safety or efficacy may be affected (e.g. higher bioavailability or user exposure), further studies may be required.",
+      "quote": "if the modifications made have an impact on the physico-chemical properties of the additive, additional data on the physical properties (e.g. dusting potential, particle size distribution), stability and/or homogeneity should be provided, as appropriate",
+      "guidance_anchors": [
+        "if the modifications made have an impact on the physico-chemical properties of the additive, additional data on the physical properties (e.g. dusting potential, particle size distribution), stability and/or homogeneity should be provided, as appropriate"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "R2.2-COMPLIANCE",
+      "guidance_section": "2.2",
+      "guidance_page": 6,
+      "title": "Section II: confirm compliance with the authorised specification",
+      "requirement": "A complete Section II follows the 2017 identity/characterisation guidance (and the 2018 microorganism guidance where relevant). The data must confirm compliance with the specification in the authorising regulation, including composition, activity, impurities and other provisions, using the most recent and precise analytical methods.",
+      "quote": "The data provided in this section must allow confirmation of the compliance of the feed additive with the specification detailed in the authorising regulation, including composition, activity, impurities and any other provisions",
+      "guidance_anchors": [
+        "The data provided in this section must allow confirmation of the compliance of the feed additive with the specification detailed in the authorising regulation, including composition, activity, impurities and any other provisions"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "R2.2-METHODS",
+      "guidance_section": "2.2",
+      "guidance_page": 7,
+      "title": "Methods of analysis: fill earlier gaps",
+      "requirement": "If verification studies or ISO/CEN methods were missing at the first application, supply them now, for the active substance (Section 2.6.1 of Regulation 429/2008) and for residues in food (Section 2.6.2).",
+      "quote": "if verification studies as specified in this Regulation or the availability of ISO/CEN methods were missing at time of the first application, the applicant should provide that missing information",
+      "guidance_anchors": [
+        "if verification studies as specified in this Regulation or the availability of ISO/CEN methods were missing at time of the first application, the applicant should provide that missing information"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "R2.2-MICRO",
+      "guidance_section": "2.2",
+      "guidance_page": 6,
+      "title": "Microorganisms on renewal",
+      "requirement": "Follow the 2018 microorganism guidance, in particular identification under updated nomenclature, antimicrobial resistance/susceptibility, antimicrobial production (if not excluded before), toxigenicity and pathogenicity, genetic modification, and absence of viable cells and DNA of the production strain. For QPS microorganisms confirm compliance with the qualifications of the most recent QPS list update; if QPS status is not confirmed, consider the safety implications (e.g. toxicological studies).",
+      "quote": "Identification of each microorganism in the light of updated nomenclature [...] information should be provided to confirm the compliance with the qualifications listed in the most recent update of the list of QPS-recommended biological agents",
+      "guidance_anchors": [
+        "Identification of each microorganism in the light of updated nomenclature",
+        "information should be provided to confirm the compliance with the qualifications listed in the most recent update of the list of QPS-recommended biological agents"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "R2.3.3-CONSUMER",
+      "guidance_section": "2.3.3",
+      "guidance_page": 8,
+      "title": "Consumer safety on renewal",
+      "requirement": "Show that, on current knowledge, the additive remains safe for the consumer. No more is needed for additives listed in section 3.1 of the consumer guidance if the exclusion qualifications are met; otherwise update ADME, deposition and toxicology and the exposure assessment using the most up-to-date method.",
+      "quote": "the safety update should consider any new data/information available on the absorption, distribution, metabolism and excretion (ADME), deposition and toxicological properties of the additive or its components in the target species or laboratory animals, as well as the exposure of the consumer to residues following the most up-to-date exposure assessment methodology",
+      "guidance_anchors": [
+        "the safety update should consider any new data/information available on the absorption, distribution, metabolism and excretion (ADME), deposition and toxicological properties of the additive or its components in the target species or laboratory animals, as well as the exposure of the consumer to residues following the most up-to-date exposure assessment methodology"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char",
+        "exposure",
+        "risk-char"
+      ]
+    },
+    {
+      "id": "R2.3.3.1-RESIDUES",
+      "guidance_section": "2.3.3.1",
+      "guidance_page": 8,
+      "title": "When residue data are required on renewal",
+      "requirement": "Residue data are needed when the authorising regulation requires residue monitoring, when metabolism in the target species may give a different set of residues, when composition or manufacturing changes may affect bioavailability, and for any additive with a health-based guidance value; provided following the 2017 consumer guidance.",
+      "quote": "when the authorising Regulation requires residue monitoring [...] for any additives for which a health-based guidance value (HBGV) is established",
+      "guidance_anchors": [
+        "when the authorising Regulation requires residue monitoring",
+        "for any additives for which a health-based guidance value (HBGV) is established"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure",
+        "risk-char"
+      ]
+    }
+  ]
+}

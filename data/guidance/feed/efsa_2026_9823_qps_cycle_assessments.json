@@ -1,0 +1,317 @@
+{
+  "dataset_id": "efsa-2026-9823-qps-cycle",
+  "dataset_version": "0.1.0",
+  "partial": true,
+  "catalogue_id": "efsa-2026-9823-qps",
+  "coverage": "ONLY the taxonomic units assessed between October 2022 and September 2025 (Table 6, 31 units; Table 7 qualifications) and the groups the opinion says are excluded from QPS assessment (section 3.3.4). It is NOT the QPS list. The full list is published separately by EFSA (Zenodo 10.5281/zenodo.1146566) and is not bundled.",
+  "interpretation": "A taxon missing from this file says nothing about its QPS status.",
+  "taxa": [
+    {
+      "taxon": "Actinomadura roseirufa",
+      "qps": "no",
+      "panel_statement": 20,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Agrobacterium radiobacter",
+      "qps": "yes",
+      "panel_statement": 20,
+      "qualifications": [
+        "Recommended for the QPS list with the qualification 'for production purposes only'",
+        "The strains should not harbour any acquired resistance genes to therapeutic antimicrobials"
+      ],
+      "synonyms": [
+        "Rhizobium radiobacter"
+      ],
+      "table6_page": 19,
+      "table7_page": 20
+    },
+    {
+      "taxon": "Akkermansia muciniphila",
+      "qps": "no",
+      "panel_statement": 20,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Anaerobutyricum soehngenii",
+      "qps": "no",
+      "panel_statement": 18,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Aurantiochytrium acetophilum",
+      "qps": "no",
+      "panel_statement": 23,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Bacillus nakamurai",
+      "qps": "no",
+      "panel_statement": 21,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Bacillus sonorensis",
+      "qps": "yes",
+      "panel_statement": 22,
+      "qualifications": [
+        "Recommended for the QPS list with the qualifications 'absence of bacitracin production ability' and 'absence of toxigenic activity'",
+        "The strains should not harbour any acquired resistance genes to therapeutic antimicrobials"
+      ],
+      "synonyms": [],
+      "table6_page": 19,
+      "table7_page": 20
+    },
+    {
+      "taxon": "Bacillus thermoamylovorans",
+      "qps": "no",
+      "panel_statement": 23,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Bacillus thuringiensis",
+      "qps": "no",
+      "panel_statement": 21,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19,
+      "note": "Not recommended for the QPS list due to safety concerns (section 3.3.3)."
+    },
+    {
+      "taxon": "Burkholderia stagnalis",
+      "qps": "no",
+      "panel_statement": 20,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Burkholderia ubonensis",
+      "qps": "no",
+      "panel_statement": 19,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Candida oleophila",
+      "qps": "yes",
+      "panel_statement": 19,
+      "qualifications": [
+        "Recommended for the QPS status with the qualification for 'production purposes only'"
+      ],
+      "synonyms": [],
+      "table6_page": 19,
+      "table7_page": 20
+    },
+    {
+      "taxon": "Chlamydomonas reinhardtii",
+      "qps": "yes",
+      "panel_statement": 19,
+      "qualifications": [
+        "Recommended for QPS status with the qualification for 'production purposes only'"
+      ],
+      "synonyms": [],
+      "table6_page": 19,
+      "table7_page": 20
+    },
+    {
+      "taxon": "Clostridium tyrobutyricum",
+      "qps": "yes",
+      "panel_statement": 19,
+      "qualifications": [
+        "Recommended for the QPS list with the qualification 'absence of genetic determinants for toxin production'",
+        "The strains should not harbour any acquired resistance genes to therapeutic antimicrobials"
+      ],
+      "synonyms": [],
+      "table6_page": 19,
+      "table7_page": 20
+    },
+    {
+      "taxon": "Corynebacterium stationis",
+      "qps": "no",
+      "panel_statement": 22,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Ensifer adhaerens",
+      "qps": "no",
+      "panel_statement": 19,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Enterococcus lactis",
+      "qps": "no",
+      "panel_statement": 21,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Grand Total",
+      "qps": "no",
+      "panel_statement": 23,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Klebsiella pneumoniae",
+      "qps": "no",
+      "panel_statement": 19,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Lacticaseibacillus huelsenbergensis",
+      "qps": "yes",
+      "panel_statement": 21,
+      "qualifications": [
+        "Can be granted the QPS status based on its close relatedness to several other QPS Lacticaseibacillus species",
+        "The strains should not harbour any acquired resistance genes to therapeutic antimicrobials"
+      ],
+      "synonyms": [],
+      "table6_page": 19,
+      "table7_page": 20
+    },
+    {
+      "taxon": "Lactobacillus paragasseri",
+      "qps": "yes",
+      "panel_statement": 22,
+      "synonyms": [
+        "formerly included in Lactobacillus gasseri"
+      ],
+      "qualifications": [
+        "Recommended for the QPS list",
+        "The strains should not harbour any acquired resistance genes to therapeutic antimicrobials"
+      ],
+      "table7_page": 20,
+      "note": "Not notified; assessed because it was formerly included in Lactobacillus gasseri (Table 7 text). Not counted in Table 6."
+    },
+    {
+      "taxon": "Microbacterium arborescens",
+      "qps": "no",
+      "panel_statement": 20,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Microchloropsis gaditana",
+      "qps": "yes",
+      "panel_statement": 23,
+      "qualifications": [
+        "Recommended for QPS status with the qualification for 'production purposes only'"
+      ],
+      "synonyms": [],
+      "table6_page": 19,
+      "table7_page": 20
+    },
+    {
+      "taxon": "Nannochloropsis oculata",
+      "qps": "no",
+      "panel_statement": 18,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Papiliotrema terrestris",
+      "qps": "no",
+      "panel_statement": 22,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Pseudomonas putida",
+      "qps": "no",
+      "panel_statement": 19,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Pseudomonas stutzeri",
+      "qps": "no",
+      "panel_statement": 18,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Serratia marcescens",
+      "qps": "no",
+      "panel_statement": 19,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Serratia plymuthica",
+      "qps": "no",
+      "panel_statement": 21,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Unnamed (Coriobacteriaceae)",
+      "qps": "no",
+      "panel_statement": 18,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    },
+    {
+      "taxon": "Vibrio natriegens",
+      "qps": "yes",
+      "panel_statement": 22,
+      "qualifications": [
+        "Recommended for the QPS status with the qualification for 'production purposes only'"
+      ],
+      "synonyms": [],
+      "table6_page": 19,
+      "table7_page": 20
+    },
+    {
+      "taxon": "Weizmannia faecalis",
+      "qps": "no",
+      "panel_statement": 19,
+      "qualifications": [],
+      "synonyms": [],
+      "table6_page": 19
+    }
+  ],
+  "excluded_groups": [
+    "filamentous fungi",
+    "streptomycetes",
+    "oomycetes",
+    "Enterococcus faecium",
+    "Escherichia coli",
+    "Clostridium butyricum",
+    "Klebsiella pneumoniae",
+    "Actinomadura roseirufa",
+    "Burkholderia stagnalis"
+  ],
+  "excluded_groups_source": "section 3.3.4",
+  "excluded_groups_page": 20,
+  "bacteriophages": "Previously ineligible; now eligible for QPS at species level (abstract)."
+}

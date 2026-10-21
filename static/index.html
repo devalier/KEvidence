@@ -857,7 +857,7 @@ async function sendAssistant(prompt) {
   addMessage('Thinking…', 'bot', 'typing');
   const charGaps = state.characterisation ? characterisationGapSummary() : [];
   const assistantContext = {
-    workflow_step: state.activeTab === 'characterisation' ? 'characterisation' : '',
+    workflow_step: ['characterisation', 'hazard-char', 'exposure', 'risk-char'].includes(state.activeTab) ? state.activeTab : '',
     domain: state.domain,
     characterisation_product: state.characterisation?.meta?.product_name || '',
     characterisation_gaps: charGaps,
@@ -949,11 +949,13 @@ async function loadCharacterisationGuidance() {
       const anchored = s.verification_counts?.anchored_in_guidance_text || 0;
       const broken = s.broken || [];
       const role = s.role === 'primary' ? 'Drives the data-gap analysis' : 'Grounds the assistant';
-      return `<div style="margin-top:6px"><span class="badge">${escapeHtml(role)}</span>${escapeHtml(s.guidance?.citation || '')}
+      const informs = (s.steps || []).map(x => ({ characterisation: '0', 'hazard-char': '2', exposure: '3', 'risk-char': '4' }[x])).join(', ');
+      return `<div style="margin-top:6px"><span class="badge">${escapeHtml(role)}</span><span class="badge">Steps ${escapeHtml(informs)}</span>${escapeHtml(s.guidance?.citation || '')}
         <br><span class="badge">${s.guidance_text_loaded ? 'Guidance text loaded' : 'Guidance text NOT loaded'}</span>${anchored}/${s.entries} entries anchored verbatim in the guidance text${broken.length ? ` — <strong class="status-gap">review: ${broken.map(escapeHtml).join(', ')}</strong>` : ''}.
         <a href="${API_BASE}/characterisation/guidance.pdf?domain=${encodeURIComponent(state.domain)}&source=${encodeURIComponent(s.catalogue_id)}" target="_blank" rel="noopener" style="color:var(--accent)">Open PDF</a></div>`;
     }).join('');
-    $('charGuidanceStatus').innerHTML = `<span class="badge">Domain</span>${escapeHtml(g.domain?.label || state.domain)}${rows}`;
+    const dsets = (g.datasets || []).map(d => `<div style="margin-top:6px"><span class="badge">Dataset${d.partial ? ' (partial)' : ''}</span>${escapeHtml(d.dataset_id)} — ${escapeHtml(d.coverage)}</div>`).join('');
+    $('charGuidanceStatus').innerHTML = `<span class="badge">Domain</span>${escapeHtml(g.domain?.label || state.domain)}${rows}${dsets}`;
   } catch (e) {
     $('charGuidanceStatus').textContent = `Guidance status unavailable: ${e.message}`;
   }

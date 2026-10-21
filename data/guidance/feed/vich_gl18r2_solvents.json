@@ -1,0 +1,242 @@
+{
+  "dataset_id": "vich-gl18r2-solvents",
+  "dataset_version": "0.1.0",
+  "source": {
+    "title": "VICH GL18(R2) Impurities: residual solvents in new veterinary medicinal products, active substances and excipients (revision 2)",
+    "reference": "EMA/CVMP/VICH/502/1999, adopted by CVMP 17 May 2023, in effect April 2024",
+    "file": "vich-gl18r2.pdf",
+    "table_pages": {
+      "class1": 7,
+      "class2": 8,
+      "class3": 8,
+      "class4": 9
+    }
+  },
+  "basis": "Option 1 limits assume a daily product mass of 10 g (concentration ppm = 1000 x PDE / dose in g). Doses above 10 g/day are handled under Option 2.",
+  "class1_avoid": [
+    {
+      "solvent": "Benzene",
+      "limit_ppm": 2,
+      "concern": "Carcinogen"
+    },
+    {
+      "solvent": "Carbon tetrachloride",
+      "limit_ppm": 4,
+      "concern": "Toxic and environmental hazard"
+    },
+    {
+      "solvent": "1,2-Dichloroethane",
+      "limit_ppm": 5,
+      "concern": "Toxic"
+    },
+    {
+      "solvent": "1,1-Dichloroethene",
+      "limit_ppm": 8,
+      "concern": "Toxic"
+    },
+    {
+      "solvent": "1,1,1-Trichloroethane",
+      "limit_ppm": 1500,
+      "concern": "Environmental hazard"
+    }
+  ],
+  "class2_limit": [
+    {
+      "solvent": "Acetonitrile",
+      "pde_mg_per_day": 4.1,
+      "limit_ppm": 410
+    },
+    {
+      "solvent": "Chlorobenzene",
+      "pde_mg_per_day": 3.6,
+      "limit_ppm": 360
+    },
+    {
+      "solvent": "Chloroform",
+      "pde_mg_per_day": 0.6,
+      "limit_ppm": 60
+    },
+    {
+      "solvent": "Cumene",
+      "pde_mg_per_day": 0.7,
+      "limit_ppm": 70
+    },
+    {
+      "solvent": "Cyclohexane",
+      "pde_mg_per_day": 38.8,
+      "limit_ppm": 3880
+    },
+    {
+      "solvent": "Cyclopentyl methyl ether",
+      "pde_mg_per_day": 15.0,
+      "limit_ppm": 1500
+    },
+    {
+      "solvent": "1,2-Dichloroethene",
+      "pde_mg_per_day": 18.7,
+      "limit_ppm": 1870
+    },
+    {
+      "solvent": "Dichloromethane",
+      "pde_mg_per_day": 6.0,
+      "limit_ppm": 600
+    },
+    {
+      "solvent": "1,2-Dimethoxyethane",
+      "pde_mg_per_day": 1.0,
+      "limit_ppm": 100
+    },
+    {
+      "solvent": "N,N-Dimethylacetamide",
+      "pde_mg_per_day": 10.9,
+      "limit_ppm": 1090
+    },
+    {
+      "solvent": "N,N-Dimethylformamide",
+      "pde_mg_per_day": 8.8,
+      "limit_ppm": 880
+    },
+    {
+      "solvent": "1,4-Dioxane",
+      "pde_mg_per_day": 3.8,
+      "limit_ppm": 380
+    },
+    {
+      "solvent": "2-Ethoxyethanol",
+      "pde_mg_per_day": 1.6,
+      "limit_ppm": 160
+    },
+    {
+      "solvent": "Ethylene glycol",
+      "pde_mg_per_day": 6.2,
+      "limit_ppm": 620
+    },
+    {
+      "solvent": "Formamide",
+      "pde_mg_per_day": 2.2,
+      "limit_ppm": 220
+    },
+    {
+      "solvent": "Hexane",
+      "pde_mg_per_day": 2.9,
+      "limit_ppm": 290
+    },
+    {
+      "solvent": "Methanol",
+      "pde_mg_per_day": 30.0,
+      "limit_ppm": 3000
+    },
+    {
+      "solvent": "2-Methoxyethanol",
+      "pde_mg_per_day": 0.5,
+      "limit_ppm": 50
+    },
+    {
+      "solvent": "Methylbutylketone",
+      "pde_mg_per_day": 0.5,
+      "limit_ppm": 50
+    },
+    {
+      "solvent": "Methylcyclohexane",
+      "pde_mg_per_day": 11.8,
+      "limit_ppm": 1180
+    },
+    {
+      "solvent": "Methylisobutylketone",
+      "pde_mg_per_day": 45.0,
+      "limit_ppm": 4500
+    },
+    {
+      "solvent": "N-Methylpyrrolidone",
+      "pde_mg_per_day": 5.3,
+      "limit_ppm": 530
+    },
+    {
+      "solvent": "Nitromethane",
+      "pde_mg_per_day": 0.5,
+      "limit_ppm": 50
+    },
+    {
+      "solvent": "Pyridine",
+      "pde_mg_per_day": 2.0,
+      "limit_ppm": 200
+    },
+    {
+      "solvent": "Sulfolane",
+      "pde_mg_per_day": 1.6,
+      "limit_ppm": 160
+    },
+    {
+      "solvent": "Tertiary-butyl alcohol",
+      "pde_mg_per_day": 35.0,
+      "limit_ppm": 3500
+    },
+    {
+      "solvent": "Tetrahydrofuran",
+      "pde_mg_per_day": 7.2,
+      "limit_ppm": 720
+    },
+    {
+      "solvent": "Tetralin",
+      "pde_mg_per_day": 1.0,
+      "limit_ppm": 100
+    },
+    {
+      "solvent": "Toluene",
+      "pde_mg_per_day": 8.9,
+      "limit_ppm": 890
+    },
+    {
+      "solvent": "1,1,2-Trichloroethene",
+      "pde_mg_per_day": 0.8,
+      "limit_ppm": 80
+    },
+    {
+      "solvent": "Xylene",
+      "pde_mg_per_day": 21.7,
+      "limit_ppm": 2170
+    }
+  ],
+  "class3_low_toxic_potential": [
+    "Acetic acid",
+    "Heptane",
+    "Acetone",
+    "Isobutyl acetate",
+    "Anisole",
+    "Isopropyl acetate",
+    "1-Butanol",
+    "Methyl acetate",
+    "2-Butanol",
+    "3-Methyl-1-butanol",
+    "Butyl acetate",
+    "Methylethyl ketone",
+    "tert-Butylmethyl ether",
+    "2-Methyl-1-propanol",
+    "Dimethylsulfoxide",
+    "2-Methyltetrahydrofuran",
+    "Ethanol",
+    "Pentane",
+    "Ethyl acetate",
+    "1-Pentanol",
+    "Ethyl ether",
+    "1-Propanol",
+    "Ethyl formate",
+    "2-Propanol",
+    "Formic acid",
+    "Propyl acetate",
+    "Triethylamine"
+  ],
+  "class3_limit_note": "50 mg/day or less (5000 ppm or 0.5% under Option 1) is acceptable without justification",
+  "no_pde": [
+    "1,1-Diethoxypropane",
+    "Methylisopropyl ketone",
+    "1,1-Dimethoxymethane",
+    "Methyltetrahydrofuran",
+    "2,2-Dimethoxypropane",
+    "Petroleum ether",
+    "Isooctane",
+    "Trichloroacetic acid",
+    "Isopropyl ether",
+    "Trifluoroacetic acid"
+  ]
+}
