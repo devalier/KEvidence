@@ -1,0 +1,420 @@
+{
+  "catalogue_id": "efsa-2017-5022-consumer",
+  "catalogue_version": "0.1.0",
+  "kind": "knowledge",
+  "scope": "Parts of the FEEDAP consumer-safety guidance that bear on what must be characterised: which material is tested, identity with the commercial product, identification of metabolites and residues, the purity exemption and the QPS exemption. Grounds the assistant only. ",
+  "guidance": {
+    "title": "Guidance on the assessment of the safety of feed additives for the consumer",
+    "short_name": "FEEDAP 2017 consumer safety (5022)",
+    "author": "EFSA FEEDAP Panel",
+    "citation": "EFSA FEEDAP Panel (Rychen G et al.), 2017. Guidance on the assessment of the safety of feed additives for the consumer. EFSA Journal 2017;15(10):5022, 17 pp.",
+    "doi": "10.2903/j.efsa.2017.5022",
+    "url": "https://doi.org/10.2903/j.efsa.2017.5022",
+    "bundled_file": "efsa_2017_5022_consumer.pdf",
+    "license": "CC BY-ND 4.0 (open access; redistributed unmodified with citation)",
+    "title_check_phrase": "Guidance on the assessment of the safety of feed additives for the consumer",
+    "expected_pages": 17,
+    "page_numbering": "guidance_page is the PDF page number."
+  },
+  "entries": [
+    {
+      "id": "C-SCOPE",
+      "guidance_section": "Scope",
+      "guidance_page": 4,
+      "title": "What the consumer-safety guidance covers",
+      "requirement": "Guidance on assessing consumer safety of feed additives: studies needed (Section 2), requirements by additive (Section 3), highest safe intake and exposure (Section 4), MRLs (Section 5). Safety is assessed by comparing consumer exposure to residues with the safe intake.",
+      "quote": "The safety for the consumer is assessed by comparing the exposure of the consumer to residues in food products to this safe intake",
+      "guidance_anchors": [
+        "The safety for the consumer is assessed by comparing the exposure of the consumer to residues in food products to this safe intake"
+      ],
+      "applies_to": "all",
+      "kind": "scope"
+    },
+    {
+      "id": "C1-ACTIVE",
+      "guidance_section": "1",
+      "guidance_page": 4,
+      "title": "Test the active substance; the fermentation product must be identical to the commercial one",
+      "requirement": "Consumer-safety studies use the active substance. If it is in a fermentation product, test the fermentation product, which must be identical to the commercial one. With several active components, assess each and consider interactions; for complex mixtures that cannot be fully identified or separated, assess the whole mixture.",
+      "quote": "studies necessary to assess consumer safety should be carried out with the active substance [...] The fermentation product tested must be identical to that to be used in the commercial product [...] For complex mixtures, especially when the components cannot be fully identified/separated, the whole mixture should be assessed",
+      "guidance_anchors": [
+        "studies necessary to assess consumer safety should be carried out with the active substance",
+        "The fermentation product tested must be identical to that to be used in the commercial product",
+        "For complex mixtures, especially when the components cannot be fully identified/separated, the whole mixture should be assessed"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C1-IDENTICAL",
+      "guidance_section": "1",
+      "guidance_page": 5,
+      "title": "Published studies: evidence that the additive is identical",
+      "requirement": "When data come from publications, show that the additive used is identical to the one under application, or that conclusions still carry over. For fermentation additives this includes the production strain.",
+      "quote": "evidence must be provided that the additive used in these studies is identical to that under application [...] For additives produced by fermentation, this includes the production strain",
+      "guidance_anchors": [
+        "evidence must be provided that the additive used in these studies is identical to that under application",
+        "For additives produced by fermentation, this includes the production strain"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C1-OMISSIONS",
+      "guidance_section": "1",
+      "guidance_page": 5,
+      "title": "Justify omissions and deviations",
+      "requirement": "Applicants must justify omitted data and any deviation from the guidance.",
+      "quote": "Applicants should justify the omission from the dossier of any data or any deviations from the requirements detailed in this guidance",
+      "guidance_anchors": [
+        "Applicants should justify the omission from the dossier of any data or any deviations from the requirements detailed in this guidance"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1-AIMS",
+      "guidance_section": "2.1",
+      "guidance_page": 5,
+      "title": "Aims of ADME and residue studies",
+      "requirement": "Establish metabolic fate in laboratory and target animals; identify and quantify toxicologically relevant residues (parent and metabolites) in edible tissues and products and select the marker residue; establish kinetics of total and marker residues.",
+      "quote": "to identify and quantify residues (parent compound and metabolites) of toxicological relevance in edible tissues and products and select the marker residue when required",
+      "guidance_anchors": [
+        "to identify and quantify residues (parent compound and metabolites) of toxicological relevance in edible tissues and products and select the marker residue when required"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1.1-LABEL",
+      "guidance_section": "2.1.1",
+      "guidance_page": 5,
+      "title": "Radiolabelled test substance: justification and characterisation",
+      "requirement": "Justify the choice and molecular position of the label and describe its specific activity, radiochemical purity and stability.",
+      "quote": "A justification of the choice and the molecular position of the label should be given, its specific (radio)activity, (radio)chemical purity and stability described",
+      "guidance_anchors": [
+        "A justification of the choice and the molecular position of the label should be given, its specific (radio)activity, (radio)chemical purity and stability described"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1.1.1-METABOLITES",
+      "guidance_section": "2.1.1.1",
+      "guidance_page": 6,
+      "title": "Metabolite identification threshold",
+      "requirement": "Identify all metabolites at >= 5% of the administered dose or >= 10% of total radioactivity in the animal (whichever detects more) and give a metabolic scheme. Identification means exact structural determination.",
+      "quote": "Efforts should be made to identify all metabolites present at 5% or greater of the administered dose or 10% of total radioactivity in the animal [...] Identification refers to the exact structural determination of components",
+      "guidance_anchors": [
+        "Efforts should be made to identify all metabolites present at 5% or greater of the administered dose or 10% of total radioactivity in the animal",
+        "Identification refers to the exact structural determination of components"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1.2-MARKER",
+      "guidance_section": "2.1.2",
+      "guidance_page": 7,
+      "title": "Marker residue",
+      "requirement": "The marker residue is the residue chosen for assay whose concentration has a known relationship to total residues. Select it and give marker-to-total ratios for edible tissues and products. Consider non-extractable residues.",
+      "quote": "The marker residue is the residue selected for assay whose concentration is in a known relationship to total residues in tissues and products [...] Consideration should also be given to the amount and nature of non-extractable residues in edible tissues/products",
+      "guidance_anchors": [
+        "The marker residue is the residue selected for assay whose concentration is in a known relationship to total residues in tissues and products",
+        "Consideration should also be given to the amount and nature of non-extractable residues in edible tissues/products"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1.2.2-MARKERSTUDY",
+      "guidance_section": "2.1.2.2",
+      "guidance_page": 7,
+      "title": "Marker residue study design",
+      "requirement": "Minimum administration period 28 days (animals for fattening: the 28 days before slaughter); marker residue concentration measured with a validated analytical method of sufficient sensitivity.",
+      "quote": "The minimum administration period of the additive should be 28 days [...] Measurements of the marker residue concentration (MRC) should use a validated analytical method with sufficient sensitivity",
+      "guidance_anchors": [
+        "The minimum administration period of the additive should be 28 days",
+        "Measurements of the marker residue concentration (MRC) should use a validated analytical method with sufficient sensitivity"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C2.1.3-RELEVANCE",
+      "guidance_section": "2.1.3",
+      "guidance_page": 7,
+      "title": "Relevance of residues",
+      "requirement": "First approach: total residues from labelled active substance are toxicologically relevant. Second step: discount the fraction incorporated into endogenous compounds and metabolites with reduced toxicological relevance. Structural alerts may help identify relevant metabolites.",
+      "quote": "total residues measured in edible tissues and products from target animals administered the (radio)labelled active substance are considered of toxicological relevance [...] Identification of toxicologically relevant metabolites can make use of structural alerts",
+      "guidance_anchors": [
+        "total residues measured in edible tissues and products from target animals administered the (radio)labelled active substance are considered of toxicological relevance",
+        "Identification of toxicologically relevant metabolites can make use of structural alerts"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C3.1-NOEXPOSURE",
+      "guidance_section": "3.1",
+      "guidance_page": 10,
+      "title": "No consumer-safety studies: no exposure, not absorbed, QPS microorganisms",
+      "requirement": "No studies are needed if target animals are not exposed (with analytical data showing the substance is not detectable in feed at feeding), if the substance is not significantly absorbed (not for additives with a measurable nanoparticle fraction), or for QPS microorganisms and, in specified cases, enzymes and amino acids from them.",
+      "quote": "Appropriate analytical data to determine that the active substance (or related substances) is not detectable in feed at the time of feeding should be provided [...] except additives with a measurable fraction of nanoparticles [...] microorganisms considered by EFSA to qualify for the qualified presumption of safety (QPS) approach to safety assessment",
+      "guidance_anchors": [
+        "Appropriate analytical data to determine that the active substance (or related substances) is not detectable in feed at the time of feeding should be provided",
+        "except additives with a measurable fraction of nanoparticles",
+        "microorganisms considered by EFSA to qualify for the qualified presumption of safety (QPS) approach to safety assessment"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C3.2.3-MICRO",
+      "guidance_section": "3.2.3",
+      "guidance_page": 11,
+      "title": "Microorganisms and fermentation products: basic toxicity set",
+      "requirement": "Provide genotoxicity/mutagenicity tests and a 90-day oral toxicity study. For xenobiotic substances, the basic set augmented as appropriate.",
+      "quote": "For microorganisms and fermentation products, a basic set of toxicity studies should be provided consisting of genotoxicity/mutagenicity tests and a subchronic (90-day) oral toxicity study",
+      "guidance_anchors": [
+        "For microorganisms and fermentation products, a basic set of toxicity studies should be provided consisting of genotoxicity/mutagenicity tests and a subchronic (90-day) oral toxicity study"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C3.2.3-PURITY",
+      "guidance_section": "3.2.3",
+      "guidance_page": 11,
+      "title": "Toxicological studies not required for highly purified non-xenobiotic chemicals",
+      "requirement": "Toxicological studies are not required for highly purified non-xenobiotic chemicals, as a guide < 1% unidentified material on a dry matter basis. Characterisation of the unidentified fraction therefore decides whether this exemption applies.",
+      "quote": "non-xenobiotic chemicals highly purified (as a guide < 1% of unidentified material on a dry matter basis)",
+      "guidance_anchors": [
+        "non-xenobiotic chemicals highly purified (as a guide < 1% of unidentified material on a dry matter basis)"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "C4.1-SAFEDOSE",
+      "guidance_section": "4.1",
+      "guidance_page": 12,
+      "title": "Safe dose: NOAEL or BMDL, lowest value",
+      "requirement": "The safe dose comes from the dose-response of toxicological or pharmacological effects, usually a NOAEL in mg/kg bw per day. Where only a LOAEL exists or dose spacing is wide, calculate a benchmark dose (BMDL5 continuous, BMDL10 quantal). Use the lowest NOAEL from all studies; justify any deviation.",
+      "quote": "The safe dose is derived from the dose response of toxicological or pharmacological effects and usually expressed as a NOAEL [...] In principle, the lowest NOAEL should be taken. Any deviation from this principle should be fully justified",
+      "guidance_anchors": [
+        "The safe dose is derived from the dose response of toxicological or pharmacological effects and usually expressed as a NOAEL",
+        "In principle, the lowest NOAEL should be taken. Any deviation from this principle should be fully justified"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char"
+      ]
+    },
+    {
+      "id": "C4.2-HBGV",
+      "guidance_section": "4.2",
+      "guidance_page": 12,
+      "title": "Highest safe intake: health-based guidance value",
+      "requirement": "The highest safe intake is a health-based guidance value (ADI, or UL for nutrients) = reference point (NOAEL, BMDL, LOAEL) / uncertainty factor. Default UF 100 (10x10) given genotoxicity, a chronic and reproduction studies; extra factor 2 if a subchronic NOAEL replaces a chronic one; UF <= 10 may be used with human data.",
+      "quote": "The health-based guidance value (mg of active substance per kg bw per day) is derived by dividing the selected reference point (e.g. NOAEL, BMDL, LOAEL) by an appropriate UF [...] The overall default UF of 100 (10x10 for inter- and intraspecies extrapolation) is normally used in calculating the ADI from laboratory animal data [...] If the NOAEL of a subchronic study has to be used in place of that of a chronic study, an additional UF of 2 should be applied",
+      "guidance_anchors": [
+        "The health-based guidance value (mg of active substance per kg bw per day) is derived by dividing the selected reference point (e.g. NOAEL, BMDL, LOAEL) by an appropriate UF",
+        "The overall default UF of 100 (10x10 for inter- and intraspecies extrapolation) is normally used in calculating the ADI from laboratory animal data",
+        "If the NOAEL of a subchronic study has to be used in place of that of a chronic study, an additional UF of 2 should be applied"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char",
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C4.2-MOS",
+      "guidance_section": "4.2",
+      "guidance_page": 13,
+      "title": "Margin of safety when no health-based guidance value can be set",
+      "requirement": "For an additive that is not genotoxic, or is genotoxic and carcinogenic, and for which no health-based guidance value can be established, the margin of safety may be used: lowest NOAEL (usually from a 90-day study) divided by dietary exposure to the toxicologically relevant residue.",
+      "quote": "The MOS is calculated as the ratio between the lowest NOAEL usually from a 90-day subchronic toxicity study and the dietary exposure of consumers to the toxicologically relevant residue",
+      "guidance_anchors": [
+        "The MOS is calculated as the ratio between the lowest NOAEL usually from a 90-day subchronic toxicity study and the dietary exposure of consumers to the toxicologically relevant residue"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C4.2-PROXIMITY",
+      "guidance_section": "4.2",
+      "guidance_page": 12,
+      "title": "An ADI applies only with a comparable residue pattern",
+      "requirement": "An ADI normally needs consumers to be exposed to residues comparable to those formed in the laboratory animal used to derive it; if metabolic proximity cannot be shown, test the target-species metabolites toxicologically.",
+      "quote": "If metabolic proximity between the laboratory animal used for deriving the ADI and the target species cannot be demonstrated, additional toxicological studies with the metabolites specific to the target species should be done",
+      "guidance_anchors": [
+        "If metabolic proximity between the laboratory animal used for deriving the ADI and the target species cannot be demonstrated, additional toxicological studies with the metabolites specific to the target species should be done"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char",
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C4.3.1-CONSUMPTION",
+      "guidance_section": "4.3.1",
+      "guidance_page": 13,
+      "title": "Consumption data and commodities",
+      "requirement": "Consumption comes from the EFSA Comprehensive European Food Consumption Database (latest survey per country and age class), converted to raw agricultural commodity equivalents. Age classes: infants <12 months, toddlers 12-<36 months, other children 36 months-<10 years, adolescents 10-<18, adults 18-<65, elderly 65-<75, very elderly >=75. Commodities: meat, fat, liver, other offals (including kidney), milk, eggs, honey, fish and seafood; mammals and poultry separately for meat, fat, liver and offals.",
+      "quote": "Consumption of edible tissues and products as derived from the EFSA Comprehensive European Food Consumption Database [...] Infants: < 12 months old [...] meat, fat, liver, other offals (including kidney), milk, eggs, honey, fish and seafood",
+      "guidance_anchors": [
+        "Consumption of edible tissues and products as derived from the EFSA Comprehensive European Food Consumption Database",
+        "Infants: < 12 months old",
+        "meat, fat, liver, other offals (including kidney), milk, eggs, honey, fish and seafood"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure"
+      ]
+    },
+    {
+      "id": "C4.3.2-RESIDUES",
+      "guidance_section": "4.3.2",
+      "guidance_page": 13,
+      "title": "Residue data used for exposure",
+      "requirement": "The dossier must allow estimating total relevant residues per commodity: arithmetic mean + 2 SD, or the highest single value with fewer than six animals. For multispecies use, the species with the highest residue per tissue represents poultry, mammals and fish. Meat is 80% muscle + 20% fat (mammals) or 90% muscle + 10% skin+fat (poultry).",
+      "quote": "the arithmetic mean plus two standard deviations or the highest single value in case of less than six animals [...] the value for the species with the highest concentration of residues in a given tissue of poultry, mammals and fish will be taken as representative [...] mammals 80% muscle and 20% fat, poultry 90% muscle and 10% fat (skin + fat)",
+      "guidance_anchors": [
+        "the arithmetic mean plus two standard deviations or the highest single value in case of less than six animals",
+        "the value for the species with the highest concentration of residues in a given tissue of poultry, mammals and fish will be taken as representative",
+        "mammals 80% muscle and 20% fat, poultry 90% muscle and 10% fat (skin + fat)"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure"
+      ]
+    },
+    {
+      "id": "C4.3.3-ACUTE",
+      "guidance_section": "4.3.3",
+      "guidance_page": 14,
+      "title": "Percentiles and acute exposure",
+      "requirement": "Report the mean and the higher percentile (usually P95) of individual exposures per dietary survey and age class. Acute exposure is assessed for all available surveys, per commodity (RAC), on consuming days only.",
+      "quote": "the higher percentile (usually the 95th percentile) exposures based on the consuming days only will be calculated for each food commodity, dietary survey and age class separately [...] acute exposure will be assessed for all dietary surveys available and will be carried out for each RAC value separately",
+      "guidance_anchors": [
+        "the higher percentile (usually the 95th percentile) exposures based on the consuming days only will be calculated for each food commodity, dietary survey and age class separately",
+        "acute exposure will be assessed for all dietary surveys available and will be carried out for each RAC value separately"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure"
+      ]
+    },
+    {
+      "id": "C4.3.3-CHRONIC",
+      "guidance_section": "4.3.3",
+      "guidance_page": 13,
+      "title": "Chronic exposure: survey eligibility",
+      "requirement": "Chronic exposure assessments do not use dietary surveys with only one reporting day per individual, as these cannot assess repeated exposure. Per individual, total relevant residues are combined with average daily consumption of each commodity, summed and standardised by body weight.",
+      "quote": "dietary surveys with only one reporting day per individual will not be considered as they are not adequate to assess repeated exposure",
+      "guidance_anchors": [
+        "dietary surveys with only one reporting day per individual will not be considered as they are not adequate to assess repeated exposure"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure"
+      ]
+    },
+    {
+      "id": "C4.3.4-OUTCOME",
+      "guidance_section": "4.3.4",
+      "guidance_page": 14,
+      "title": "Outcome when exposure exceeds the safe level",
+      "requirement": "If consumer exposure at the highest proposed feed concentration exceeds the highest safe level, reduce exposure: lower the feed concentration and/or introduce a withdrawal period and MRLs.",
+      "quote": "If the highest proposed feed concentration of an additive would result in a consumer exposure exceeding the highest safe level, measures to reduce consumer exposure should be taken",
+      "guidance_anchors": [
+        "If the highest proposed feed concentration of an additive would result in a consumer exposure exceeding the highest safe level, measures to reduce consumer exposure should be taken"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C5-MRL",
+      "guidance_section": "5",
+      "guidance_page": 14,
+      "title": "When MRLs and withdrawal periods are needed",
+      "requirement": "MRLs and a withdrawal period may be needed when residues could harm human health; generally no MRL without a withdrawal time; no MRL can be set without a health-based guidance value. An experimental withdrawal up to 12 h counts as practical zero-day withdrawal.",
+      "quote": "MRLs are generally not considered necessary if a withdrawal time is not required [...] In principle, the MRL cannot be set in the absence of such a value [...] An experimental withdrawal up to 12 h is considered a practical zero-day withdrawal",
+      "guidance_anchors": [
+        "MRLs are generally not considered necessary if a withdrawal time is not required",
+        "In principle, the MRL cannot be set in the absence of such a value",
+        "An experimental withdrawal up to 12 h is considered a practical zero-day withdrawal"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C5.1-LOQ",
+      "guidance_section": "5.1",
+      "guidance_page": 16,
+      "title": "MRL analytical method",
+      "requirement": "An analytical method of sufficient sensitivity must exist before an MRL can be set; its limit of quantification should be at least three times lower than the MRL.",
+      "quote": "The limit of quantification of the method should be at least three times lower than the MRL",
+      "guidance_anchors": [
+        "The limit of quantification of the method should be at least three times lower than the MRL"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C5.1-MRLCALC",
+      "guidance_section": "5.1",
+      "guidance_page": 14,
+      "title": "Calculating MRLs: variability",
+      "requirement": "MRLs are set per tissue/product from marker residue data; variability is normally reflected by the 95% confidence limit of the mean, or the highest individual value when it cannot be calculated. The process is iterative: choose the shortest withdrawal time with dietary intake of total residues below the health-based guidance value, derive MRLs, and lower them if the intake implied by the MRLs exceeds it.",
+      "quote": "Variability is normally reflected by using the 95% confidence limit of the mean",
+      "guidance_anchors": [
+        "Variability is normally reflected by using the 95% confidence limit of the mean"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "C5.3-EXTRAPOLATE",
+      "guidance_section": "5.3",
+      "guidance_page": 16,
+      "title": "Extrapolating MRLs",
+      "requirement": "If feed levels are essentially similar, MRLs extrapolate within physiologically similar species (Table 1), to horses when MRLs exist for a major ruminant and pigs, and to other minor food-producing species except fish when identical MRLs were derived in cattle, pigs and chicken.",
+      "quote": "to horses when MRLs for a major ruminant and pigs exist [...] to all other minor species of food-producing animals except fish if identical MRLs were derived in tissues of cattle, pigs and chicken",
+      "guidance_anchors": [
+        "to horses when MRLs for a major ruminant and pigs exist",
+        "to all other minor species of food-producing animals except fish if identical MRLs were derived in tissues of cattle, pigs and chicken"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    }
+  ]
+}

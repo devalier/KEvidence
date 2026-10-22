@@ -27,6 +27,7 @@ import io
 import ipaddress
 import json
 import logging
+import math
 import os
 import re
 import socket
@@ -37,11 +38,17 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 from urllib.parse import urljoin, urlparse
 
-GUIDANCE_DIR = Path(os.getenv("KEVIDENCE_GUIDANCE_DIR", str(Path(__file__).resolve().parent / "data" / "guidance")))
+# Guidance is stored per domain: data/guidance/<domain>/ (catalogues, bundled PDFs, output template).
+# data/guidance/domains.json is the registry; a domain is only usable when it is listed there.
+GUIDANCE_ROOT = Path(os.getenv("KEVIDENCE_GUIDANCE_DIR", str(Path(__file__).resolve().parent / "data" / "guidance")))
+DOMAINS_PATH = GUIDANCE_ROOT / "domains.json"
+DEFAULT_DOMAIN = "feed"
+# Paths of the default (feed) domain, kept for callers that predate domains.
+GUIDANCE_DIR = GUIDANCE_ROOT / DEFAULT_DOMAIN
 CATALOGUE_PATH = GUIDANCE_DIR / "feedap_2017_5023_chemical_requirements.json"
 TEMPLATE_PATH = GUIDANCE_DIR / "characterisation_template.md"
 # An institution can point this at its own (non-public) opinion template; placeholders are documented in
-# data/guidance/characterisation_template.md. data/guidance/local/ is git-ignored for that purpose.
+# data/guidance/feed/characterisation_template.md. data/guidance/feed/local/ is git-ignored for that purpose.
 LOCAL_TEMPLATE_PATH = Path(os.getenv("KEVIDENCE_CHARACTERISATION_TEMPLATE", str(GUIDANCE_DIR / "local" / "characterisation_template.md")))
 GUIDANCE_PDF_CANDIDATES = ("efsa_2017_5023.pdf", "j.efsa.2017.5023.pdf", "5023.pdf", "guidance_5023.pdf")
 
@@ -94,7 +101,8 @@ def _normalise_ws(text: str) -> str:
     return re.sub(r"\s+", " ", text or "").strip()
 
 
-LIGATURES = {"ﬁ": "fi", "ﬂ": "fl", "ﬀ": "ff", "ﬃ": "ffi", "ﬄ": "ffl", "–": "-", "—": "-", "’": "'", "‘": "'"}
+LIGATURES = {"ﬁ": "fi", "ﬂ": "fl", "ﬀ": "ff", "ﬃ": "ffi", "ﬄ": "ffl", "–": "-", "—": "-", "−": "-", "’": "'", "‘": "'",
+             "\u00ad": "", "\u200b": ""}
 
 
 def _fix_ligatures(text: str) -> str:
@@ -108,13 +116,81 @@ def _compact(text: str) -> tuple[str, list[int]]:
     """Lower-case, ligature-fixed text with all whitespace removed, plus a map
     from compact positions back to positions in the ligature-fixed text.
     PDF extraction inserts spurious spaces (e.g. 'speci ﬁcation'), so anchors
-    are matched whitespace-insensitively."""
+    are matched whitespace- and hyphen-insensitively."""
     chars, index = [], []
     for i, ch in enumerate(text):
-        if not ch.isspace():
+        # Hyphens are dropped as well: PDF line breaks split words as "bac-" / "teriophages".
+        if not ch.isspace() and ch != "-":
             chars.append(ch.lower())
             index.append(i)
     return "".join(chars), index
+
+
+class UnknownDomain(KeyError):
+    """The requested domain is not in the registry, so no guidance is available to ground it."""
+
+
+def load_domains(path: Path = DOMAINS_PATH) -> dict[str, Any]:
+    with open(path, encoding="utf-8") as f:
+        registry = json.load(f)
+    ids = [d["id"] for d in registry["domains"]]
+    if len(ids) != len(set(ids)):
+        raise ValueError("Duplicate domain ids in guidance registry")
+    if registry["default_domain"] not in ids:
+        raise ValueError("default_domain is not a registered domain")
+    return registry
+
+
+def load_knowledge_catalogue(path: Path) -> dict[str, Any]:
+    """Load a supporting catalogue: verbatim-quoted guidance entries that ground the assistant
+    but do not drive the data-gap analysis. Entries share the field names of requirements."""
+    with open(path, encoding="utf-8") as f:
+        catalogue = json.load(f)
+    entries = catalogue["entries"]
+    ids = [e["id"] for e in entries]
+    if len(ids) != len(set(ids)):
+        raise ValueError(f"Duplicate entry IDs in {path.name}")
+    for entry in entries:
+        for key in ("guidance_section", "guidance_page", "quote", "guidance_anchors", "requirement", "title"):
+            if not entry.get(key):
+                raise ValueError(f"{entry['id']} is missing '{key}' (every entry must cite the guidance)")
+    catalogue["requirements"] = entries  # same shape as the primary catalogue, so anchoring is shared
+    return catalogue
+
+
+def load_pdf_pages(pdf_path: Path) -> Optional[list[str]]:
+    if not pdf_path.exists():
+        return None
+    doc = extract_document(pdf_path.name, pdf_path.read_bytes())
+    return doc.pages if doc.pages and any(p.strip() for p in doc.pages) else None
+
+
+def load_domain_bundle(domain_id: Optional[str] = None, root: Path = GUIDANCE_ROOT) -> dict[str, Any]:
+    """Everything the backend needs to ground one domain: the primary catalogue that drives the
+    gap analysis, the supporting catalogues, and the text of each bundled guidance PDF."""
+    registry = load_domains(root / "domains.json")
+    domain_id = domain_id or registry["default_domain"]
+    entry = next((d for d in registry["domains"] if d["id"] == domain_id), None)
+    if entry is None:
+        raise UnknownDomain(domain_id)
+    directory = root / entry["directory"]
+    primary_cat = load_catalogue(directory / entry["primary"]["catalogue"])
+    sources = [{"role": "primary", "catalogue": primary_cat,
+                "pages": load_pdf_pages(directory / primary_cat["guidance"]["bundled_file"])}]
+    for sup in entry.get("supporting", []):
+        cat = load_knowledge_catalogue(directory / sup["catalogue"])
+        sources.append({"role": "supporting", "catalogue": cat,
+                        "pages": load_pdf_pages(directory / cat["guidance"]["bundled_file"])})
+    datasets = {}
+    for key, fname in (entry.get("datasets") or {}).items():
+        with open(directory / fname, encoding="utf-8") as f:
+            datasets[key] = json.load(f)
+    return {
+        "id": entry["id"], "label": entry["label"], "directory": directory,
+        "assistant_role": entry.get("assistant_role", ""), "datasets": datasets,
+        "template": directory / entry["primary"].get("template", "characterisation_template.md"),
+        "primary": sources[0], "sources": sources,
+    }
 
 
 def load_guidance_pages(guidance_dir: Path = GUIDANCE_DIR) -> Optional[list[str]]:
@@ -1165,7 +1241,8 @@ def apply_inference(meta: dict[str, Any], inferred: dict[str, Any]) -> dict[str,
 
 
 def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optional[dict[str, Any]] = None,
-                    guidance_pages: Optional[list[str]] = None, fetch_notes: Optional[list[str]] = None) -> dict[str, Any]:
+                    guidance_pages: Optional[list[str]] = None, fetch_notes: Optional[list[str]] = None,
+                    datasets: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     catalogue = catalogue or load_catalogue()
     segments = segment_documents(docs)
     meta = dict(meta or {})
@@ -1199,7 +1276,8 @@ def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optio
             "detail": "Select 'fermentation' as production type so that the §2.1.4 fermentation-specific impurity requirements "
                       "(spent growth medium, absence of production organism and antimicrobial activity, LPS, DNA) are applied. "
                       "Characterisation of the production strain itself follows the FEEDAP microorganism guidance "
-                      "(EFSA Journal 2018;16(3):5206) and is outside this MVP.",
+                      "(EFSA Journal 2018;16(3):5206) and is outside this MVP; how to report WGS data is in the EFSA statement "
+                      "(EFSA Journal 2024;22(8):e8912).",
             "evidence": fermentation,
         })
     elif "fermentation" in meta["production_types"]:
@@ -1250,6 +1328,7 @@ def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optio
         "summary": summary,
         "scope_flags": scope_flags,
         "opinion": opinion,
+        "solvent_checks": vich_solvent_checks(opinion["all_rows"], (datasets or {}).get("vich")),
     }
     result["markdown"] = render_markdown(result, catalogue)
     return result
@@ -1777,6 +1856,7 @@ def _opinion_111_md(result: dict[str, Any]) -> str:
         lines.append("- Residual solvents reported: " + "; ".join(f"{r['label']} ({r['unit']}) {format_row_value(r, False)} ({r['citation']})"
                                                                   for r in solvent_rows)
                      + " — compare with the VICH GL18 limits cited in guidance §2.1.4.")
+        lines += [f"  - {_md_escape(format_vich_check(c))}" for c in result.get("solvent_checks", [])]
     else:
         lines.append("- No residual-solvent results located (guidance §2.1.4 requires residual solvents to be identified and quantified).")
     lines += [f"- ⚠ {_md_escape(f)}" for f in dict.fromkeys(flags)]
@@ -1839,7 +1919,8 @@ def _opinion_112_md(result: dict[str, Any]) -> str:
     return ("**[Outside this chemical-characterisation MVP — to be completed by the scientific officer.]** Characterisation of the "
             "production strain (deposition, taxonomic identification by WGS, genetic modification, antimicrobial resistance genes and "
             "susceptibility, toxins and virulence factors, antimicrobial activity) follows the FEEDAP microorganism guidance "
-            "(EFSA Journal 2018;16(3):5206) referred to in guidance §2.2.1.2 and §2.2.2.2.")
+            "(EFSA Journal 2018;16(3):5206) referred to in guidance §2.2.1.2 and §2.2.2.2; WGS reporting expectations are in the EFSA "
+            "statement (EFSA Journal 2024;22(8):e8912).")
 
 
 # ---------------------------------------------------------------------------
@@ -2130,10 +2211,12 @@ QUESTION_STOPWORDS = {
 
 
 def guidance_context_for_question(question: str, catalogue: Optional[dict[str, Any]] = None,
-                                  guidance_pages: Optional[list[str]] = None, limit: int = 6) -> tuple[str, list[str]]:
+                                  guidance_pages: Optional[list[str]] = None, limit: int = 6,
+                                  label: str = "Guidance") -> tuple[str, list[str]]:
     """Select catalogue requirements (and guidance passages, when loaded) relevant to a question."""
     catalogue = catalogue or load_catalogue()
     words = {w for w in re.findall(r"[a-z]{4,}", question.lower())} - QUESTION_STOPWORDS
+    words |= {w.lower() for w in re.findall(r"\b[A-Z]{3}\b", question)}  # acronyms such as WGS, ANI, AMR
     scored = []
     for req in catalogue["requirements"]:
         hay = f"{req['title']} {req['requirement']} {req['quote']} {' '.join(req.get('guidance_anchors', []))}".lower()
@@ -2148,10 +2231,380 @@ def guidance_context_for_question(question: str, catalogue: Optional[dict[str, A
     parts = []
     for req in chosen:
         g = anchors[req["id"]]
-        part = (f"[{req['id']}] Guidance §{req['guidance_section']} (p.{req['guidance_page']}): {req['title']}\n"
+        part = (f"[{req['id']}] {label} §{req['guidance_section']} (p.{req['guidance_page']}): {req['title']}\n"
                 f"Requirement (paraphrase): {req['requirement']}\nVerbatim guidance quote: \"{req['quote']}\"\n"
                 f"Grounding status: {g['status']}")
         for p in g.get("passages", [])[:2]:
             part += f"\nGuidance text p.{p['page']}: \"{p['excerpt']}\""
         parts.append(part)
     return "\n\n".join(parts), [r["id"] for r in chosen]
+
+
+WORKFLOW_STEPS = ("characterisation", "hazard-char", "exposure", "risk-char")
+DEFAULT_ENTRY_STEPS = ["characterisation"]
+
+
+def entry_steps(entry: dict[str, Any]) -> list[str]:
+    return entry.get("steps") or DEFAULT_ENTRY_STEPS
+
+
+def entries_for_step(catalogue: dict[str, Any], step: Optional[str]) -> dict[str, Any]:
+    """The catalogue restricted to the entries that inform a workflow step (all entries if step is None)."""
+    if not step:
+        return catalogue
+    return {**catalogue, "requirements": [e for e in catalogue["requirements"] if step in entry_steps(e)]}
+
+
+GENERIC_QUESTION_WORDS = {"calculated", "calculate", "calculation", "used", "using", "uses", "applies", "apply", "applied", "reported", "report",
+                          "reports", "number", "amount", "level", "levels", "value", "values", "example", "relevant", "specific", "case",
+                          "cases", "following", "within", "between", "under", "over", "make", "made", "take", "taken", "give", "given",
+                          "list", "listed", "mean", "means", "meant", "counts", "count", "define", "defined", "definition", "work"}
+
+
+def _stem(word: str) -> str:
+    w = word.lower()
+    for suf in ("ies", "es", "s"):
+        if len(w) > 4 and w.endswith(suf):
+            return w[: -len(suf)] + ("y" if suf == "ies" else "")
+    return w
+
+
+def _entry_tokens(entry: dict[str, Any]) -> tuple[set[str], set[str]]:
+    body = f"{entry['requirement']} {entry['quote']} {' '.join(entry.get('guidance_anchors', []))}"
+    head = f"{entry['title']} {entry['id']} {entry.get('applies_to', '')}"
+    tok = lambda t: {_stem(w) for w in re.findall(r"[a-z0-9]+", t.lower()) if len(w) >= 3}
+    return tok(body) | tok(head), tok(head)
+
+
+def rank_entries(question: str, bundle: dict[str, Any], step: Optional[str] = None, extra_terms: str = "") -> list[tuple[float, int, dict[str, Any]]]:
+    """Rank the domain's guidance entries for a question: whole-word matches weighted by rarity across the
+    domain's entries, with title/id hits counting double. Returns (score, source index, entry), best first."""
+    pool = [(i, e) for i, src in enumerate(bundle["sources"]) for e in entries_for_step(src["catalogue"], step)["requirements"]]
+    if not pool:
+        return []
+    tokens = {id(e): _entry_tokens(e) for _, e in pool}
+    words = {w.lower() for w in re.findall(r"[A-Za-z]{4,}", f"{question} {extra_terms}")} - QUESTION_STOPWORDS - GENERIC_QUESTION_WORDS
+    words |= {w.lower() for w in re.findall(r"\b[A-Z]{3}\b", question)}  # acronyms such as WGS, ANI, AMR, MIC
+    stems = {_stem(w) for w in words}
+    n = len(pool)
+    df = {st: sum(1 for _, e in pool if st in tokens[id(e)][0]) for st in stems}
+    ranked = []
+    for i, e in pool:
+        body, head = tokens[id(e)]
+        score = sum(math.log(1 + n / df[st]) * (2 if st in head else 1) for st in stems if df[st] and st in body)
+        for ref in (r"(§|section\s*)" + re.escape(e["guidance_section"]) + r"\b", re.escape(e["id"])):
+            if re.search(ref, question, re.I):
+                score += 10
+        if score:
+            ranked.append((score, i, e))
+    ranked.sort(key=lambda x: -x[0])
+    return ranked
+
+
+def domain_context_for_question(question: str, bundle: dict[str, Any], extra_terms: str = "",
+                                limit: int = 8, step: Optional[str] = None, min_share: float = 0.45) -> tuple[str, list[str]]:
+    """Select the entries relevant to a question from every guidance source of a domain (optionally only those
+    tagged for a workflow step): the best-scoring entries, at most `limit`, each within `min_share` of the top score.
+    Each entry is labelled with its source so the assistant cites the right document."""
+    ranked = rank_entries(question, bundle, step, extra_terms)
+    if not ranked:
+        return "", []
+    top = ranked[0][0]
+    chosen = [r for r in ranked if r[0] >= max(min_share * top, 1.5)][:limit]
+    anchors_cache: dict[int, dict[str, Any]] = {}
+    blocks: dict[int, list[str]] = {}
+    ids = []
+    for _, i, e in chosen:
+        src = bundle["sources"][i]
+        if i not in anchors_cache:
+            anchors_cache[i] = anchor_requirements(src["catalogue"], src["pages"])
+        g = anchors_cache[i][e["id"]]
+        part = (f"[{e['id']}] {source_short_name(src['catalogue'])} §{e['guidance_section']} (p.{e['guidance_page']}): {e['title']}\n"
+                f"Requirement (paraphrase): {e['requirement']}\nVerbatim guidance quote: \"{e['quote']}\"\nGrounding status: {g['status']}")
+        for pas in g.get("passages", [])[:2]:
+            part += f"\nGuidance text p.{pas['page']}: \"{pas['excerpt']}\""
+        blocks.setdefault(i, []).append(part)
+        ids.append(e["id"])
+    text = "\n\n".join(f"=== {bundle['sources'][i]['catalogue']['guidance']['citation']} ===\n\n" + "\n\n".join(parts)
+                        for i, parts in blocks.items())
+    return text, ids
+
+
+def domain_template_path(bundle: dict[str, Any]) -> Path:
+    """Institution template (env override, then <domain>/local/) if present, else the public one."""
+    env = os.getenv("KEVIDENCE_CHARACTERISATION_TEMPLATE")
+    for candidate in ([Path(env)] if env else []) + [bundle["directory"] / "local" / "characterisation_template.md"]:
+        if candidate.exists():
+            return candidate
+    return bundle["template"]
+
+
+def source_short_name(catalogue: dict[str, Any]) -> str:
+    g = catalogue["guidance"]
+    return g.get("short_name") or f"Guidance {g['doi'].rsplit('/', 1)[-1]}"
+
+
+def source_status(src: dict[str, Any]) -> dict[str, Any]:
+    """Grounding status of one guidance source (catalogue plus bundled PDF text)."""
+    cat, pages = src["catalogue"], src["pages"]
+    anchors = anchor_requirements(cat, pages)
+    counts: dict[str, int] = {}
+    for req in cat["requirements"]:
+        key = anchors[req["id"]]["status"]
+        counts[key] = counts.get(key, 0) + 1
+    return {
+        "role": src["role"], "catalogue_id": cat["catalogue_id"], "catalogue_version": cat["catalogue_version"],
+        "guidance": cat["guidance"], "scope": cat["scope"],
+        "guidance_text_loaded": bool(pages), "guidance_pages": len(pages) if pages else 0,
+        "verification_counts": counts, "entries": len(cat["requirements"]),
+        "steps": sorted({st for e in cat["requirements"] for st in entry_steps(e)}, key=WORKFLOW_STEPS.index),
+        "broken": [rid for rid, a in anchors.items() if a["status"] == "not_found_in_guidance_text"],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Structured datasets extracted from the bundled guidance (QPS cycle table, MIC cut-offs, VICH solvents)
+# ---------------------------------------------------------------------------
+
+def _word_in(needle: str, text: str) -> bool:
+    return re.search(r"(?<![a-z])" + re.escape(needle.lower()) + r"(?![a-z])", text.lower()) is not None
+
+
+def _abbreviations(name: str) -> list[str]:
+    parts = name.split()
+    return [f"{parts[0][0]}. {' '.join(parts[1:])}"] if len(parts) >= 2 else []
+
+
+QPS_PARTIAL_NOTE = ("PARTIAL dataset: only the taxonomic units assessed between October 2022 and September 2025 and the groups the opinion "
+                    "says are excluded. Absence of a taxon here says nothing about its QPS status; the full QPS list is published separately "
+                    "by EFSA and is not bundled.")
+
+
+def qps_lookup(text: str, qps: Optional[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Taxa of the QPS cycle dataset (and excluded groups) mentioned in text."""
+    if not qps or not text:
+        return []
+    hits = []
+    for t in qps["taxa"]:
+        names = [t["taxon"]] + [syn for syn in t.get("synonyms", []) if len(syn.split()) == 2 and "(" not in syn]
+        if any(_word_in(n, text) or any(_word_in(a, text) for a in _abbreviations(n)) for n in names):
+            hits.append({"kind": "assessed", **t})
+    for grp in qps.get("excluded_groups", []):
+        if _word_in(grp, text) or any(_word_in(a, text) for a in _abbreviations(grp)):
+            hits.append({"kind": "excluded_group", "taxon": grp, "page": qps.get("excluded_groups_page")})
+    return hits
+
+
+def format_qps_hits(hits: list[dict[str, Any]], qps: dict[str, Any]) -> str:
+    src = qps["catalogue_id"]
+    lines = []
+    for h in hits:
+        if h["kind"] == "excluded_group":
+            lines.append(f"- {h['taxon']}: listed as excluded from QPS assessments (section 3.3.4, p.{h['page']}); assessed at strain level by the relevant EFSA unit.")
+        else:
+            quals = "; ".join(h.get("qualifications") or []) or "none recorded"
+            note = f" Note: {h['note']}" if h.get("note") else ""
+            lines.append(f"- {h['taxon']}: QPS = {h['qps'].upper()}; Panel Statement {h['panel_statement']}; qualifications: {quals}.{note} "
+                         f"(Table 6 p.{h.get('table6_page', '-')}, Table 7 p.{h.get('table7_page', '-')})")
+    return f"QPS cycle dataset [{src}]. {QPS_PARTIAL_NOTE}\n" + "\n".join(lines)
+
+
+MIC_KEYWORDS = {
+    "obligate homofermentative": ["delbrueckii", "helveticus", "homofermentative"],
+    "acidophilus group": ["acidophilus", "gasseri", "paragasseri", "johnsonii", "crispatus"],
+    "obligate heterofermentative": ["fermentum", "buchneri", "heterofermentative"],
+    "reuteri": ["reuteri"],
+    "facultative heterofermentative": ["salivarius", "facultative"],
+    "plantarum/pentosus": ["plantarum", "pentosus"],
+    "rhamnosus": ["rhamnosus"],
+    "casei/paracasei": ["casei", "paracasei"],
+}
+MIC_GENERA = ["Bifidobacterium", "Pediococcus", "Leuconostoc", "Lactococcus lactis", "Streptococcus thermophilus", "Bacillus",
+              "Propionibacterium", "Enterococcus faecium", "Corynebacterium", "Enterobacteriaceae"]
+
+
+def mic_lookup(text: str, mic: Optional[dict[str, Any]]) -> list[dict[str, Any]]:
+    """MIC cut-off rows (FEEDAP 2018 Table 2) matching organisms named in text."""
+    if not mic or not text:
+        return []
+    rows, picked = mic["taxa"], []
+    low = text.lower()
+    for key, words in MIC_KEYWORDS.items():
+        if any(_word_in(w, low) for w in words):
+            r = next((r for r in rows if r["taxon"].startswith("Lactobacillus") and key in r["taxon"]), None)
+            if r and r not in picked:
+                picked.append(r)
+    for genus in MIC_GENERA:
+        if _word_in(genus, low):
+            r = next((r for r in rows if r["taxon"].lower().startswith(genus.lower())), None)
+            if r and r not in picked:
+                picked.append(r)
+    return picked
+
+
+def format_mic_rows(rows: list[dict[str, Any]], mic: dict[str, Any]) -> str:
+    lines = []
+    for r in rows:
+        vals = ", ".join(f"{k} {'n.r.' if v is None else format(v, 'g')}" for k, v in r["mg_per_l"].items())
+        lines.append(f"- {r['taxon']}: {vals}")
+    extra = ("; footnote: L. buchneri tetracycline cut-off is 128" if any("obligate heterofermentative" in r["taxon"] for r in rows) else "")
+    return (f"MIC cut-off values, mg/L ({mic['source']['table']}, p.{mic['source']['page']}; n.r. = not required). {mic['rule']}{extra}\n"
+            + "\n".join(lines))
+
+
+# VICH GL18(R2) -------------------------------------------------------------
+
+VICH_ALIASES = {
+    "isopropanol": "2-Propanol", "isopropyl alcohol": "2-Propanol", "ipa": "2-Propanol", "n-hexane": "Hexane",
+    "methyl tert-butyl ether": "tert-Butylmethyl ether", "mtbe": "tert-Butylmethyl ether", "dimethylformamide": "N,N-Dimethylformamide",
+    "dmf": "N,N-Dimethylformamide", "dmso": "Dimethylsulfoxide", "dimethyl sulfoxide": "Dimethylsulfoxide", "thf": "Tetrahydrofuran",
+    "methylene chloride": "Dichloromethane", "dcm": "Dichloromethane", "mek": "Methylethyl ketone", "methyl ethyl ketone": "Methylethyl ketone",
+    "mibk": "Methylisobutyl ketone", "ethyl ether": "Ethyl ether", "diethyl ether": "Ethyl ether", "nmp": "N-Methylpyrrolidone",
+    "acetonitrile": "Acetonitrile", "tert-butanol": "Tertiary-butyl alcohol",
+}
+PPM_FACTORS = {"mg/kg": 1.0, "ppm": 1.0, "g/kg": 1000.0, "%": 10000.0, "µg/kg": 0.001, "μg/kg": 0.001, "ug/kg": 0.001, "ppb": 0.001}
+
+
+def vich_index(vich: dict[str, Any]) -> list[tuple[str, str, str, Optional[int], Optional[float]]]:
+    """(needle, VICH name, class, concentration limit ppm, PDE mg/day), longest needles first."""
+    items = []
+    for x in vich["class1_avoid"]:
+        items.append((x["solvent"], x["solvent"], "1", x["limit_ppm"], None))
+    for x in vich["class2_limit"]:
+        items.append((x["solvent"], x["solvent"], "2", x["limit_ppm"], x["pde_mg_per_day"]))
+    for name in vich["class3_low_toxic_potential"]:
+        items.append((name, name, "3", 5000, 50.0))
+    for name in vich["no_pde"]:
+        items.append((name, name, "none", None, None))
+    by_name = {i[1].lower(): i for i in items}
+    for alias, target in VICH_ALIASES.items():
+        t = by_name.get(target.lower())
+        if t:
+            items.append((alias, t[1], t[2], t[3], t[4]))
+    return sorted(items, key=lambda i: -len(i[0]))
+
+
+def vich_find(label: str, vich: dict[str, Any]) -> Optional[tuple[str, str, str, Optional[int], Optional[float]]]:
+    low = label.lower()
+    for item in vich_index(vich):
+        if _word_in(item[0], low):
+            return item
+    return None
+
+
+def _unit_factor(unit: str) -> Optional[float]:
+    u = re.sub(r"\s+", "", (unit or "").lower().replace("w/w", "").replace("dm", ""))
+    return PPM_FACTORS.get(u)
+
+
+def vich_solvent_checks(rows: list[dict[str, Any]], vich: Optional[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Compare reported residual-solvent values with the VICH GL18(R2) Option 1 concentration limits.
+
+    The comparison states facts only: Option 1 assumes a product mass of 10 g per day, and a higher limit may be
+    justified (Option 2/3), so the conclusion stays with the scientific officer."""
+    if not vich:
+        return []
+    out = []
+    for r in rows:
+        if r.get("category") != "substance_related":
+            continue
+        found = vich_find(r["label"], vich)
+        if not found:
+            continue
+        _, name, cls, limit_ppm, pde = found
+        check = {"label": r["label"], "solvent": name, "vich_class": cls, "limit_ppm": limit_ppm, "pde_mg_per_day": pde,
+                 "citation": r.get("citation", ""), "unit": r.get("unit", ""), "values": r.get("values", [])}
+        factor = _unit_factor(r.get("unit", ""))
+        numeric = list(r.get("numeric") or [])
+        if numeric and factor:
+            top = max(numeric) * factor
+            check["max_ppm"] = top
+            if limit_ppm is None:
+                check["status"] = "no_limit"
+            else:
+                check["status"] = "within_option1" if top <= limit_ppm else "exceeds_option1"
+        elif not numeric and r.get("below_loq"):
+            check["status"] = "below_loq"
+        elif numeric:
+            check["status"] = "unit_not_converted"
+        else:
+            check["status"] = "no_value"
+        out.append(check)
+    return out
+
+
+def format_vich_check(c: dict[str, Any]) -> str:
+    cls = {"1": "Class 1 (to be avoided)", "2": "Class 2", "3": "Class 3", "none": "no PDE established"}[c["vich_class"]]
+    head = f"{c['label']} → VICH {c['solvent']}, {cls}"
+    lim = f"Option 1 limit {c['limit_ppm']} ppm" if c.get("limit_ppm") is not None else "no Option 1 limit"
+    st = c["status"]
+    if st == "within_option1":
+        body = f"highest reported {c['max_ppm']:g} ppm is within the {lim}"
+    elif st == "exceeds_option1":
+        body = f"highest reported {c['max_ppm']:g} ppm exceeds the {lim}; Option 2 (PDE with the actual daily dose) or 3 (justification) would be needed"
+    elif st == "below_loq":
+        body = "reported below the LOQ"
+    elif st == "no_limit":
+        body = f"highest reported {c['max_ppm']:g} ppm; VICH gives no PDE, so the manufacturer must justify the level"
+    elif st == "unit_not_converted":
+        body = f"unit '{c['unit']}' could not be converted to ppm; compare manually with the {lim}"
+    else:
+        body = "no value located"
+    if c["vich_class"] == "1" and st != "below_loq":
+        body += "; Class 1 solvents should not be used unless strongly justified"
+    return f"{head}: {body} ({c['citation']}). Option 1 assumes 10 g product/day."
+
+
+def vich_context(text: str, vich: Optional[dict[str, Any]]) -> str:
+    """Per-solvent VICH GL18(R2) limits for solvents named in text, or the class overview if only 'solvent' is mentioned."""
+    if not vich or not text:
+        return ""
+    seen, lines = set(), []
+    for needle, name, cls, limit, pde in vich_index(vich):
+        if name in seen or not _word_in(needle, text):
+            continue
+        seen.add(name)
+        label = {"1": "Class 1 (avoid)", "2": "Class 2 (limit)", "3": "Class 3 (low toxic potential)", "none": "no PDE established"}[cls]
+        bits = [label]
+        if pde is not None and cls == "2":
+            bits.append(f"PDE {pde:g} mg/day")
+        if limit is not None:
+            bits.append(f"Option 1 limit {limit} ppm" + (" (50 mg/day or less is acceptable without justification)" if cls == "3" else ""))
+        lines.append(f"- {name}: " + ", ".join(bits))
+    if not lines and re.search(r"solvent|\bPDE\b|vich", text, re.I):
+        lines = [f"- Class 1 (avoid): " + ", ".join(f"{x['solvent']} {x['limit_ppm']} ppm" for x in vich["class1_avoid"]),
+                 f"- Class 2 (limit): {len(vich['class2_limit'])} solvents with PDE and Option 1 limits (e.g. methanol 3000 ppm, toluene 890 ppm, hexane 290 ppm)",
+                 f"- Class 3: {len(vich['class3_low_toxic_potential'])} solvents; 5000 ppm (0.5%) acceptable without justification",
+                 f"- No PDE: " + ", ".join(vich["no_pde"])]
+    if not lines:
+        return ""
+    return (f"VICH GL18(R2) solvent limits (Tables {vich['source']['table_pages']}; {vich['basis']})\n" + "\n".join(lines))
+
+
+def dataset_context(question: str, bundle: dict[str, Any]) -> str:
+    """Structured-dataset blocks relevant to a question: QPS cycle taxa, MIC cut-offs, residual-solvent limits."""
+    ds = bundle.get("datasets") or {}
+    blocks = []
+    if ds.get("qps"):
+        hits = qps_lookup(question, ds["qps"])
+        if hits:
+            blocks.append(format_qps_hits(hits, ds["qps"]))
+        elif re.search(r"\bQPS\b", question) and re.search(r"\b(is|are|list|status|qualif)", question, re.I):
+            blocks.append(f"QPS cycle dataset [{ds['qps']['catalogue_id']}]: no taxon named in the question matched. {QPS_PARTIAL_NOTE}")
+    if ds.get("mic"):
+        rows = mic_lookup(question, ds["mic"])
+        if rows and re.search(r"\bMIC\b|cut-?off|susceptib|resist|antibiotic|antimicrobial", question, re.I):
+            blocks.append(format_mic_rows(rows, ds["mic"]))
+    if ds.get("vich"):
+        v = vich_context(question, ds["vich"])
+        if v:
+            blocks.append(v)
+    return "\n\n".join(blocks)
+
+
+def datasets_status(bundle: dict[str, Any]) -> list[dict[str, Any]]:
+    out = []
+    for key, d in (bundle.get("datasets") or {}).items():
+        out.append({"key": key, "dataset_id": d["dataset_id"], "partial": bool(d.get("partial")),
+                    "coverage": d.get("coverage") or d.get("basis") or d.get("rule", "")})
+    return out

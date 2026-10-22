@@ -2248,8 +2248,13 @@ async def chat(body: dict):
         raise HTTPException(400, "message is required")
 
     workbench_context = body.get("context") if isinstance(body.get("context"), dict) else {}
-    if workbench_context.get("workflow_step") == "characterisation":
+    step = workbench_context.get("workflow_step")
+    if step == "characterisation":
         return characterisation_chat(query, workbench_context)
+    if step in STEP_GUIDANCE_STEPS:
+        guided = step_guidance_chat(query, workbench_context, step)
+        if guided:
+            return guided
     selected_aop_id = _safe_int(
         workbench_context.get("selected_aop_id")
         or workbench_context.get("aop_id")
@@ -2522,21 +2527,38 @@ async def weight_of_evidence(chemical: str, aop_id: Optional[int] = None):
 # ---------------------------------------------------------------------------
 # Step 0 — substance/product characterisation (feed additives, chemical MVP)
 # ---------------------------------------------------------------------------
-CHAR_CATALOGUE = charmod.load_catalogue()
-CHAR_GUIDANCE_PAGES = charmod.load_guidance_pages()
+CHAR_REGISTRY = charmod.load_domains()
+CHAR_DOMAINS = {d["id"]: charmod.load_domain_bundle(d["id"]) for d in CHAR_REGISTRY["domains"]}
 
-CHAR_SYSTEM_PROMPT = """You are the KEvidence characterisation assistant for EFSA scientific officers assessing feed additives.
-You answer ONLY from the EFSA FEEDAP Guidance on the identity, characterisation and conditions of use of feed additives
-(EFSA Journal 2017;15(10):5023), supplied below as requirement entries with verbatim quotes and guidance text excerpts.
+CHAR_SYSTEM_PROMPT = """You are the KEvidence characterisation assistant for {role}.
+Domain: {domain}. You answer ONLY from the guidance entries supplied below, each with a verbatim quote and guidance text excerpts.
+The guidance documents loaded for this domain are:
+{sources}
 
 Rules:
-1. Ground every statement in the supplied guidance entries. Cite the guidance section and page, e.g. (§2.1.3, p.5), and the requirement ID.
+1. Ground every statement in the supplied guidance entries. Cite the document, section and page, e.g. (FEEDAP 2017 guidance (5023) §2.1.3, p.5), and the entry ID.
 2. Quote the guidance verbatim when the exact wording matters (batch numbers, durations, methods, thresholds).
-3. If the supplied guidance entries do not answer the question, say that the identity/characterisation guidance does not
-   address it (or that it is outside the chemical-characterisation scope), and name the guidance that may apply if one is
-   listed. Never fill gaps from general knowledge, and never invent requirements, numbers or section references.
-4. When a dossier gap summary is supplied, relate your answer to it, but do not assume dossier content beyond it.
-5. Do not draw safety or efficacy conclusions; characterisation supports, but is not, the risk assessment."""
+3. If the supplied entries do not answer the question, say that the loaded guidance does not address it, and name the guidance that may apply if one
+   is listed. Never fill gaps from general knowledge, and never invent requirements, numbers or section references.
+4. Entries from the EFSA WGS statement describe what applicants should report and the usual thresholds; the statement itself says it defines
+   no assessment criteria and does not say when WGS data are needed. Do not present its thresholds as pass/fail criteria for a conclusion.
+5. When a dossier gap summary is supplied, relate your answer to it, but do not assume dossier content beyond it.
+6. Do not draw safety or efficacy conclusions; characterisation supports, but is not, the risk assessment.
+7. Dataset blocks (QPS cycle taxa, MIC cut-offs, VICH solvent limits) were extracted from the guidance documents. The QPS dataset is PARTIAL:
+   never say a species is not QPS because it is absent from it; say it is not in the dataset and the full QPS list must be checked.
+   State VICH Option 1 limits together with their 10 g/day basis.
+8. The guidance entries come from several documents with different dates. Where two entries differ (e.g. the age limit on batch data in a first
+   application versus a renewal), state both and say which situation each applies to; do not merge them.
+9. Workflow step in use: {step}. Prefer entries for that step but cite whichever supplied entry answers the question."""
+
+
+def _char_domain(domain: Optional[str]) -> dict:
+    """Resolve a domain id to its grounding bundle. An unknown domain is an error: the backend never
+    falls back to another domain's guidance."""
+    try:
+        return CHAR_DOMAINS[domain or CHAR_REGISTRY["default_domain"]]
+    except KeyError:
+        raise HTTPException(400, f"Unknown domain '{domain}'. Available: {', '.join(CHAR_DOMAINS)}.")
 
 
 def _char_meta(raw: str) -> dict:
@@ -2572,19 +2594,41 @@ def _llm_complete(system: str, user: str) -> str:
     return resp.choices[0].message.content or ""
 
 
+@app.get("/api/domains")
+async def characterisation_domains():
+    """Domains with grounding guidance loaded in this instance, and the default."""
+    return {
+        "default": CHAR_REGISTRY["default_domain"],
+        "domains": [{"id": b["id"], "label": b["label"],
+                     "sources": [charmod.source_short_name(s["catalogue"]) for s in b["sources"]]}
+                    for b in CHAR_DOMAINS.values()],
+    }
+
+
 @app.get("/api/characterisation/guidance")
-async def characterisation_guidance():
-    """Guidance catalogue, grounding status of every requirement, and scope."""
-    return charmod.guidance_status(CHAR_CATALOGUE)
+async def characterisation_guidance(domain: str = ""):
+    """Guidance catalogue, grounding status of every requirement, and scope, for one domain."""
+    bundle = _char_domain(domain)
+    primary = bundle["primary"]
+    status = charmod.guidance_status(primary["catalogue"], bundle["directory"])
+    status["domain"] = {"id": bundle["id"], "label": bundle["label"]}
+    status["sources"] = [charmod.source_status(s) for s in bundle["sources"]]
+    status["datasets"] = charmod.datasets_status(bundle)
+    return status
 
 
 @app.get("/api/characterisation/guidance.pdf")
-async def characterisation_guidance_pdf():
-    """The bundled guidance (EFSA Journal 2017;15(10):5023, CC BY-ND 4.0), unmodified."""
-    pdf = charmod.GUIDANCE_DIR / CHAR_CATALOGUE["guidance"]["bundled_file"]
+async def characterisation_guidance_pdf(domain: str = "", source: str = ""):
+    """A bundled guidance document of the domain (unmodified). `source` is a catalogue_id; default is the primary."""
+    bundle = _char_domain(domain)
+    src = next((s for s in bundle["sources"] if s["catalogue"]["catalogue_id"] == source), None) if source else bundle["primary"]
+    if src is None:
+        raise HTTPException(404, "Unknown guidance source for this domain")
+    g = src["catalogue"]["guidance"]
+    pdf = bundle["directory"] / g["bundled_file"]
     if not pdf.exists():
         raise HTTPException(404, "Guidance PDF not bundled in this instance")
-    return FileResponse(str(pdf), media_type="application/pdf", filename="EFSA_FEEDAP_2017_5023_identity_characterisation.pdf")
+    return FileResponse(str(pdf), media_type="application/pdf", filename=f"EFSA_{g['doi'].rsplit('/', 1)[-1]}.pdf")
 
 
 @app.post("/api/characterisation/analyse")
@@ -2593,13 +2637,16 @@ def characterisation_analyse(
     urls: str = Form(""),
     meta: str = Form("{}"),
     allow_external_llm: str = Form("false"),
+    domain: str = Form(""),
 ):
-    """Characterise a feed additive from dossier documents (uploads and/or URLs).
+    """Characterise a product from dossier documents (uploads and/or URLs), grounded in the chosen domain.
 
     Documents are processed in memory for this request only and are not stored.
     The response contains the structured requirement evaluation, the data-gap
     analysis and the EFSA-structured characterisation in Markdown.
     """
+    bundle = _char_domain(domain)
+    catalogue, guidance_pages = bundle["primary"]["catalogue"], bundle["primary"]["pages"]
     meta_obj = _char_meta(meta)
     url_list = [u.strip() for u in re.split(r"[\n\r]+", urls or "") if u.strip()]
     if not files and not url_list:
@@ -2619,7 +2666,9 @@ def characterisation_analyse(
     if len(url_list) > 10:
         notes.append(f"{len(url_list) - 10} URL(s) ignored (limit 10 per analysis).")
 
-    result = charmod.analyse_dossier(docs, meta_obj, CHAR_CATALOGUE, CHAR_GUIDANCE_PAGES, notes)
+    result = charmod.analyse_dossier(docs, meta_obj, catalogue, guidance_pages, notes)
+    result["domain"] = {"id": bundle["id"], "label": bundle["label"]}
+    template_path = charmod.domain_template_path(bundle)
 
     use_llm = str(allow_external_llm).lower() in ("1", "true", "yes", "on")
     result["llm"] = {"requested": use_llm, "used": False}
@@ -2630,28 +2679,46 @@ def characterisation_analyse(
             try:
                 result["narrative"] = charmod.draft_narrative(result, _llm_complete)
                 result["llm"]["used"] = bool(result["narrative"])
-                result["markdown"] = charmod.render_markdown(result, CHAR_CATALOGUE)
+                result["markdown"] = charmod.render_markdown(result, catalogue, template_path)
             except Exception as exc:
                 result["llm"]["error"] = f"Narrative drafting failed: {type(exc).__name__}"
     return result
 
 
 def characterisation_chat(query: str, workbench_context: dict) -> dict:
+    domain = str(workbench_context.get("domain") or "")[:40]
+    try:
+        bundle = _char_domain(domain)
+    except HTTPException:
+        # Another domain was chosen but no guidance for it is loaded: refuse rather than answer from feed guidance.
+        return {"answer": f"No guidance is loaded for the domain '{domain}', so I cannot ground an answer. "
+                          f"Available domains: {', '.join(CHAR_DOMAINS)}.",
+                "sources": [], "guidance_requirements": [], "no_data": True}
     gap_summary = workbench_context.get("characterisation_gaps") or []
     if not isinstance(gap_summary, list):
         gap_summary = []
     gap_terms = " ".join(f"{g.get('id', '')} {g.get('title', '')}" for g in gap_summary[:30] if isinstance(g, dict))
-    guidance_ctx, ids = charmod.guidance_context_for_question(query, CHAR_CATALOGUE, CHAR_GUIDANCE_PAGES)
+    guidance_ctx, ids = charmod.domain_context_for_question(query, bundle, step="characterisation")
     if (not ids or re.search(r"\bgaps?\b|missing|dossier", query, re.I)) and gap_terms:
         # Questions about "the gaps" are answered from the requirements behind the current gap list.
-        guidance_ctx, ids = charmod.guidance_context_for_question(f"{query} {gap_terms}", CHAR_CATALOGUE,
-                                                                  CHAR_GUIDANCE_PAGES, limit=8)
+        guidance_ctx, ids = charmod.domain_context_for_question(query, bundle, extra_terms=gap_terms, limit=8, step="characterisation")
+    dataset_ctx = charmod.dataset_context(query, bundle)
+    if dataset_ctx:
+        guidance_ctx = f"{guidance_ctx}\n\n{dataset_ctx}".strip()
+    names = [charmod.source_short_name(s["catalogue"]) for s in bundle["sources"]]
     if not guidance_ctx:
+        _, elsewhere = charmod.domain_context_for_question(query, bundle)
+        if elsewhere:
+            steps_hit = sorted({st for src in bundle["sources"] for e in src["catalogue"]["requirements"] if e["id"] in elsewhere
+                                for st in charmod.entry_steps(e) if st != "characterisation"})
+            names_map = {"hazard-char": "2. Hazard characterisation", "exposure": "3. Exposure assessment", "risk-char": "4. Risk characterisation"}
+            return {"answer": "The guidance that answers this is grounded in another step. Open " +
+                              " or ".join(names_map[x] for x in steps_hit if x in names_map) + " and ask the assistant there.",
+                    "sources": [], "guidance_requirements": [], "no_data": True}
         return {
-            "answer": "I could not match this question to a requirement of the FEEDAP Guidance on the identity, "
-                      "characterisation and conditions of use of feed additives (EFSA Journal 2017;15(10):5023). "
+            "answer": f"I could not match this question to the guidance loaded for {bundle['label']} ({'; '.join(names)}). "
                       "In step 0 I only answer from that guidance — try naming the topic (e.g. batches, impurities, "
-                      "dusting potential, stability, homogeneity) or the section (e.g. §2.1.4).",
+                      "dusting potential, stability, homogeneity, WGS depth, ANI) or the section (e.g. §2.1.4).",
             "sources": [], "guidance_requirements": [], "no_data": True,
         }
     lines = []
@@ -2660,13 +2727,16 @@ def characterisation_chat(query: str, workbench_context: dict) -> dict:
             lines.append(f"- {g.get('id')} (§{g.get('guidance_section')}): {g.get('status')}"
                          + (f" — {'; '.join(str(m) for m in (g.get('missing') or [])[:3])}" if g.get("missing") else ""))
     product = workbench_context.get("characterisation_product") or ""
-    user = (f"Guidance entries (FEEDAP 2017, EFSA Journal 15(10):5023):\n\n{guidance_ctx}\n\n---\n\n"
+    user = (f"Guidance entries ({bundle['label']}):\n\n{guidance_ctx}\n\n---\n\n"
             f"Dossier gap summary{(' for ' + str(product)) if product else ''}:\n"
             f"{chr(10).join(lines) if lines else 'No dossier analysed yet.'}\n\n---\n\nQuestion: {query}")
+    system = CHAR_SYSTEM_PROMPT.format(
+        role=bundle["assistant_role"] or "scientific officers", domain=bundle["label"], step="characterisation",
+        sources="\n".join(f"- {s['catalogue']['guidance']['citation']}" for s in bundle["sources"]))
     try:
         resp = llm.chat.completions.create(
             model=LLM_MODEL,
-            messages=[{"role": "system", "content": CHAR_SYSTEM_PROMPT}, {"role": "user", "content": user}],
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
             temperature=0.1,
             max_tokens=1200,
         )
@@ -2674,6 +2744,53 @@ def characterisation_chat(query: str, workbench_context: dict) -> dict:
     except Exception as e:
         return {"answer": f"I encountered an error querying the LLM: {str(e)}", "sources": [], "guidance_requirements": ids}
     return {"answer": answer, "sources": [], "guidance_requirements": ids}
+
+
+STEP_GUIDANCE_STEPS = ("hazard-char", "exposure", "risk-char")
+STEP_LABELS = {"hazard-char": "2. Hazard characterisation", "exposure": "3. Exposure assessment", "risk-char": "4. Risk characterisation"}
+
+
+def step_guidance_chat(query: str, workbench_context: dict, step: str) -> Optional[dict]:
+    """Answer from the domain's guidance entries tagged for this workflow step. Returns None when no entry
+    matches, so the caller can fall back to the AOP-grounded assistant."""
+    try:
+        bundle = _char_domain(str(workbench_context.get("domain") or "")[:40])
+    except HTTPException:
+        return None
+    guidance_ctx, ids = charmod.domain_context_for_question(query, bundle, step=step)
+    dataset_ctx = charmod.dataset_context(query, bundle)
+    if not ids and not dataset_ctx:
+        return None
+    if dataset_ctx:
+        guidance_ctx = f"{guidance_ctx}\n\n{dataset_ctx}".strip()
+    lines = [f"Workflow step: {STEP_LABELS[step]}"]
+    for key, label in (("chemical", "Substance"), ("exposure_estimate", "Exposure estimate"), ("route", "Route"), ("population", "Population/species")):
+        if workbench_context.get(key):
+            lines.append(f"{label}: {str(workbench_context[key])[:300]}")
+    user = (f"Guidance entries ({bundle['label']}, entries for this step):\n\n{guidance_ctx}\n\n---\n\n"
+            f"Workbench context:\n{chr(10).join(lines)}\n\n---\n\nQuestion: {query}")
+    system = CHAR_SYSTEM_PROMPT.format(
+        role=bundle["assistant_role"] or "scientific officers", domain=bundle["label"], step=STEP_LABELS[step],
+        sources="\n".join(f"- {s['catalogue']['guidance']['citation']}" for s in bundle["sources"]))
+    try:
+        resp = llm.chat.completions.create(
+            model=LLM_MODEL, temperature=0.1, max_tokens=1200,
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
+        answer = resp.choices[0].message.content
+    except Exception as e:
+        return {"answer": f"I encountered an error querying the LLM: {str(e)}", "sources": [], "guidance_requirements": ids}
+    return {"answer": answer, "sources": [], "guidance_requirements": ids}
+
+
+@app.get("/api/qps")
+async def qps_lookup_endpoint(q: str = "", domain: str = ""):
+    """Taxa of the bundled QPS cycle dataset (PARTIAL, not the QPS list) that are named in q."""
+    bundle = _char_domain(domain)
+    qps = bundle["datasets"].get("qps")
+    if not qps:
+        raise HTTPException(404, "No QPS dataset for this domain")
+    hits = charmod.qps_lookup(q[:500], qps)
+    return {"query": q[:500], "partial": True, "note": charmod.QPS_PARTIAL_NOTE, "coverage": qps["coverage"], "matches": hits}
 
 
 # Serve frontend

@@ -1,0 +1,206 @@
+{
+  "catalogue_id": "efsa-2019-5648-environment",
+  "catalogue_version": "0.1.0",
+  "kind": "knowledge",
+  "scope": "FEEDAP guidance on the environmental risk assessment of feed additives: Phase I screen and its trigger values, key assumptions, Phase II risk-quotient logic, PBT/vPvB screening and the physico-chemical data needed. Feed intake and nitrogen excretion tables, fate and effect study details, PNEC derivation and the appendices are not encoded. Grounds the assistant only.",
+  "guidance": {
+    "title": "Guidance on the assessment of the safety of feed additives for the environment",
+    "short_name": "FEEDAP 2019 environment (5648)",
+    "author": "EFSA FEEDAP Panel",
+    "citation": "EFSA FEEDAP Panel (Bampidis V et al.), 2019. Guidance on the assessment of the safety of feed additives for the environment. EFSA Journal 2019;17(4):5648, 78 pp.",
+    "doi": "10.2903/j.efsa.2019.5648",
+    "url": "https://doi.org/10.2903/j.efsa.2019.5648",
+    "bundled_file": "efsa_2019_5648_environment.pdf",
+    "license": "CC BY-ND 4.0 (open access; redistributed unmodified with citation)",
+    "title_check_phrase": "Guidance on environmental risk assessment of feed additives",
+    "expected_pages": 78,
+    "page_numbering": "guidance_page is the PDF page number."
+  },
+  "entries": [
+    {
+      "id": "E-PROTECTION",
+      "guidance_section": "1",
+      "guidance_page": 7,
+      "title": "Protection goal and precaution",
+      "requirement": "Default specific protection goal: the 'ecological threshold option', a small tolerable effect on key organism groups (< 10% relative to controls). Without relevant, reliable data PEC and PNEC use worst-case assumptions.",
+      "quote": "the magnitude of tolerable effect on key organism groups in the receiving environment is set at small",
+      "guidance_anchors": [
+        "the magnitude of tolerable effect on key organism groups in the receiving environment is set at small"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "E-SCOPE",
+      "guidance_section": "1",
+      "guidance_page": 6,
+      "title": "What the environmental risk assessment covers",
+      "requirement": "An ERA is required for the terrestrial compartment (manure on agricultural soil), the aquatic compartment (drainage and run-off, discharge from land-based fish farms, excreta from cage-farmed fish to sediment) and groundwater (leaching). The air compartment is not assessed.",
+      "quote": "an environmental risk assessment (ERA) should be conducted for (1) terrestrial compartment",
+      "guidance_anchors": [
+        "an environmental risk assessment (ERA) should be conducted for (1) terrestrial compartment"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure",
+        "risk-char"
+      ]
+    },
+    {
+      "id": "E2-PHASE1",
+      "guidance_section": "2",
+      "guidance_page": 7,
+      "title": "Phase I: exemption criteria from Phase II",
+      "requirement": "Phase II is not needed, absent evidence of concern, if the additive is for non-food-producing animals only, is a natural substance not exceeding natural concentrations, is extensively metabolised, is not a (potential) PBT/vPvB substance, has no mode of action or accumulation concern, and its PEC (assuming 100% of the ingested dose is excreted as parent) is below the trigger values.",
+      "quote": "Exemption from Phase II assessment may be made on the following criteria, unless there is scientifically based evidence for concern [...] does not meet the threshold value that triggers a Phase II assessment",
+      "guidance_anchors": [
+        "Exemption from Phase II assessment may be made on the following criteria, unless there is scientifically based evidence for concern",
+        "does not meet the threshold value that triggers a Phase II assessment"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure",
+        "risk-char"
+      ]
+    },
+    {
+      "id": "E2.3-METABOLISM",
+      "guidance_section": "2.3",
+      "guidance_page": 9,
+      "title": "Extensive metabolism",
+      "requirement": "Extensively metabolised means converted to metabolites without environmentally relevant biological activity (water, CO2, common salts). Complete degradation in manure must be shown by total mineralisation or by degradation products each at 5% or less of the initial feed concentration. Interspecies extrapolation may be used (see consumer guidance 2.1.1.1).",
+      "quote": "complete degradation should be demonstrated either by total mineralisation or by the presence of degradation products all representing",
+      "guidance_anchors": [
+        "complete degradation should be demonstrated either by total mineralisation or by the presence of degradation products all representing"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure"
+      ]
+    },
+    {
+      "id": "E2.4-PBT",
+      "guidance_section": "2.4",
+      "guidance_page": 9,
+      "title": "PBT and vPvB screening",
+      "requirement": "Substances are PBT or vPvB when they meet the criteria of Annex XIII of REACH (all three of P, B, T, or both vP and vB). Screening information (Appendix E) can be used; if the additive is screened as a potential PBT/vPvB it goes to the Phase II assessment, and if confirmed no safe use for the environment can be identified.",
+      "quote": "Substances are considered as PBT or vPvB substances when they fulfil the criteria as laid down in Annex XIII of the REACH Regulation",
+      "guidance_anchors": [
+        "Substances are considered as PBT or vPvB substances when they fulfil the criteria as laid down in Annex XIII of the REACH Regulation"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char",
+        "risk-char"
+      ]
+    },
+    {
+      "id": "E2.5-MOA",
+      "guidance_section": "2.5",
+      "guidance_page": 10,
+      "title": "Mode of action and accumulation",
+      "requirement": "Coccidiostats and histomonostats are expected to need Phase II; substances with sublethal toxicity of environmental concern (e.g. reproductive) or that hardly dissipate (metals and other elements) must go to Phase II.",
+      "quote": "Coccidiostats and histomonostats are chemicals with a specific toxic mode-of-action against harmful protozoa",
+      "guidance_anchors": [
+        "Coccidiostats and histomonostats are chemicals with a specific toxic mode-of-action against harmful protozoa"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "hazard-char"
+      ]
+    },
+    {
+      "id": "E2.6-TRIGGERS",
+      "guidance_section": "2.6",
+      "guidance_page": 11,
+      "title": "Phase I PEC trigger values (terrestrial)",
+      "requirement": "Phase II is needed unless PECsoil (default 5 cm depth) is below 10 ug/kg dry weight AND PECpw (pore water, surrogate for groundwater; default 20 cm soil depth) is below 0.1 ug/L, and there is no scientific evidence of a risk to health or the environment. For aquaculture (Q6b) the triggers are PEC in surface water < 0.1 ug/L and, for marine aquaculture, sediment < 10 ug/kg.",
+      "quote": "If PEC for soil (PECsoil) (default: 5 cm depth) is less than 10",
+      "guidance_anchors": [
+        "If PEC for soil (PECsoil) (default: 5 cm depth) is less than 10"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure",
+        "risk-char"
+      ]
+    },
+    {
+      "id": "E2.6.1-ASSUMPTIONS",
+      "guidance_section": "2.6.1",
+      "guidance_page": 11,
+      "title": "Phase I worst-case PECsoil assumptions",
+      "requirement": "The additive is given continuously at the maximum recommended dose; the whole intake is excreted as parent compound; the nitrogen load standard of 170 kg N/ha per year applies; there is no dissipation during storage or spreading; manure is mixed into the top 5 cm. Feed intake and nitrogen excretion defaults per species/category are in Table 1; species not listed need a motivated proposal.",
+      "quote": "The additive is continuously applied at the maximal recommended dose [...] Total intake of the active substance is considered to be excreted as parent compound [...] There is no dissipation of the parent compound during storage and spreading of slurry/manure",
+      "guidance_anchors": [
+        "The additive is continuously applied at the maximal recommended dose",
+        "Total intake of the active substance is considered to be excreted as parent compound",
+        "There is no dissipation of the parent compound during storage and spreading of slurry/manure"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "exposure"
+      ]
+    },
+    {
+      "id": "E3-PHASE2",
+      "guidance_section": "3",
+      "guidance_page": 16,
+      "title": "Phase II: risk quotient approach",
+      "requirement": "Phase II compares PEC with PNEC for each compartment of concern (PNEC = experimental endpoint / assessment factor). Tiered: IIA conservative using fate and effect studies, IIB refined PEC, IIC refined PNEC.",
+      "quote": "The Phase II assessment is based on a risk quotient approach, where the calculated PEC and PNEC values for each compartment of concern should be compared",
+      "guidance_anchors": [
+        "The Phase II assessment is based on a risk quotient approach, where the calculated PEC and PNEC values for each compartment of concern should be compared"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    },
+    {
+      "id": "E3.1-PHYSCHEM",
+      "guidance_section": "3.1",
+      "guidance_page": 18,
+      "title": "Physico-chemical properties needed for Phase IIA",
+      "requirement": "Water solubility (OECD 105), dissociation constants in water (OECD 112), UV-visible absorption spectrum (OECD 101), vapour pressure (OECD 104; calculation acceptable), n-octanol/water partition coefficient (OECD 107, 117 or 123) and melting point/range (OECD 102). log Kow of ionisable substances is measured on the non-ionised form at environmentally relevant pH.",
+      "quote": "In order to evaluate the fate and toxicity of the feed additive, some basic physico-chemical properties are needed [...] Water solubility OECD 105",
+      "guidance_anchors": [
+        "In order to evaluate the fate and toxicity of the feed additive, some basic physico-chemical properties are needed",
+        "Water solubility OECD 105"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "characterisation",
+        "exposure"
+      ]
+    },
+    {
+      "id": "E3.3.8-RQ",
+      "guidance_section": "3.3.8",
+      "guidance_page": 28,
+      "title": "Phase IIA risk characterisation",
+      "requirement": "If PECA / PNECI is below 1 for a compartment, no further assessment is needed; otherwise refine the PEC (Phase IIB) or the PNEC (Phase IIC). If the groundwater PECA exceeds 0.1 ug/L, proceed to Phase IIB.",
+      "quote": "if the ratio of the PECA to the PNECI is lower than 1, no further assessment is required",
+      "guidance_anchors": [
+        "if the ratio of the PECA to the PNECI is lower than 1, no further assessment is required"
+      ],
+      "applies_to": "all",
+      "kind": "requirement",
+      "steps": [
+        "risk-char"
+      ]
+    }
+  ]
+}

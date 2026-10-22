@@ -1,0 +1,201 @@
+{
+  "catalogue_id": "vich-gl18r2",
+  "catalogue_version": "0.1.0",
+  "kind": "knowledge",
+  "scope": "VICH guideline on residual solvents in veterinary medicinal products, active substances and excipients, cited by FEEDAP 2017 (5023) section 2.1.4 for residual solvents in feed additives. It is written for veterinary medicinal products; the 10 g/day basis of Option 1 should be checked against the feed additive's daily intake. Per-solvent limits are in vich_gl18r2_solvents.json. Grounds the assistant and the residual-solvent comparison.",
+  "guidance": {
+    "title": "VICH GL18(R2) Impurities: residual solvents in new veterinary medicinal products, active substances and excipients (revision 2)",
+    "short_name": "VICH GL18(R2)",
+    "author": "VICH / EMA CVMP",
+    "citation": "VICH, 2023. Revised Guideline 18 - Impurities: residual solvents in new veterinary medicinal products, active substances and excipients (Revision 2). EMA/CVMP/VICH/502/1999, adopted by CVMP 17 May 2023, in effect April 2024.",
+    "doi": "EMA/CVMP/VICH/502/1999",
+    "url": "",
+    "bundled_file": "vich-gl18r2.pdf",
+    "license": "EMA copyright; reproduction authorised provided the source is acknowledged (© European Medicines Agency, 2023)",
+    "title_check_phrase": "Impurities: residual solvents in new veterinary medicinal products",
+    "expected_pages": 19,
+    "page_numbering": "guidance_page is the PDF page number."
+  },
+  "entries": [
+    {
+      "id": "V1-CLASSES",
+      "guidance_section": "1",
+      "guidance_page": 4,
+      "title": "Three solvent classes",
+      "requirement": "Class 1 (Table 1): avoid, unless strongly justified in a risk-benefit assessment. Class 2 (Table 2): limit. Class 3 (Table 3): less toxic, preferred. The lists are not exhaustive and limits may change as safety data appear.",
+      "quote": "Some solvents that are known to cause unacceptable toxicities (Class 1, Table 1) should be avoided in the production of active substances, excipients, or veterinary medicinal products unless their use can be strongly justified in a risk-benefit assessment [...] The lists are not exhaustive and other solvents can be used and later added to the lists",
+      "guidance_anchors": [
+        "Some solvents that are known to cause unacceptable toxicities (Class 1, Table 1) should be avoided in the production of active substances, excipients, or veterinary medicinal products unless their use can be strongly justified in a risk-benefit assessment",
+        "The lists are not exhaustive and other solvents can be used and later added to the lists"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V1-PURPOSE",
+      "guidance_section": "1",
+      "guidance_page": 4,
+      "title": "Purpose and what it does not cover",
+      "requirement": "Recommends acceptable amounts of residual solvents for the safety of the target animal and of residues in products from food-producing animals. It does not address solvents deliberately used as excipients, nor solvates, but their content should be evaluated and justified.",
+      "quote": "The objective of this guideline is to recommend acceptable amounts for residual solvents in pharmaceuticals for the safety of the target animal as well as for the safety of residues in products derived from treated food producing animals [...] This guideline does not address solvents deliberately used as excipients nor does it address solvates",
+      "guidance_anchors": [
+        "The objective of this guideline is to recommend acceptable amounts for residual solvents in pharmaceuticals for the safety of the target animal as well as for the safety of residues in products derived from treated food producing animals",
+        "This guideline does not address solvents deliberately used as excipients nor does it address solvates"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V2-SCOPE",
+      "guidance_section": "2",
+      "guidance_page": 4,
+      "title": "When to test",
+      "requirement": "Test for residual solvents when production or purification is known to leave them, and only for solvents used or produced in manufacture or purification. A cumulative calculation from the ingredients can replace testing of the product if it comes out at or below the recommended level.",
+      "quote": "testing should be performed for residual solvents when production or purification processes are known to result in the presence of such solvents [...] It is only necessary to test for solvents that are used or produced in the manufacture or purification of medicinal substances, excipients, or veterinary medicinal products",
+      "guidance_anchors": [
+        "testing should be performed for residual solvents when production or purification processes are known to result in the presence of such solvents",
+        "It is only necessary to test for solvents that are used or produced in the manufacture or purification of medicinal substances, excipients, or veterinary medicinal products"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V3.1-CLASS-DEFS",
+      "guidance_section": "3.1",
+      "guidance_page": 5,
+      "title": "Class definitions and PDE",
+      "requirement": "Class 1: known or strongly suspected human carcinogens and environmental hazards. Class 2: non-genotoxic animal carcinogens or agents of other irreversible toxicity (neurotoxicity, teratogenicity), or suspected of other significant reversible toxicity. Class 3: low toxic potential, PDE of 50 mg/day or more. PDE = permitted daily exposure.",
+      "quote": "Known human carcinogens, strongly suspected human carcinogens, and environmental hazards [...] Class 3 solvents have PDEs of 50 mg or more per day",
+      "guidance_anchors": [
+        "Known human carcinogens, strongly suspected human carcinogens, and environmental hazards",
+        "Class 3 solvents have PDEs of 50 mg or more per day"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V3.3-OPTION1",
+      "guidance_section": "3.3",
+      "guidance_page": 5,
+      "title": "Class 2 Option 1: concentration limits",
+      "requirement": "Use the ppm limits of Table 2, calculated as 1000 x PDE (mg/day) / dose (g/day) for a 10 g daily product mass. Acceptable for any component if the daily dose is unknown or fixed; if all components meet them they can be used in any proportion. Products dosed above 10 g/day go to Option 2.",
+      "quote": "The concentration limits in ppm stated in Table 2 can be used. They were calculated using equation (1) below by assuming a product mass of 10 g administered daily [...] Products that are administered in doses greater than 10 g per day should be considered under Option 2",
+      "guidance_anchors": [
+        "The concentration limits in ppm stated in Table 2 can be used. They were calculated using equation (1) below by assuming a product mass of 10 g administered daily",
+        "Products that are administered in doses greater than 10 g per day should be considered under Option 2"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V3.3-OPTION2",
+      "guidance_section": "3.3",
+      "guidance_page": 6,
+      "title": "Class 2 Option 2: PDE with the known maximum daily dose",
+      "requirement": "Use the PDE in mg/day with the known maximum daily dose to set the allowed concentration, provided the solvent has been reduced to the practical minimum and limits are realistic for analytical precision and manufacturing. Amounts in all components can be summed; the daily sum must stay below the PDE.",
+      "quote": "The sum of the amounts of solvent per day should be less than that given by the PDE [...] The limits should be realistic in relation to analytical precision, manufacturing capability, reasonable variation in the manufacturing process",
+      "guidance_anchors": [
+        "The sum of the amounts of solvent per day should be less than that given by the PDE",
+        "The limits should be realistic in relation to analytical precision, manufacturing capability, reasonable variation in the manufacturing process"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V3.3-OPTION3",
+      "guidance_section": "3.3",
+      "guidance_page": 6,
+      "title": "Class 2 Option 3: higher justified limits",
+      "requirement": "Applicants may justify higher limits from the actual daily dose, actual target species and toxicological data, with consumer safety considered. Handled case by case by the authorities.",
+      "quote": "Applicants may justify higher levels for the PDE and concentration limit based upon the actual daily dose, actual target species, and relevant toxicological data and considering consumer safety aspects [...] Use of Option 3 will be handled on a case by case basis by the regulatory authorities",
+      "guidance_anchors": [
+        "Applicants may justify higher levels for the PDE and concentration limit based upon the actual daily dose, actual target species, and relevant toxicological data and considering consumer safety aspects",
+        "Use of Option 3 will be handled on a case by case basis by the regulatory authorities"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V3.4-ANALYTICAL",
+      "guidance_section": "3.4",
+      "guidance_page": 7,
+      "title": "Analytical procedures",
+      "requirement": "Typically gas chromatography; use harmonised pharmacopoeial procedures if feasible, otherwise a validated method. If only Class 3 solvents are present, a non-specific method such as loss on drying may be used.",
+      "quote": "Residual solvents are typically determined using chromatographic techniques such as gas chromatography [...] If only Class 3 solvents are present, a non-specific method such as loss on drying may be used",
+      "guidance_anchors": [
+        "Residual solvents are typically determined using chromatographic techniques such as gas chromatography",
+        "If only Class 3 solvents are present, a non-specific method such as loss on drying may be used"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V3.5-REPORTING",
+      "guidance_section": "3.5",
+      "guidance_page": 7,
+      "title": "Reporting residual solvent levels",
+      "requirement": "Suppliers can state that only Class 3 solvents are likely (loss on drying < 0.5%), or name the Class 2 solvents and confirm they are below the Option 1 limit. Class 1 solvents likely to be present must be identified and quantified, as must Class 2 or 3 solvents above their Option 1 limit or 0.5%. 'Likely' covers the last step's solvent and earlier solvents not consistently removed.",
+      "quote": "If Class 1 solvents are likely to be present, they should be identified and quantified [...] If solvents of Class 2 or Class 3 are present at greater than their Option 1 limits or 0.5%, respectively, they should be identified and quantified",
+      "guidance_anchors": [
+        "If Class 1 solvents are likely to be present, they should be identified and quantified",
+        "If solvents of Class 2 or Class 3 are present at greater than their Option 1 limits or 0.5%, respectively, they should be identified and quantified"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V4.1-CLASS1",
+      "guidance_section": "4.1",
+      "guidance_page": 7,
+      "title": "Class 1 limits (Table 1)",
+      "requirement": "If unavoidable for a significant therapeutic advance, restrict to: benzene 2 ppm, carbon tetrachloride 4 ppm, 1,2-dichloroethane 5 ppm, 1,1-dichloroethene 8 ppm, 1,1,1-trichloroethane 1500 ppm.",
+      "quote": "Solvents in Class 1 should not be employed in the manufacture of active substances, excipients, and veterinary medicinal products because of their unacceptable toxicity or their deleterious environmental effect [...] Benzene 2 Carcinogen",
+      "guidance_anchors": [
+        "Solvents in Class 1 should not be employed in the manufacture of active substances, excipients, and veterinary medicinal products because of their unacceptable toxicity or their deleterious environmental effect",
+        "Benzene 2 Carcinogen"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V4.2-CLASS2",
+      "guidance_section": "4.2",
+      "guidance_page": 8,
+      "title": "Class 2 limits (Table 2)",
+      "requirement": "Class 2 solvents are limited for inherent toxicity; PDEs are given to 0.1 mg/day and concentrations to the nearest 10 ppm, which do not reflect the analytical precision needed. See the structured table for each solvent.",
+      "quote": "Solvents in Table 2 should be limited in pharmaceutical products because of their inherent toxicity [...] Acetonitrile 4.1 410",
+      "guidance_anchors": [
+        "Solvents in Table 2 should be limited in pharmaceutical products because of their inherent toxicity",
+        "Acetonitrile 4.1 410"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V4.3-CLASS3",
+      "guidance_section": "4.3",
+      "guidance_page": 8,
+      "title": "Class 3 solvents",
+      "requirement": "Low toxic potential; 50 mg/day or less (5000 ppm or 0.5% under Option 1) is acceptable without justification; higher amounts may be acceptable if realistic for manufacturing capability and GMP.",
+      "quote": "amounts of these residual solvents of 50 mg per day or less (corresponding to 5000 ppm or 0.5% under Option 1) would be acceptable without justification",
+      "guidance_anchors": [
+        "amounts of these residual solvents of 50 mg per day or less (corresponding to 5000 ppm or 0.5% under Option 1) would be acceptable without justification"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    },
+    {
+      "id": "V4.4-NOPDE",
+      "guidance_section": "4.4",
+      "guidance_page": 9,
+      "title": "Solvents without a PDE (Table 4)",
+      "requirement": "For solvents lacking adequate toxicological data (e.g. isooctane, isopropyl ether, petroleum ether, trifluoroacetic acid) the manufacturer must justify the residual levels.",
+      "quote": "Manufacturers should supply justification for residual levels of these and other solvents for which a PDE has not been established for use in pharmaceutical products",
+      "guidance_anchors": [
+        "Manufacturers should supply justification for residual levels of these and other solvents for which a PDE has not been established for use in pharmaceutical products"
+      ],
+      "applies_to": "all",
+      "kind": "requirement"
+    }
+  ]
+}
