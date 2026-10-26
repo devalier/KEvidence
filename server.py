@@ -22,6 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from openai import OpenAI
 
 import characterisation as charmod
+import docx_export
 
 # ---------------------------------------------------------------------------
 # Config
@@ -2683,6 +2684,25 @@ def characterisation_analyse(
             except Exception as exc:
                 result["llm"]["error"] = f"Narrative drafting failed: {type(exc).__name__}"
     return result
+
+
+@app.post("/api/characterisation/export.docx")
+def characterisation_export_docx(body: dict):
+    """Word version of the on-screen characterisation. The client sends the Markdown it is showing, so the
+    download always equals the screen; nothing is stored."""
+    markdown = body.get("markdown")
+    if not isinstance(markdown, str) or not markdown.strip():
+        raise HTTPException(400, "markdown is required")
+    if len(markdown) > docx_export.MAX_MARKDOWN_CHARS:
+        raise HTTPException(413, "Characterisation is too large to export")
+    name = re.sub(r"\.{2,}", ".", re.sub(r"[^A-Za-z0-9._-]+", "_", str(body.get("product_name") or "additive")))[:60].strip("._") or "additive"
+    title = str(body.get("title") or f"Characterisation of the additive — {body.get('product_name') or ''}").strip()[:200]
+    try:
+        content = docx_export.markdown_to_docx(markdown, title)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    return Response(content=content, media_type=docx_export.DOCX_MEDIA_TYPE,
+                    headers={"Content-Disposition": f'attachment; filename="characterisation_{name}.docx"'})
 
 
 def characterisation_chat(query: str, workbench_context: dict) -> dict:

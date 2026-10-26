@@ -312,7 +312,7 @@
         </div>
         <h3>Step 2 — Run</h3>
         <div class="actions"><button class="primary" id="charAnalyseBtn" disabled>Characterise from documents</button><span class="muted" id="charRunHint" style="align-self:center">Add at least one document or URL first.</span></div>
-        <div class="actions"><button class="secondary" id="charDownloadBtn" disabled>Download Markdown</button><button class="secondary" id="charCopyBtn" disabled>Copy Markdown</button></div>
+        <div class="actions"><button class="primary" id="charWordBtn" disabled>Download Word (.docx)</button><button class="secondary" id="charDownloadBtn" disabled>Download Markdown</button><button class="secondary" id="charCopyBtn" disabled>Copy Markdown</button></div>
         <div class="warning-box">Documents are processed in memory for one request and are not stored. Identification, extraction and gap analysis run locally (no LLM). Scanned PDFs need OCR first. Dossier portals rendered by JavaScript (e.g. Open EFSA) cannot be read by URL — download the documents and upload them.</div>
       </div>
 
@@ -1033,7 +1033,7 @@ function renderCharacterisation() {
     <div id="charMarkdownView" class="md-view">${renderMarkdown(c.markdown || '')}</div>`;
   $('charViewRendered').addEventListener('click', () => { $('charMarkdownView').className = 'md-view'; $('charMarkdownView').innerHTML = renderMarkdown(c.markdown || ''); });
   $('charViewSource').addEventListener('click', () => { $('charMarkdownView').className = ''; $('charMarkdownView').innerHTML = `<pre class="md-source">${escapeHtml(c.markdown || '')}</pre>`; });
-  ['charDownloadBtn', 'charCopyBtn'].forEach(id => { $(id).disabled = false; });
+  ['charWordBtn', 'charDownloadBtn', 'charCopyBtn'].forEach(id => { $(id).disabled = false; });
   $('charQuestions').hidden = false;
   $('charNext').hidden = false;
 }
@@ -1084,6 +1084,32 @@ function renderMarkdown(md) {
   }
   return out.join('\n');
 }
+async function downloadCharacterisationWord() {
+  const c = state.characterisation;
+  if (!c) return;
+  const btn = $('charWordBtn');
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Preparing Word file…';
+  try {
+    const res = await fetch(`${API_BASE}/characterisation/export.docx`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ markdown: c.markdown || '', product_name: c.meta?.product_name || '' })
+    });
+    if (!res.ok) { let msg = `HTTP ${res.status}`; try { msg = (await res.json()).detail || msg; } catch (e) {} throw new Error(msg); }
+    const name = (c.meta?.product_name || 'additive').replace(/[^A-Za-z0-9._-]+/g, '_');
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `characterisation_${name}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  } catch (e) {
+    alert(`Word export failed: ${e.message}`);
+  } finally {
+    btn.textContent = label; btn.disabled = false;
+  }
+}
 function downloadCharacterisation() {
   const c = state.characterisation;
   if (!c) return;
@@ -1116,6 +1142,7 @@ $('charAddComponentBtn').addEventListener('click', () => addComponentRow());
 $('charAnalyseBtn').addEventListener('click', runCharacterisation);
 $('charRerunBtn').addEventListener('click', runCharacterisation);
 $('charDownloadBtn').addEventListener('click', downloadCharacterisation);
+$('charWordBtn').addEventListener('click', downloadCharacterisationWord);
 $('charCopyBtn').addEventListener('click', copyCharacterisation);
 $('charUseIdentityBtn').addEventListener('click', useCharacterisedIdentity);
 function updateCharRunState() {
