@@ -30,7 +30,7 @@ The workbench then supports **uncertainty analysis** (confidence summaries, key 
 Assists EFSA scientific officers with the characterisation section of a feed additive assessment.
 
 - **Input:** confidential applicant documents — uploads (PDF, DOCX, XLSX, CSV/TSV, TXT/MD, JSON, HTML) and/or URLs (a PDF/DOCX/XLSX link, or an HTML page whose linked documents are followed). Product form, routes of administration, production type, additive type, current authorisation, preparations/formulations under application, and each component (name, CAS, role).
-- **Output (Markdown, on screen and downloadable):**
+- **Output (on screen, as Markdown and as a Word file):** the *Download Word (.docx)* button converts exactly the Markdown on screen (`docx_export.py`, `POST /api/characterisation/export.docx`; nothing is stored), so the two cannot differ. Tables keep their header rows across pages and have content-based column widths; footnotes appear as numbered notes under their table; the page header marks it as a draft for scientific-officer verification. Content:
   1. a draft of the opinion's characterisation section in the FEEDAP opinion layout: §1.1.1 *Characterisation of the additive* with the specifications, **Table 1** (product/active substance) and, when preparations are listed, **Table 2** (one column per preparation) — batch-to-batch variation as average (range) [number of batches], substance-related impurities and residual solvents as ranges, `<` below the LOQ, `-` not analysed, footnotes naming the source documents — followed by facts located for the scientific officer's conclusion (e.g. "3/3 batch values meet the specification ≥ 99.5 %") and, for fermentation products, the viable-cell and DNA fields; **Appendix A** with other impurities and physico-chemical/technological properties; §1.1.2 (production microorganism) as an out-of-scope stub;
   2. the data-gap analysis;
   3. an evidence map against Section 2 of the guidance (2.1 Identity … 2.6 Methods of analysis).
@@ -114,6 +114,7 @@ The Evidence Assistant uses structured workbench context when answering question
 ```text
 .
 ├── server.py                         # FastAPI backend and risk assessment logic
+├── docx_export.py                    # Markdown → Word (.docx) for the step 0 output
 ├── characterisation.py               # Step 0: document ingestion, guidance-grounded characterisation and gap analysis
 ├── static/index.html                 # Single-page workbench UI
 ├── requirements.txt                  # Python dependencies
@@ -278,6 +279,7 @@ export BIOACTIVITY_SQLITE_PATH="/path/to/bioactivity.db"
 | `/api/bioactivity/search` | POST | Search locally indexed ToxCast/Tox21/ToxRefDB-style AC50/POD records. |
 | `/api/domains` | GET | Registered domains and their guidance sources. |
 | `/api/qps?domain=&q=` | GET | Taxa named in `q` that appear in the bundled (partial) QPS cycle dataset. |
+| `/api/characterisation/export.docx` | POST | JSON `{markdown, product_name}` → Word file of that Markdown (max 3 M characters). |
 | `/api/characterisation/guidance?domain=` | GET | Step 0 requirement catalogue and grounding status against the guidance text, for the domain and each of its sources. |
 | `/api/characterisation/guidance.pdf?domain=&source=` | GET | A bundled guidance PDF of the domain (`source` = catalogue id; default the primary). |
 | `/api/characterisation/guidance.pdf` | GET | The bundled FEEDAP guidance PDF (unmodified). |
