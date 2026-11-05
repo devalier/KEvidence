@@ -16,6 +16,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt -r requirements-dev.txt
       - name: Compile
-        run: python -m py_compile server.py characterisation.py sanitisation.py scripts/import_openfoodtox.py scripts/import_epa_bioactivity.py scripts/make_sanitisation_demo.py
+        run: python -m py_compile server.py characterisation.py sanitisation.py scripts/import_openfoodtox.py scripts/import_epa_bioactivity.py scripts/make_sanitisation_demo.py scripts/filter_aopwiki_licences.py
       - name: Run tests
         run: python -m pytest -q tests

@@ -108,6 +108,8 @@ def load_aop_list():
             if not row or not row[0].startswith("Aop:"):
                 continue
             aop_id = int(row[0].replace("Aop:", ""))
+            if aop_id in AOPWIKI_EXCLUDED_IDS:
+                continue
             if aop_id not in aops:
                 aops[aop_id] = {
                     "id": aop_id,
@@ -120,12 +122,50 @@ def load_aop_list():
     return aops
 
 
+# Only AOP-Wiki content licensed CC BY-SA is redistributed and displayed. "All rights reserved" needs the
+# authors' written permission and "Open for adoption" grants no licence (scripts/filter_aopwiki_licences.py
+# removes them from the bundled data; this guard also covers a freshly downloaded export).
+AOPWIKI_ALLOWED_LICENCES = {"BY-SA"}
+DB_DATA_TAG = "aopwiki-by-sa-only-v1"
+
+
+def _aopwiki_excluded():
+    """(AOP-Wiki ids, AOP uuids) of AOPs in the export whose licence does not allow redistribution."""
+    import gzip
+    xml_path = DATA_DIR / "aop-wiki-xml.gz"
+    if not xml_path.exists():
+        return set(), set()
+    xml = gzip.decompress(xml_path.read_bytes()).decode("utf-8", "replace")
+    wiki_ids = dict(re.findall(r'<aop-reference id="([^"]+)" aop-wiki-id="(\d+)"/>', xml))
+    uuids = set()
+    for m in re.finditer(r'<aop id="([^"]+)">.*?</aop>', xml, re.S):
+        lic = re.search(r"<wiki-license>([^<]*)</wiki-license>", m.group(0))
+        if (lic.group(1).strip() if lic else "") not in AOPWIKI_ALLOWED_LICENCES:
+            uuids.add(m.group(1))
+    return {int(wiki_ids[u]) for u in uuids if u in wiki_ids}, uuids
+
+
+AOPWIKI_EXCLUDED_IDS, AOPWIKI_EXCLUDED_UUIDS = _aopwiki_excluded()
+if AOPWIKI_EXCLUDED_IDS:
+    print(f"AOP-Wiki export contains {len(AOPWIKI_EXCLUDED_IDS)} AOPs not licensed CC BY-SA; they are excluded. "
+          "Run scripts/filter_aopwiki_licences.py to remove them from data/.")
+
+
 def build_db():
     """Load TSV data into SQLite for fast querying."""
     if DB_PATH.exists():
-        return
+        try:
+            with sqlite3.connect(str(DB_PATH)) as c:
+                tag = c.execute("SELECT value FROM meta WHERE key = 'data_tag'").fetchone()
+        except sqlite3.Error:
+            tag = None
+        if tag and tag[0] == DB_DATA_TAG:
+            return
+        DB_PATH.unlink()  # built before the licence filter: rebuild
     conn = sqlite3.connect(str(DB_PATH))
     cur = conn.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)")
+    cur.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('data_tag', ?)", (DB_DATA_TAG,))
     cur.execute("""
         CREATE TABLE IF NOT EXISTS aops (
             id INTEGER PRIMARY KEY,
@@ -177,6 +217,8 @@ def build_db():
             if not row or not row[0].startswith("Aop:"):
                 continue
             aop_id = int(row[0].replace("Aop:", ""))
+            if aop_id in AOPWIKI_EXCLUDED_IDS:
+                continue
             event_id = int(row[1].replace("Event:", ""))
             event_type = row[2]
             event_name = row[3]
@@ -217,6 +259,8 @@ def build_db():
             if not row or not row[0].startswith("Aop:"):
                 continue
             aop_id = int(row[0].replace("Aop:", ""))
+            if aop_id in AOPWIKI_EXCLUDED_IDS:
+                continue
             up = int(row[1].replace("Event:", ""))
             down = int(row[2].replace("Event:", ""))
             rel_id = int(row[3].replace("Relationship:", ""))
@@ -235,6 +279,8 @@ def build_db():
             if not row or not row[0].startswith("Aop:"):
                 continue
             aop_id = int(row[0].replace("Aop:", ""))
+            if aop_id in AOPWIKI_EXCLUDED_IDS:
+                continue
             event_id = int(row[1].replace("Event:", ""))
             action = row[2]
             obj_src = row[3] if len(row) > 3 else ""
@@ -341,6 +387,8 @@ def _build_chemical_index():
         if not aop_uid_match:
             continue
         aop_uid = aop_uid_match.group(1)
+        if aop_uid in AOPWIKI_EXCLUDED_UUIDS:
+            continue
         aop_body = m.group()
 
         # Stressor refs
@@ -799,6 +847,8 @@ def find_aops_by_chemical(chemical_name: str) -> list:
             for fpath in AOP_CACHE_DIR.glob("aop_*.txt"):
                 try:
                     aop_id = int(fpath.stem.replace("aop_", ""))
+                    if aop_id in AOPWIKI_EXCLUDED_IDS:
+                        continue
                     text = fpath.read_text().lower()
 
                     # Only match if stressor name appears in the PROTOTYPICAL STRESSOR section

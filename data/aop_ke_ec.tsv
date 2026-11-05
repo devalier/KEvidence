@@ -35,16 +35,6 @@ Aop:7	Event:406	decreased	MESH	D005298	fertility	GO	GO:0009566	fertilization
 Aop:7	Event:405	disrupted	UBERON	UBERON:0001305	ovarian follicle	GO	GO:0042698	ovulation cycle
 Aop:7	Event:408	decreased	PR	PR:000006100	aromatase	GO	GO:0070330	aromatase activity
 Aop:7	Event:408	decreased	PR	PR:000006100	aromatase	GO	GO:0009299	mRNA transcription
-Aop:8	Event:239	increased	PR	PR:000011397	nuclear receptor subfamily 1 group I member 2	GO	GO:0023052	signaling
-Aop:8	Event:319	increased				MP	MP:0000032	cochlear degeneration
-Aop:8	Event:280	decreased	CHEBI	CHEBI:30660	thyroxine	GO	GO:0010817	regulation of hormone levels
-Aop:8	Event:281	decreased	CHEBI	CHEBI:30660	thyroxine	MP	MP:0005475	abnormal circulating thyroxine level
-Aop:8	Event:295	increased	PR	PR:000001325	beta-1,3-glucuronyltransferase	GO	GO:0015020	glucuronosyltransferase activity
-Aop:8	Event:295	increased	PR	PR:000001325	beta-1,3-glucuronyltransferase	GO	GO:0003824	catalytic activity
-Aop:8	Event:757	morphological change	UBERON	UBERON:0002421	hippocampal formation	GO	GO:0007420	brain development
-Aop:8	Event:758	abnormal	GO	GO:0045202	synapse	GO	GO:0007268	chemical synaptic transmission
-Aop:8	Event:756	abnormal	UBERON	UBERON:0002421	hippocampal formation	GO	GO:0010468	regulation of gene expression
-Aop:8	Event:961	increased	CHEBI	CHEBI:30660	thyroxine	GO	GO:0008152	metabolic process
 Aop:10	Event:64	decreased	CHEBI	CHEBI:17996	chloride	GO	GO:0022851	GABA-gated chloride ion channel activity
 Aop:10	Event:616	occurrence				GO	GO:0051899	membrane depolarization
 Aop:10	Event:613	occurrence				NBO	NBO:0000025	seizures
@@ -113,11 +103,6 @@ Aop:18	Event:289	decreased	PR	PR:000016757	translocator protein	GO	GO:0010467	ge
 Aop:18	Event:348	morphological change	UBERON	UBERON:0003135	male reproductive organ			
 Aop:18	Event:1690	decreased	CHEBI	CHEBI:17347	testosterone	GO	GO:0042446	hormone biosynthetic process
 Aop:18	Event:1690	decreased	CHEBI	CHEBI:17347	testosterone	GO	GO:0061370	testosterone biosynthetic process
-Aop:19	Event:310	abnormal	GO	GO:1990909	Wnt signalosome	GO	GO:0016055	Wnt signaling pathway
-Aop:19	Event:240	arrested	UBERON	UBERON:0003135	male reproductive organ	GO	GO:0032502	developmental process
-Aop:19	Event:286	decreased	PR	PR:000004191	androgen receptor	GO	GO:0010468	regulation of gene expression
-Aop:19	Event:337	decreased	MESH	D005298	fertility			
-Aop:19	Event:26	decreased	PR	PR:000004191	androgen receptor	GO	GO:0004882	androgen receptor activity
 Aop:21	Event:18	increased	PR	PR:000003858	aryl hydrocarbon receptor	GO	GO:0004874	aryl hydrocarbon receptor activity
 Aop:21	Event:18	increased	PR	PR:000003858	aryl hydrocarbon receptor	GO	GO:0017162	aryl hydrocarbon receptor binding
 Aop:21	Event:944	increased	PR	PR:000003858	aryl hydrocarbon receptor	GO	GO:0046983	protein dimerization activity
@@ -152,14 +137,6 @@ Aop:25	Event:309	decreased				GO	GO:0048599	oocyte development
 Aop:25	Event:3	decreased	CHEBI	CHEBI:16469	17beta-estradiol	GO	GO:0006703	estrogen biosynthetic process
 Aop:25	Event:78	decreased				VT	VT:1000294	egg quantity
 Aop:25	Event:221	decreased	MESH	D014819	vitellogenins			
-Aop:26	Event:51	decreased	GO	GO:0090534	calcium ion-transporting ATPase complex	GO	GO:0005388	calcium-transporting ATPase activity
-Aop:26	Event:50	increased	CHEBI	CHEBI:39124	calcium ion			
-Aop:26	Event:178	disrupted	GO	GO:0005746	mitochondrial respiratory chain			
-Aop:26	Event:40	decreased	CHEBI	CHEBI:15422	ATP	GO	GO:0006754	ATP biosynthetic process
-Aop:26	Event:193	decreased	CHEBI	CHEBI:16480	nitric oxide			
-Aop:26	Event:166	decreased				GO	GO:0060291	long-term synaptic potentiation
-Aop:26	Event:1392	increased				MP	MP:0003674	oxidative stress
-Aop:26	Event:1115	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:1903409	reactive oxygen species biosynthetic process
 Aop:27	Event:41	decreased	PR	PR:000003549	bile salt export pump	GO	GO:0006810	transport
 Aop:27	Event:288	increased	PR	PR:000011396	bile acid receptor	GO	GO:0010467	gene expression
 Aop:27	Event:214	increased	UBERON	UBERON:0001970	bile			
@@ -195,20 +172,6 @@ Aop:30	Event:309	decreased	MESH	D014819	vitellogenins	GO	GO:0006898	receptor-med
 Aop:30	Event:309	decreased				GO	GO:0001555	oocyte growth
 Aop:30	Event:309	decreased				GO	GO:0048599	oocyte development
 Aop:30	Event:78	decreased				VT	VT:1000294	egg quantity
-Aop:31	Event:213	increased				GO	GO:0006788	heme oxidation
-Aop:31	Event:21	abnormal	PR	PR:P69905	hemoglobin subunit alpha (human)	GO	GO:0010467	gene expression
-Aop:31	Event:250	increased	MESH	D006461	hemolysis			
-Aop:31	Event:118	increased	CHEBI	CHEBI:35703	xenobiotic	GO	GO:0042541	hemoglobin biosynthetic process
-Aop:31	Event:118	increased				GO	GO:0030492	hemoglobin binding
-Aop:31	Event:131	decreased	PR	PR:000007749	glucose-6-phosphate 1-dehydrogenase	GO	GO:0010467	gene expression
-Aop:31	Event:246	increased	CL	CL:0000232	erythrocyte			
-Aop:31	Event:246	increased				MP	MP:0010019	liver vascular congestion
-Aop:31	Event:161	increased	MESH	D006486	hemosiderosis			
-Aop:31	Event:173	increased	MESH	D008708	Methemoglobinemia			
-Aop:31	Event:173	decreased	CHEBI	CHEBI:35143	hemoglobin			
-Aop:31	Event:173	increased	CL	CL:0000232	erythrocyte			
-Aop:31	Event:321	occurrence	MESH	D003490	Cyanosis			
-Aop:31	Event:1392	increased				MP	MP:0003674	oxidative stress
 Aop:32	Event:77	increased	CHEBI	CHEBI:39185	thiamethoxam	GO	GO:0008152	metabolic process
 Aop:32	Event:77	increased	CHEBI	CHEBI:25212	metabolite	GO	GO:0008152	metabolic process
 Aop:32	Event:164	decreased				HP	HP:0001410	Decreased liver function
@@ -216,8 +179,6 @@ Aop:32	Event:147	decreased	PR	PR:000011326	nitric oxide synthase, brain	GO	GO:00
 Aop:32	Event:270	increased				MI	MI:2141	hepatotoxicity
 Aop:32	Event:269	increased				GO	GO:0072574	hepatocyte proliferation
 Aop:32	Event:347	increased	MESH	D006528	hepatocellular carcinoma			
-Aop:33	Event:9	increased	PR	PR:000001168	5-hydroxytryptamine receptor 2C	GO	GO:0023052	signaling
-Aop:33	Event:759	increased				MP	MP:0003606	kidney failure
 Aop:34	Event:167	increased	PR	PR:000011394	oxysterols receptor LXR-beta	GO	GO:0023052	signaling
 Aop:34	Event:167	increased	PR	PR:000011395	oxysterols receptor LXR-alpha	GO	GO:0023052	signaling
 Aop:34	Event:54	increased	PR	PR:000001905	platelet glycoprotein 4	GO	GO:0010467	gene expression
@@ -803,13 +764,6 @@ Aop:116	Event:784	increased	CL	CL:1000494	nephron tubule epithelial cell	MP	MP:0
 Aop:116	Event:713	increased	MESH	D000236	Adenoma			
 Aop:116	Event:713	increased	MESH	D002277	Carcinoma			
 Aop:116	Event:713	increased	MESH	D000236	Adenoma	MESH	D002292	Carcinoma, Renal Cell
-Aop:117	Event:716	increased	CL	CL:0000422	mitogenic signaling cell	GO	GO:0008283	cell proliferation
-Aop:117	Event:716	increased	CL	CL:0000182	hepatocyte	GO	GO:0072574	hepatocyte proliferation
-Aop:117	Event:774	increased	MP	MP:0003902	abnormal cell mass	MP	MP:0002009	preneoplasia
-Aop:117	Event:719	increased	MESH	D000236	Adenoma			
-Aop:117	Event:719	increased	MESH	D002277	Carcinoma			
-Aop:117	Event:719	increased	MESH	D000236	Adenoma	MESH	D006528	hepatocellular carcinoma
-Aop:117	Event:25	increased	PR	PR:000004191	androgen receptor	GO	GO:0004882	androgen receptor activity
 Aop:118	Event:786	increased	CL	CL:0000182	hepatocyte	GO	GO:0008219	cell death
 Aop:118	Event:787	increased	CL	CL:0000182	hepatocyte	GO	GO:0008283	cell proliferation
 Aop:118	Event:774	increased	MP	MP:0003902	abnormal cell mass	MP	MP:0002009	preneoplasia
@@ -949,10 +903,6 @@ Aop:138	Event:1102	increased	CHEBI	CHEBI:27226	uric acid
 Aop:138	Event:1106	increased	MESH	D001145	Arrhythmias, Cardiac			
 Aop:138	Event:360	decreased	PCO	PCO:0000001	population of organisms	PCO	PCO:0000008	population growth rate
 Aop:138	Event:1392	increased				MP	MP:0003674	oxidative stress
-Aop:139	Event:97	increased	CHEBI	CHEBI:16991	deoxyribonucleic acid	GO	GO:0006305	DNA alkylation
-Aop:139	Event:155	abnormal	CHEBI	CHEBI:16991	deoxyribonucleic acid	GO	GO:0006281	DNA repair
-Aop:139	Event:185	increased	CHEBI	CHEBI:16991	deoxyribonucleic acid	MESH	D009154	mutation
-Aop:139	Event:885	increased	MESH	D009369	Neoplasms			
 Aop:141	Event:155	abnormal	CHEBI	CHEBI:16991	deoxyribonucleic acid	GO	GO:0006281	DNA repair
 Aop:141	Event:185	increased	CHEBI	CHEBI:16991	deoxyribonucleic acid	MESH	D009154	mutation
 Aop:141	Event:885	increased	MESH	D009369	Neoplasms			
@@ -1319,29 +1269,6 @@ Aop:197	Event:584	decreased	PR	PR:000002095	sodium channel protein type 1 subuni
 Aop:197	Event:584	decreased	PR	PR:000002095	sodium channel protein type 1 subunit alpha	GO	GO:0023052	signaling
 Aop:197	Event:1176	decreased	CHEBI	CHEBI:29101	sodium(1+)	GO	GO:0006810	transport
 Aop:197	Event:1179	decreased	CHEBI	CHEBI:16865	gamma-aminobutyric acid	GO	GO:0006810	transport
-Aop:200	Event:1182	increased				GO	GO:0008283	cell proliferation
-Aop:200	Event:1183	decreased				GO	GO:0006915	apoptotic process
-Aop:200	Event:177	functional change	GO	GO:0005739	mitochondrion			
-Aop:200	Event:1187	increased	CHEBI	CHEBI:16991	deoxyribonucleic acid	GO	GO:0030331	estrogen receptor binding
-Aop:200	Event:1188	increased	PR	PR:000016261	serotransferrin	GO	GO:0030331	estrogen receptor binding
-Aop:200	Event:1189	increased				GO	GO:0001935	endothelial cell proliferation
-Aop:200	Event:1190	increased				GO	GO:0043542	endothelial cell migration
-Aop:200	Event:1191	increased				GO	GO:0023052	signaling
-Aop:200	Event:1192	increased				MESH	D006965	hyperplasia
-Aop:200	Event:1193	pathological	MESH	D001943	Breast Neoplasms			
-Aop:200	Event:1194	functional change	CHEBI	CHEBI:16991	deoxyribonucleic acid			
-Aop:200	Event:1195	morphological change	GO	GO:0031012	extracellular matrix			
-Aop:200	Event:1196	increased	CL	CL:0000066	epithelial cell			
-Aop:200	Event:1197	decreased				GO	GO:0001775	cell activation
-Aop:200	Event:1198	decreased				GO	GO:0042116	macrophage activation
-Aop:200	Event:1213	increased				GO	GO:0001525	angiogenesis
-Aop:200	Event:1239	abnormal				GO	GO:0010467	gene expression
-Aop:200	Event:1240	abnormal	PR	PR:000000001	protein	GO	GO:0006412	translation
-Aop:200	Event:1241	increased				GO	GO:0048870	cell motility
-Aop:200	Event:1242	increased				GO	GO:0019932	second-messenger-mediated signaling
-Aop:200	Event:1392	increased				MP	MP:0003674	oxidative stress
-Aop:200	Event:111	increased	PR	PR:000007204	estrogen receptor	GO	GO:0030284	estrogen receptor activity
-Aop:200	Event:111	increased	PR	PR:000007204	estrogen receptor	GO	GO:0048018	receptor agonist activity
 Aop:201	Event:1205	increased	CHEBI	CHEBI:24943	juvenile hormone	GO	GO:0023052	signaling
 Aop:201	Event:1206	increased	PR	PR:P23023	protein doublesex (fruit fly)	GO	GO:0010467	gene expression
 Aop:201	Event:1208	increased				VT	VT:1000189	offspring quantity
@@ -1403,19 +1330,10 @@ Aop:212	Event:1505	disrupted	PR	PR:000029191	cell cycle-related cyclin	GO	GO:005
 Aop:212	Event:1262	increased				GO	GO:0006915	apoptotic process
 Aop:212	Event:1506	increased	FMA	FMA:7210	Testis	HP	HP:0000029	Testicular atrophy
 Aop:212	Event:1515	decreased	CL	CL:0000017	spermatocyte			
-Aop:213	Event:459	increased				HP	HP:0001397	Hepatic steatosis
-Aop:213	Event:1115	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:1903409	reactive oxygen species biosynthetic process
-Aop:214	Event:1320	increased	GO	GO:0005576	extracellular region	MP	MP:0010069	increased serotonin level
-Aop:214	Event:1320	increased	CHEBI	CHEBI:28790	serotonin	MP	MP:0010069	increased serotonin level
-Aop:214	Event:122	increased	PR	PR:000011406	glucocorticoid receptor	GO	GO:0004883	glucocorticoid receptor activity
-Aop:214	Event:1339	increased	CHEBI	CHEBI:29108	calcium(2+)	VT	VT:0010499	calcium amount
-Aop:215	Event:1350	increased	CHEBI	CHEBI:29985	L-glutamate(1-)	GO	GO:0035249	synaptic transmission, glutamatergic
-Aop:215	Event:1353	disrupted				GO	GO:0005248	voltage-gated sodium channel activity
 Aop:216	Event:1686	increased				RBO	RBO:00015021	energy deposition event
 Aop:216	Event:1635	increased	FMA	FMA:74412	Deoxyribonucleic acid	NCI	NCI:C25830	DNA Strand Break
 Aop:216	Event:78	decreased				VT	VT:1000294	egg quantity
 Aop:216	Event:360	decreased	PCO	PCO:0000001	population of organisms	PCO	PCO:0000008	population growth rate
-Aop:217	Event:1376	increased	GO	GO:1990150	VEGF-A complex	HP	HP:0003002	Breast carcinoma
 Aop:218	Event:360	decreased	PCO	PCO:0000001	population of organisms	PCO	PCO:0000008	population growth rate
 Aop:219	Event:360	decreased	PCO	PCO:0000001	population of organisms	PCO	PCO:0000008	population growth rate
 Aop:220	Event:1392	increased				MP	MP:0003674	oxidative stress
@@ -1423,22 +1341,6 @@ Aop:220	Event:1394	increased				GO	GO:0034599	cellular response to oxidative str
 Aop:220	Event:1394	increased	CL	CL:0000235	macrophage	GO	GO:0002281	macrophage activation involved in immune response
 Aop:220	Event:1394	decreased	PR	PR:000008555	hypoxia-inducible factor 1-alpha	MP	MP:0005039	hypoxia
 Aop:220	Event:1394	decreased	PR	PR:000017294	von Hippel-Lindau disease tumor suppressor	MP	MP:0005039	hypoxia
-Aop:221	Event:1320	increased	GO	GO:0005576	extracellular region	MP	MP:0010069	increased serotonin level
-Aop:221	Event:1320	increased	CHEBI	CHEBI:28790	serotonin	MP	MP:0010069	increased serotonin level
-Aop:222	Event:1320	increased	GO	GO:0005576	extracellular region	MP	MP:0010069	increased serotonin level
-Aop:222	Event:1320	increased	CHEBI	CHEBI:28790	serotonin	MP	MP:0010069	increased serotonin level
-Aop:223	Event:1320	increased	GO	GO:0005576	extracellular region	MP	MP:0010069	increased serotonin level
-Aop:223	Event:1320	increased	CHEBI	CHEBI:28790	serotonin	MP	MP:0010069	increased serotonin level
-Aop:224	Event:1320	increased	GO	GO:0005576	extracellular region	MP	MP:0010069	increased serotonin level
-Aop:224	Event:1320	increased	CHEBI	CHEBI:28790	serotonin	MP	MP:0010069	increased serotonin level
-Aop:225	Event:1320	increased	GO	GO:0005576	extracellular region	MP	MP:0010069	increased serotonin level
-Aop:225	Event:1320	increased	CHEBI	CHEBI:28790	serotonin	MP	MP:0010069	increased serotonin level
-Aop:226	Event:1320	increased	GO	GO:0005576	extracellular region	MP	MP:0010069	increased serotonin level
-Aop:226	Event:1320	increased	CHEBI	CHEBI:28790	serotonin	MP	MP:0010069	increased serotonin level
-Aop:226	Event:1339	increased	CHEBI	CHEBI:29108	calcium(2+)	VT	VT:0010499	calcium amount
-Aop:230	Event:1350	increased	CHEBI	CHEBI:29985	L-glutamate(1-)	GO	GO:0035249	synaptic transmission, glutamatergic
-Aop:230	Event:1353	disrupted				GO	GO:0005248	voltage-gated sodium channel activity
-Aop:232	Event:459	increased				HP	HP:0001397	Hepatic steatosis
 Aop:233	Event:763	increased				GO	GO:0060081	membrane hyperpolarization
 Aop:235	Event:763	increased				GO	GO:0060081	membrane hyperpolarization
 Aop:237	Event:1438	increased	N/A	N/A	Acute phase proteins	GO	GO:0006953	acute-phase response
@@ -1457,8 +1359,6 @@ Aop:238	Event:78	decreased				VT	VT:1000294	egg quantity
 Aop:238	Event:360	decreased	PCO	PCO:0000001	population of organisms	PCO	PCO:0000008	population growth rate
 Aop:241	Event:1457	occurrence	FMA	FMA:66768	Epithelial cell	GO	GO:0001837	epithelial to mesenchymal transition
 Aop:241	Event:68	increased	CHEBI	CHEBI:3815	collagen	GO	GO:0032964	collagen biosynthetic process
-Aop:242	Event:1005	decreased				NBO	NBO:0000371	aquatic locomotion
-Aop:242	Event:636	decreased				VT	VT:0005372	life span trait
 Aop:245	Event:1472	decreased	CHEBI	CHEBI:15422	ATP	GO	GO:0006754	ATP biosynthetic process
 Aop:245	Event:40	decreased	CHEBI	CHEBI:15422	ATP	GO	GO:0006754	ATP biosynthetic process
 Aop:245	Event:1521	decreased	UBERON	UBERON:0000468	multicellular organism	GO	GO:0040007	growth
@@ -1876,21 +1776,6 @@ Aop:363	Event:351	increased				MESH	D009026	mortality
 Aop:363	Event:360	decreased	PCO	PCO:0000001	population of organisms	PCO	PCO:0000008	population growth rate
 Aop:363	Event:1877	morphological change	UBERON	UBERON:0000966	retina	GO	GO:0010842	retina layer formation
 Aop:363	Event:1643	functional change	UBERON	UBERON:0000970	eye	VT	VT:0002090	vision trait
-Aop:364	Event:279	decreased	PR	PR:000016584	thyroid peroxidase	GO	GO:0004447	iodide peroxidase activity
-Aop:364	Event:277	decreased	CHEBI	CHEBI:60311	thyroid hormone	GO	GO:0006590	thyroid hormone generation
-Aop:364	Event:281	decreased	CHEBI	CHEBI:30660	thyroxine	MP	MP:0005475	abnormal circulating thyroxine level
-Aop:364	Event:1003	decreased	CHEBI	CHEBI:28774	3,3',5'-triiodothyronine	MP	MP:0005473	decreased triiodothyronine level
-Aop:364	Event:1878	decreased	UBERON	UBERON:0000970	eye	MP	MP:0001297	microphthalmia
-Aop:364	Event:351	increased				MESH	D009026	mortality
-Aop:364	Event:360	decreased	PCO	PCO:0000001	population of organisms	PCO	PCO:0000008	population growth rate
-Aop:364	Event:1643	functional change	UBERON	UBERON:0000970	eye	VT	VT:0002090	vision trait
-Aop:365	Event:279	decreased	PR	PR:000016584	thyroid peroxidase	GO	GO:0004447	iodide peroxidase activity
-Aop:365	Event:277	decreased	CHEBI	CHEBI:60311	thyroid hormone	GO	GO:0006590	thyroid hormone generation
-Aop:365	Event:281	decreased	CHEBI	CHEBI:30660	thyroxine	MP	MP:0005475	abnormal circulating thyroxine level
-Aop:365	Event:1003	decreased	CHEBI	CHEBI:28774	3,3',5'-triiodothyronine	MP	MP:0005473	decreased triiodothyronine level
-Aop:365	Event:351	increased				MESH	D009026	mortality
-Aop:365	Event:360	decreased	PCO	PCO:0000001	population of organisms	PCO	PCO:0000008	population growth rate
-Aop:365	Event:1643	functional change	UBERON	UBERON:0000970	eye	VT	VT:0002090	vision trait
 Aop:366	Event:957	increased	PR	PR:000016801	transthyretin	GO	GO:0005488	binding
 Aop:366	Event:959	increased	CHEBI	CHEBI:30660	thyroxine			
 Aop:366	Event:1158	increased	CHEBI	CHEBI:60311	thyroid hormone	GO	GO:0006810	transport
@@ -1958,26 +1843,6 @@ Aop:377	Event:177	functional change	GO	GO:0005739	mitochondrion
 Aop:377	Event:1846	increased	CL	CL:0000233	platelet	HP	HP:0004936	Venous thrombosis
 Aop:377	Event:1846	decreased				GO	GO:0042730	fibrinolysis
 Aop:377	Event:1846	increased	CHEBI	CHEBI:5054	Fibrin	GO	GO:0072378	blood coagulation, fibrin clot formation
-Aop:379	Event:1845	occurrence	UBERON	UBERON:0000178	blood	MP	MP:0002551	abnormal blood coagulation
-Aop:379	Event:1846	increased	CL	CL:0000233	platelet	HP	HP:0004936	Venous thrombosis
-Aop:379	Event:1846	decreased				GO	GO:0042730	fibrinolysis
-Aop:379	Event:1846	increased	CHEBI	CHEBI:5054	Fibrin	GO	GO:0072378	blood coagulation, fibrin clot formation
-Aop:379	Event:1847	increased	GO	GO:0031381	viral RNA-directed RNA polymerase complex	GO	GO:0039694	viral RNA genome replication
-Aop:379	Event:1847	increased	GO	GO:0031381	viral RNA-directed RNA polymerase complex	GO	GO:0039690	positive stranded viral RNA replication
-Aop:379	Event:1847	increased	GO	GO:0072516	viral assembly compartment	GO	GO:0019074	viral RNA genome packaging
-Aop:379	Event:1847	increased	GO	GO:0019024	ssRNA viral genome	GO	GO:0009299	mRNA transcription
-Aop:379	Event:1847	increased	GO	GO:0019024	ssRNA viral genome	GO	GO:0019081	viral translation
-Aop:379	Event:1738	occurrence	PR	PR:000016456	transmembrane protease serine 2	GO	GO:0061025	membrane fusion
-Aop:379	Event:1738	occurrence	PR	PR:P07711	cathepsin L1 (human)	GO	GO:0075509	endocytosis involved in viral entry into host cell
-Aop:379	Event:1738	occurrence	GO	GO:0019015	viral genome	GO	GO:0046718	viral entry into host cell
-Aop:379	Event:1738	occurrence	PR	PR:000036197	viral protein	GO	GO:0046718	viral entry into host cell
-Aop:379	Event:1869	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:0034599	cellular response to oxidative stress
-Aop:379	Event:1869	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:0000302	response to reactive oxygen species
-Aop:379	Event:1869	decreased				GO	GO:0034599	cellular response to oxidative stress
-Aop:379	Event:1739	occurrence	PR	PR:000003622	angiotensin-converting enzyme 2	GO	GO:0005102	receptor binding
-Aop:379	Event:1901	decreased	PR	PR:000024938	interferon alpha	GO	GO:0060337	type I interferon signaling pathway
-Aop:379	Event:1901	decreased	PR	PR:000024939	interferon beta	GO	GO:0060337	type I interferon signaling pathway
-Aop:379	Event:1901	occurrence	GO	GO:0019022	RNA viral genome	GO	GO:0071360	cellular response to exogenous dsRNA
 Aop:381	Event:1739	occurrence	PR	PR:000003622	angiotensin-converting enzyme 2	GO	GO:0005102	receptor binding
 Aop:382	Event:1496	increased	FMA	FMA:84050	Cytokine	GO	GO:0002534	cytokine production involved in inflammatory response
 Aop:382	Event:1496	increased	FMA	FMA:241981	Chemokine	GO	GO:0090195	chemokine secretion
@@ -2391,37 +2256,6 @@ Aop:456	Event:317	morphological change				MP	MP:0001544	abnormal cardiovascular 
 Aop:456	Event:317	abnormal	UBERON	UBERON:0004535	cardiovascular system	GO	GO:0072358	cardiovascular system development
 Aop:456	Event:947	increased				MP	MP:0008762	embryonic lethality
 Aop:456	Event:947	increased				MESH	D009026	mortality
-Aop:457	Event:2118	decreased				GO	GO:0000104	succinate dehydrogenase activity
-Aop:457	Event:2118	decreased	GO	GO:0045281	succinate dehydrogenase complex	GO	GO:0046443	FAD metabolic process
-Aop:457	Event:2118	decreased	GO	GO:0045281	succinate dehydrogenase complex	GO	GO:0006105	succinate metabolic process
-Aop:457	Event:2119	increased				HP	HP:0000855	Insulin resistance
-Aop:457	Event:281	decreased	CHEBI	CHEBI:30660	thyroxine	MP	MP:0005475	abnormal circulating thyroxine level
-Aop:457	Event:2120	increased	CHEBI	CHEBI:18421	superoxide	GO	GO:0022904	respiratory electron transport chain
-Aop:457	Event:277	decreased	CHEBI	CHEBI:60311	thyroid hormone	GO	GO:0006590	thyroid hormone generation
-Aop:457	Event:1392	increased				MP	MP:0003674	oxidative stress
-Aop:458	Event:18	increased	PR	PR:000003858	aryl hydrocarbon receptor	GO	GO:0004874	aryl hydrocarbon receptor activity
-Aop:458	Event:18	increased	PR	PR:000003858	aryl hydrocarbon receptor	GO	GO:0017162	aryl hydrocarbon receptor binding
-Aop:458	Event:295	increased	PR	PR:000001325	beta-1,3-glucuronyltransferase	GO	GO:0015020	glucuronosyltransferase activity
-Aop:458	Event:295	increased	PR	PR:000001325	beta-1,3-glucuronyltransferase	GO	GO:0003824	catalytic activity
-Aop:458	Event:961	increased	CHEBI	CHEBI:30660	thyroxine	GO	GO:0008152	metabolic process
-Aop:458	Event:281	decreased	CHEBI	CHEBI:30660	thyroxine	MP	MP:0005475	abnormal circulating thyroxine level
-Aop:458	Event:280	decreased	CHEBI	CHEBI:30660	thyroxine	GO	GO:0010817	regulation of hormone levels
-Aop:458	Event:756	abnormal	UBERON	UBERON:0002421	hippocampal formation	GO	GO:0010468	regulation of gene expression
-Aop:458	Event:758	abnormal	GO	GO:0045202	synapse	GO	GO:0007268	chemical synaptic transmission
-Aop:458	Event:402	decreased				GO	GO:0007611	learning or memory
-Aop:458	Event:402	decreased				GO	GO:0050890	cognition
-Aop:459	Event:18	increased	PR	PR:000003858	aryl hydrocarbon receptor	GO	GO:0004874	aryl hydrocarbon receptor activity
-Aop:459	Event:18	increased	PR	PR:000003858	aryl hydrocarbon receptor	GO	GO:0017162	aryl hydrocarbon receptor binding
-Aop:459	Event:850	increased	PR	PR:000006102	cytochrome P450 1A2	GO	GO:0010467	gene expression
-Aop:459	Event:850	increased	PR	PR:P79761	cytochrome P450 1A5 (chicken)	GO	GO:0010467	gene expression
-Aop:459	Event:277	decreased	CHEBI	CHEBI:60311	thyroid hormone	GO	GO:0006590	thyroid hormone generation
-Aop:459	Event:281	decreased	CHEBI	CHEBI:30660	thyroxine	MP	MP:0005475	abnormal circulating thyroxine level
-Aop:459	Event:280	decreased	CHEBI	CHEBI:30660	thyroxine	GO	GO:0010817	regulation of hormone levels
-Aop:459	Event:756	abnormal	UBERON	UBERON:0002421	hippocampal formation	GO	GO:0010468	regulation of gene expression
-Aop:459	Event:758	abnormal	GO	GO:0045202	synapse	GO	GO:0007268	chemical synaptic transmission
-Aop:459	Event:402	decreased				GO	GO:0007611	learning or memory
-Aop:459	Event:402	decreased				GO	GO:0050890	cognition
-Aop:459	Event:1392	increased				MP	MP:0003674	oxidative stress
 Aop:460	Event:2027	decreased	PR	PR:000015288	smoothened	GO	GO:0010469	regulation of receptor activity
 Aop:460	Event:2028	decreased	PR	PR:000008026	zinc finger protein GLI1	GO	GO:0000060	protein import into nucleus, translocation
 Aop:460	Event:2028	decreased	PR	PR:000008027	zinc finger protein GLI2	GO	GO:0000060	protein import into nucleus, translocation
@@ -2535,22 +2369,6 @@ Aop:474	Event:2118	decreased	GO	GO:0045281	succinate dehydrogenase complex	GO	GO
 Aop:474	Event:2118	decreased	GO	GO:0045281	succinate dehydrogenase complex	GO	GO:0006105	succinate metabolic process
 Aop:474	Event:1457	occurrence	FMA	FMA:66768	Epithelial cell	GO	GO:0001837	epithelial to mesenchymal transition
 Aop:474	Event:885	increased	MESH	D009369	Neoplasms			
-Aop:475	Event:875	increased	GO	GO:0008328	ionotropic glutamate receptor complex	GO	GO:0004970	ionotropic glutamate receptor activity
-Aop:475	Event:388	increased	GO	GO:0017146	NMDA selective glutamate receptor complex	GO	GO:0004972	NMDA glutamate receptor activity
-Aop:475	Event:388	morphological change	GO	GO:0032591	dendritic spine membrane	MP	MP:0011267	abnormal excitatory postsynaptic current amplitude
-Aop:475	Event:2078	decreased	PR	PR:000006296	drebrin	GO	GO:0098974	postsynaptic actin cytoskeleton organization
-Aop:475	Event:2078	decreased	GO	GO:0015629	actin cytoskeleton	GO	GO:0060997	dendritic spine morphogenesis
-Aop:475	Event:2078	increased	GO	GO:0015629	actin cytoskeleton	GO	GO:1904621	regulation of actin-dependent ATPase activity
-Aop:475	Event:1944	decreased	CL	CL:0000117	CNS neuron (sensu Vertebrata)	MP	MP:0003990	decreased neurotransmitter release
-Aop:475	Event:1944	increased	CL	CL:0000117	CNS neuron (sensu Vertebrata)	MP	MP:0002916	increased synaptic depression
-Aop:475	Event:341	decreased				GO	GO:0007612	learning
-Aop:475	Event:341	decreased				GO	GO:0007613	memory
-Aop:475	Event:389	increased	CHEBI	CHEBI:39124	calcium ion	GO	GO:0006816	calcium ion transport
-Aop:475	Event:386	decreased				GO	GO:0099536	synaptic signaling
-Aop:475	Event:2242	pathological	GO	GO:0098871	postsynaptic actin cytoskeleton	GO	GO:0031914	negative regulation of synaptic plasticity
-Aop:475	Event:2242	decreased	PR	PR:000006296	drebrin	HP	HP:0000726	Dementia
-Aop:475	Event:2242	decreased	PR	PR:000006296	drebrin	GO	GO:0060292	long term synaptic depression
-Aop:475	Event:2242	increased	PR	PR:000006296	drebrin	MP	MP:0002207	abnormal long term potentiation
 Aop:476	Event:1115	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:1903409	reactive oxygen species biosynthetic process
 Aop:476	Event:1194	functional change	CHEBI	CHEBI:16991	deoxyribonucleic acid			
 Aop:476	Event:496	increased				GO	GO:0006915	apoptotic process
@@ -2687,7 +2505,6 @@ Aop:497	Event:1115	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:190
 Aop:497	Event:177	functional change	GO	GO:0005739	mitochondrion			
 Aop:497	Event:2119	increased				HP	HP:0000855	Insulin resistance
 Aop:497	Event:1392	increased				MP	MP:0003674	oxidative stress
-Aop:498	Event:191	increased				GO	GO:0036475	neuron death in response to oxidative stress
 Aop:499	Event:2146	increased	CL	CL:0000127	astrocyte	GO	GO:0016301	kinase activity
 Aop:499	Event:1339	increased	CHEBI	CHEBI:29108	calcium(2+)	VT	VT:0010499	calcium amount
 Aop:499	Event:341	decreased				GO	GO:0007612	learning
@@ -2701,8 +2518,6 @@ Aop:500	Event:352	increased				MP	MP:0002229	neurodegeneration
 Aop:500	Event:1115	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:1903409	reactive oxygen species biosynthetic process
 Aop:500	Event:1262	increased				GO	GO:0006915	apoptotic process
 Aop:500	Event:177	functional change	GO	GO:0005739	mitochondrion			
-Aop:501	Event:386	decreased				GO	GO:0099536	synaptic signaling
-Aop:501	Event:1392	increased				MP	MP:0003674	oxidative stress
 Aop:502	Event:2042	increased				HP	HP:0000175	Cleft palate
 Aop:502	Event:2042	increased				MP	MP:0005170	cleft upper lip
 Aop:502	Event:2041	increased	UBERON	UBERON:0005620	primary palate	MP	MP:0009888	palatal shelves fail to meet at midline
@@ -2729,21 +2544,6 @@ Aop:505	Event:1392	increased				MP	MP:0003674	oxidative stress
 Aop:505	Event:149	increased				GO	GO:0006954	inflammatory response
 Aop:505	Event:1513	increased				MP	MP:0006042	increased apoptosis
 Aop:505	Event:885	increased	MESH	D009369	Neoplasms			
-Aop:506	Event:2158	occurrence				GO	GO:0005102	receptor binding
-Aop:506	Event:2159	occurrence	GO	GO:0030665	clathrin-coated vesicle membrane	GO	GO:0036010	protein localization to endosome
-Aop:506	Event:2159	occurrence	PR	PR:000049750	influenzavirus hemagglutinin	GO	GO:0006898	receptor-mediated endocytosis
-Aop:506	Event:2159	occurrence	GO	GO:0012506	vesicle membrane	GO	GO:0061025	membrane fusion
-Aop:506	Event:2180	decreased	PR	PR:000044794	influenzavirus NS gene translation product	GO	GO:0034154	toll-like receptor 7 signaling pathway
-Aop:506	Event:2180	decreased	PR	PR:000044794	influenzavirus NS gene translation product	GO	GO:0034138	toll-like receptor 3 signaling pathway
-Aop:506	Event:2180	occurrence				GO	GO:0046775	suppression by virus of host cytokine production
-Aop:506	Event:2180	occurrence				GO	GO:0009616	virus induced gene silencing
-Aop:506	Event:2180	occurrence				GO	GO:0075528	modulation by virus of host immune response
-Aop:506	Event:2192	occurrence	GO	GO:0031381	viral RNA-directed RNA polymerase complex	GO	GO:0006606	protein import into nucleus
-Aop:506	Event:2192	occurrence	GO	GO:0019017	segmented viral genome	GO	GO:0001172	transcription, RNA-templated
-Aop:506	Event:2192	occurrence				GO	GO:0046784	viral mRNA export from host cell nucleus
-Aop:506	Event:2192	occurrence				GO	GO:0019075	virus maturation
-Aop:506	Event:2193	occurrence				GO	GO:0046761	viral budding from plasma membrane
-Aop:506	Event:2194	occurrence				GO	GO:0019089	transmission of virus
 Aop:507	Event:1392	increased				MP	MP:0003674	oxidative stress
 Aop:509	Event:177	functional change	GO	GO:0005739	mitochondrion			
 Aop:509	Event:1392	increased				MP	MP:0003674	oxidative stress
@@ -2773,8 +2573,6 @@ Aop:518	Event:2199	increased				GO	GO:0010467	gene expression
 Aop:518	Event:89	increased	CHEBI	CHEBI:35366	fatty acid	GO	GO:0006633	fatty acid biosynthetic process
 Aop:518	Event:291	increased	CHEBI	CHEBI:17855	triglyceride			
 Aop:518	Event:459	increased				HP	HP:0001397	Hepatic steatosis
-Aop:520	Event:341	decreased				GO	GO:0007612	learning
-Aop:520	Event:341	decreased				GO	GO:0007613	memory
 Aop:521	Event:1115	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:1903409	reactive oxygen species biosynthetic process
 Aop:521	Event:1392	increased				MP	MP:0003674	oxidative stress
 Aop:521	Event:1445	increased	CHEBI	CHEBI:26208	polyunsaturated fatty acid	GO	GO:0034440	lipid oxidation
@@ -2782,9 +2580,6 @@ Aop:521	Event:2206	increased	FMA	FMA:7210	Testis	HP	HP:0000035	Abnormality of th
 Aop:521	Event:1758	abnormal	FMA	FMA:67338	Mature sperm cell	HP	HP:0008669	Abnormal spermatogenesis
 Aop:521	Event:2147	decreased				GO	GO:0019953	sexual reproduction
 Aop:521	Event:2147	decreased				VT	VT:1000181	viable offspring quantity
-Aop:522	Event:112	decreased	PR	PR:000007204	estrogen receptor	GO	GO:0030284	estrogen receptor activity
-Aop:522	Event:195	decreased	GO	GO:0017146	NMDA selective glutamate receptor complex	GO	GO:0004972	NMDA glutamate receptor activity
-Aop:522	Event:386	decreased				GO	GO:0099536	synaptic signaling
 Aop:524	Event:2252	occurrence	FMA	FMA:84795	Human leukocyte antigen complex	VT	VT:0001835	antigen presentation trait
 Aop:524	Event:2253	occurrence	GO	GO:0042105	alpha-beta T cell receptor complex	GO	GO:0035822	gene conversion
 Aop:524	Event:2254	occurrence	GO	GO:0019815	B cell receptor complex	GO	GO:0002206	gene conversion of immunoglobulin genes
@@ -2795,8 +2590,6 @@ Aop:524	Event:2257	pathological	CL	CL:0002563	intestinal epithelial cell	HP	HP:0
 Aop:524	Event:2260	occurrence	CL	CL:0000084	T cell	GO	GO:0002286	T cell activation involved in immune response
 Aop:524	Event:2275	occurrence	CL	CL:0000084	T cell	GO	GO:0072678	T cell migration
 Aop:524	Event:2275	occurrence	CL	CL:0000145	professional antigen presenting cell	GO	GO:0036336	dendritic cell migration
-Aop:525	Event:341	decreased				GO	GO:0007612	learning
-Aop:525	Event:341	decreased				GO	GO:0007613	memory
 Aop:526	Event:656	decreased	PR	PR:000011405	COUP transcription factor 2	GO	GO:0035624	receptor transactivation
 Aop:526	Event:647	decreased				GO	GO:0050810	regulation of steroid biosynthetic process
 Aop:526	Event:1690	decreased	CHEBI	CHEBI:17347	testosterone	GO	GO:0042446	hormone biosynthetic process
@@ -2824,12 +2617,6 @@ Aop:530	Event:177	functional change	GO	GO:0005739	mitochondrion
 Aop:530	Event:55	increased				GO	GO:0008219	cell death
 Aop:530	Event:1931	disrupted	CL	CL:0000073	barrier epithelial cell			
 Aop:530	Event:898	occurrence	GO	GO:0005764	lysosome	GO	GO:1903008	organelle disassembly
-Aop:533	Event:1239	abnormal				GO	GO:0010467	gene expression
-Aop:533	Event:851	abnormal				MP	MP:0002882	abnormal neuron morphology
-Aop:533	Event:385	decreased	GO	GO:0045202	synapse	GO	GO:0007416	synapse assembly
-Aop:533	Event:386	decreased				GO	GO:0099536	synaptic signaling
-Aop:533	Event:341	decreased				GO	GO:0007612	learning
-Aop:533	Event:341	decreased				GO	GO:0007613	memory
 Aop:534	Event:2118	decreased				GO	GO:0000104	succinate dehydrogenase activity
 Aop:534	Event:2118	decreased	GO	GO:0045281	succinate dehydrogenase complex	GO	GO:0046443	FAD metabolic process
 Aop:534	Event:2118	decreased	GO	GO:0045281	succinate dehydrogenase complex	GO	GO:0006105	succinate metabolic process
@@ -2901,8 +2688,6 @@ Aop:546	Event:2118	decreased	GO	GO:0045281	succinate dehydrogenase complex	GO	GO
 Aop:546	Event:798	decreased	MESH	D064828	Prolyl hydroxylases	GO	GO:0003824	catalytic activity
 Aop:546	Event:590	decreased				MP	MP:0005039	hypoxia
 Aop:546	Event:885	increased	MESH	D009369	Neoplasms			
-Aop:547	Event:2274	increased	PR	PR:000004191	androgen receptor	GO	GO:0060765	regulation of androgen receptor signaling pathway
-Aop:547	Event:25	increased	PR	PR:000004191	androgen receptor	GO	GO:0004882	androgen receptor activity
 Aop:548	Event:239	increased	PR	PR:000011397	nuclear receptor subfamily 1 group I member 2	GO	GO:0023052	signaling
 Aop:548	Event:2268	decreased	PR	PR:000009056	insulin-induced gene 1 protein	MP	MP:0005567	decreased circulating total protein level
 Aop:548	Event:2269	increased	PR	PR:000015612	sterol regulatory element-binding protein 2	MP	MP:0005568	increased circulating total protein level
@@ -2917,10 +2702,6 @@ Aop:549	Event:309	decreased				GO	GO:0048599	oocyte development
 Aop:549	Event:78	decreased				VT	VT:1000294	egg quantity
 Aop:549	Event:442	decreased				PCO	PCO:0000008	population growth rate
 Aop:550	Event:1535	occurrence	UBERON	UBERON:0000948	heart	HP	HP:0001695	Cardiac arrest
-Aop:551	Event:1106	increased	MESH	D001145	Arrhythmias, Cardiac			
-Aop:551	Event:1602	increased	PR	PR:000001488	muscarinic acetylcholine receptor	GO	GO:0031789	G-protein coupled acetylcholine receptor binding
-Aop:551	Event:1098	increased	CHEBI	CHEBI:26216	potassium atom			
-Aop:551	Event:1983	disrupted				GO	GO:0001508	action potential
 Aop:552	Event:698	abnormal				GO	GO:0001508	action potential
 Aop:552	Event:1535	occurrence	UBERON	UBERON:0000948	heart	HP	HP:0001695	Cardiac arrest
 Aop:553	Event:584	decreased	PR	PR:000002095	sodium channel protein type 1 subunit alpha	GO	GO:0019871	sodium channel inhibitor activity
@@ -2942,7 +2723,6 @@ Aop:559	Event:12	decreased	PR	PR:000003626	acetylcholinesterase	GO	GO:0003990	ac
 Aop:559	Event:1602	increased	PR	PR:000001488	muscarinic acetylcholine receptor	GO	GO:0031789	G-protein coupled acetylcholine receptor binding
 Aop:559	Event:698	abnormal				GO	GO:0001508	action potential
 Aop:559	Event:1106	increased	MESH	D001145	Arrhythmias, Cardiac			
-Aop:560	Event:1106	increased	MESH	D001145	Arrhythmias, Cardiac			
 Aop:561	Event:2293	increased	PR	PR:000006100	aromatase	GO	GO:0070330	aromatase activity
 Aop:561	Event:1076	increased	CHEBI	CHEBI:50114	estrogen			
 Aop:561	Event:2251	increased	CHEBI	CHEBI:23965	estradiol			
@@ -3024,10 +2804,6 @@ Aop:577	Event:149	increased				GO	GO:0006954	inflammatory response
 Aop:578	Event:18	increased	PR	PR:000003858	aryl hydrocarbon receptor	GO	GO:0004874	aryl hydrocarbon receptor activity
 Aop:578	Event:18	increased	PR	PR:000003858	aryl hydrocarbon receptor	GO	GO:0017162	aryl hydrocarbon receptor binding
 Aop:578	Event:1971	increased	GO	GO:0070531	BRCA1-A complex	HP	HP:0003002	Breast carcinoma
-Aop:580	Event:291	increased	CHEBI	CHEBI:17855	triglyceride			
-Aop:581	Event:122	increased	PR	PR:000011406	glucocorticoid receptor	GO	GO:0004883	glucocorticoid receptor activity
-Aop:581	Event:402	decreased				GO	GO:0007611	learning or memory
-Aop:581	Event:402	decreased				GO	GO:0050890	cognition
 Aop:587	Event:177	functional change	GO	GO:0005739	mitochondrion			
 Aop:587	Event:890	increased				MP	MP:0003244	loss of dopaminergic neurons
 Aop:587	Event:896	occurrence	MESH	D020734	Parkinsonian disorders			
@@ -3059,26 +2835,6 @@ Aop:593	Event:2363	functional change	GO	GO:0005739	mitochondrion
 Aop:593	Event:890	increased				MP	MP:0003244	loss of dopaminergic neurons
 Aop:593	Event:896	occurrence	MESH	D020734	Parkinsonian disorders			
 Aop:593	Event:889	abnormal	CHEBI	CHEBI:36080	protein	MESH	D057165	Proteostasis deficiencies
-Aop:594	Event:1238	increased	GO	GO:0005886	plasma membrane	GO	GO:0055114	oxidation-reduction process
-Aop:594	Event:1238	increased	PR	PR:000000001	protein	GO	GO:0055114	oxidation-reduction process
-Aop:594	Event:1238	increased	CHEBI	CHEBI:16991	deoxyribonucleic acid	GO	GO:0055114	oxidation-reduction process
-Aop:594	Event:1288	decreased	PR	PR:000008774	3-hydroxyacyl-CoA dehydrogenase type-2	GO	GO:0003857	3-hydroxyacyl-CoA dehydrogenase activity
-Aop:594	Event:1277	decreased				GO	GO:0000003	reproduction
-Aop:595	Event:112	decreased	PR	PR:000007204	estrogen receptor	GO	GO:0030284	estrogen receptor activity
-Aop:595	Event:1115	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:1903409	reactive oxygen species biosynthetic process
-Aop:595	Event:26	decreased	PR	PR:000004191	androgen receptor	GO	GO:0004882	androgen receptor activity
-Aop:595	Event:1392	increased				MP	MP:0003674	oxidative stress
-Aop:595	Event:1262	increased				GO	GO:0006915	apoptotic process
-Aop:595	Event:177	functional change	GO	GO:0005739	mitochondrion			
-Aop:595	Event:495	decreased	CHEBI	CHEBI:17347	testosterone	GO	GO:0042446	hormone biosynthetic process
-Aop:595	Event:1690	decreased	CHEBI	CHEBI:17347	testosterone	GO	GO:0042446	hormone biosynthetic process
-Aop:595	Event:1690	decreased	CHEBI	CHEBI:17347	testosterone	GO	GO:0061370	testosterone biosynthetic process
-Aop:595	Event:1758	abnormal	FMA	FMA:67338	Mature sperm cell	HP	HP:0008669	Abnormal spermatogenesis
-Aop:595	Event:520	decreased				VT	VT:0002673	sperm quantity
-Aop:595	Event:520	morphological change	CL	CL:0000019	sperm			
-Aop:595	Event:520	decreased	MESH	D005298	fertility			
-Aop:595	Event:520	decreased	CL	CL:0000019	sperm			
-Aop:595	Event:3	decreased	CHEBI	CHEBI:16469	17beta-estradiol	GO	GO:0006703	estrogen biosynthetic process
 Aop:596	Event:1115	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:1903409	reactive oxygen species biosynthetic process
 Aop:596	Event:1392	increased				MP	MP:0003674	oxidative stress
 Aop:596	Event:1446	increased	GO	GO:0005739	mitochondrion	GO	GO:1901691	proton binding
@@ -3125,9 +2881,6 @@ Aop:603	Event:1392	increased				MP	MP:0003674	oxidative stress
 Aop:603	Event:1505	disrupted	PR	PR:000029191	cell cycle-related cyclin	GO	GO:0051726	regulation of cell cycle
 Aop:603	Event:1821	decreased	GO	GO:0005623	cell	GO	GO:0008283	cell proliferation
 Aop:603	Event:1521	decreased	UBERON	UBERON:0000468	multicellular organism	GO	GO:0040007	growth
-Aop:604	Event:2370	decreased	PR	PR:000001183	alpha-1A adrenergic receptor	GO	GO:0007186	G-protein coupled receptor signaling pathway
-Aop:604	Event:2371	increased				GO	GO:0043043	peptide biosynthetic process
-Aop:604	Event:2371	occurrence				GO	GO:0005102	receptor binding
 Aop:605	Event:279	decreased	PR	PR:000016584	thyroid peroxidase	GO	GO:0004447	iodide peroxidase activity
 Aop:605	Event:277	decreased	CHEBI	CHEBI:60311	thyroid hormone	GO	GO:0006590	thyroid hormone generation
 Aop:605	Event:281	decreased	CHEBI	CHEBI:30660	thyroxine	MP	MP:0005475	abnormal circulating thyroxine level
@@ -3139,11 +2892,6 @@ Aop:606	Event:1522	decreased				GO	GO:0004100	chitin synthase activity
 Aop:606	Event:1523	decreased	UBERON	UBERON:0001002	cuticle	GO	GO:0042335	cuticle development
 Aop:606	Event:1524	decreased				GO	GO:0018990	ecdysis, chitin-based cuticle
 Aop:606	Event:350	increased				MESH	D009026	mortality
-Aop:608	Event:1392	increased				MP	MP:0003674	oxidative stress
-Aop:608	Event:1115	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:1903409	reactive oxygen species biosynthetic process
-Aop:608	Event:1005	decreased				NBO	NBO:0000371	aquatic locomotion
-Aop:608	Event:351	increased				MESH	D009026	mortality
-Aop:608	Event:360	decreased	PCO	PCO:0000001	population of organisms	PCO	PCO:0000008	population growth rate
 Aop:609	Event:1065	increased	PR	PR:000027727	estrogen receptor alpha complex	GO	GO:0030520	intracellular estrogen receptor signaling pathway
 Aop:609	Event:1065	increased	PR	PR:000027727	estrogen receptor alpha complex	GO	GO:0030284	estrogen receptor activity
 Aop:609	Event:968	decreased	CHEBI	CHEBI:80304	Metastin	GO	GO:0007269	neurotransmitter secretion
@@ -3151,17 +2899,6 @@ Aop:609	Event:530	decreased	MESH	D007987	Gonadotropin Releasing Hormone	GO	GO:00
 Aop:609	Event:1986	decreased	UBERON	UBERON:0001009	circulatory system	HP	HP:0030339	Decreased circulating gonadotropin level
 Aop:609	Event:1075	increased				MP	MP:0009006	prolonged estrous cycle
 Aop:609	Event:1075	increased				MP	MP:0009017	prolonged estrus
-Aop:610	Event:2258	decreased	PR	PR:000014950	monocarboxylate transporter 8	GO	GO:0070327	thyroid hormone transport
-Aop:610	Event:1505	disrupted	PR	PR:000029191	cell cycle-related cyclin	GO	GO:0051726	regulation of cell cycle
-Aop:610	Event:1002	decreased	PR	PR:000006481	type II iodothyronine deiodinase	GO	GO:0003824	catalytic activity
-Aop:610	Event:2266	increased				MP	MP:0000921	demyelination
-Aop:610	Event:2266	increased				HP	HP:0007305	CNS demyelination
-Aop:610	Event:386	decreased				GO	GO:0099536	synaptic signaling
-Aop:610	Event:381	decreased	PR	PR:000004716	brain-derived neurotrophic factor	GO	GO:0010467	gene expression
-Aop:610	Event:381	decreased	PR	PR:000004716	brain-derived neurotrophic factor	GO	GO:0046903	secretion
-Aop:610	Event:385	decreased	GO	GO:0045202	synapse	GO	GO:0007416	synapse assembly
-Aop:610	Event:341	decreased				GO	GO:0007612	learning
-Aop:610	Event:341	decreased				GO	GO:0007613	memory
 Aop:611	Event:746	increased				GO	GO:0001963	synaptic transmission, dopaminergic
 Aop:611	Event:602	increased				MP	MP:0001393	ataxia
 Aop:611	Event:602	increased				MP	MP:0001399	hyperactivity
@@ -3189,14 +2926,6 @@ Aop:614	Event:948	decreased	PR	PR:000017284	vascular endothelial growth factor A
 Aop:614	Event:28	decreased				GO	GO:0001525	angiogenesis
 Aop:614	Event:947	increased				MP	MP:0008762	embryonic lethality
 Aop:614	Event:947	increased				MESH	D009026	mortality
-Aop:615	Event:902	occurrence				MP	MP:0001860	liver inflammation
-Aop:615	Event:1445	increased	CHEBI	CHEBI:26208	polyunsaturated fatty acid	GO	GO:0034440	lipid oxidation
-Aop:616	Event:1392	increased				MP	MP:0003674	oxidative stress
-Aop:616	Event:2363	functional change	GO	GO:0005739	mitochondrion			
-Aop:616	Event:1262	increased				GO	GO:0006915	apoptotic process
-Aop:616	Event:363	abnormal				GO	GO:0019098	reproductive behavior
-Aop:616	Event:364	abnormal	UBERON	UBERON:0003133	reproductive organ	GO	GO:0032502	developmental process
-Aop:616	Event:971	abnormal				GO	GO:0042698	ovulation cycle
 Aop:618	Event:202	decreased	PR	PR:000001753	transcription factor NF-kappa-B subunit	GO	GO:0007249	I-kappaB kinase/NF-kappaB signaling
 Aop:618	Event:1028	decreased	PR	PR:000013058	peroxisome proliferator-activated receptor gamma	GO	GO:0035357	peroxisome proliferator activated receptor signaling pathway
 Aop:619	Event:26	decreased	PR	PR:000004191	androgen receptor	GO	GO:0004882	androgen receptor activity
@@ -3276,11 +3005,6 @@ Aop:629	Event:134	increased	CL	CL:0000091	Kupffer cell	GO	GO:0042116	macrophage 
 Aop:629	Event:265	increased	CL	CL:0000632	hepatic stellate cell	GO	GO:0035733	hepatic stellate cell activation
 Aop:629	Event:68	increased	CHEBI	CHEBI:3815	collagen	GO	GO:0032964	collagen biosynthetic process
 Aop:629	Event:344	occurrence	UBERON	UBERON:0002107	liver	MP	MP:0003333	liver fibrosis
-Aop:636	Event:1115	increased	CHEBI	CHEBI:26523	reactive oxygen species	GO	GO:1903409	reactive oxygen species biosynthetic process
-Aop:636	Event:177	functional change	GO	GO:0005739	mitochondrion			
-Aop:636	Event:188	pathological	CL	CL:0000129	microglial cell	MP	MP:0001847	brain inflammation
-Aop:636	Event:188	pathological	CL	CL:0000127	astrocyte	MP	MP:0001847	brain inflammation
-Aop:636	Event:386	decreased				GO	GO:0099536	synaptic signaling
 Aop:637	Event:1065	increased	PR	PR:000027727	estrogen receptor alpha complex	GO	GO:0030520	intracellular estrogen receptor signaling pathway
 Aop:637	Event:1065	increased	PR	PR:000027727	estrogen receptor alpha complex	GO	GO:0030284	estrogen receptor activity
 Aop:637	Event:1985	increased	CHEBI	CHEBI:80304	Metastin	GO	GO:0007269	neurotransmitter secretion
