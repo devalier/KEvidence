@@ -19,6 +19,8 @@ KEvidence turns AOP-Wiki data into a workflow-oriented risk assessment interface
 
 The workbench then supports **uncertainty analysis** (confidence summaries, key uncertainties, critical data gaps, recommended next data) and a **scientific opinion draft** that can be refined with the Evidence Assistant and handed to risk managers.
 
+At the end, **publication — sanitisation** prepares documents for publication under the Transparency Regulation: confidential information and personal data are masked according to EFSA's practical arrangements concerning transparency and confidentiality.
+
 > **Hazard is not risk.** Hazard is the intrinsic potential for harm; risk is that hazard under actual exposure conditions. KEvidence keeps the two separate and does not make risk-management decisions.
 
 ---
@@ -46,6 +48,23 @@ Assists EFSA scientific officers with the characterisation section of a feed add
 - **Limits:** scanned PDFs need OCR first; dossier portals rendered by JavaScript (e.g. Open EFSA) cannot be read by URL — download and upload the documents. Production-strain characterisation (§2.2.1.2, §2.2.2.2; FEEDAP microorganism guidance, EFSA Journal 2018;16(3):5206) is out of scope; fermentation-related impurity requirements of §2.1.4 are included.
 
 A fictional, deliberately incomplete demo dossier is provided at `static/samples/characterisation_demo_dossier.md` (also linked from the in-app *Guide & questions* tab).
+
+### Publication — sanitisation under the Transparency Regulation
+
+Regulation (EU) 2019/1381 amended the General Food Law (Regulation (EC) No 178/2002, Art. 38-39e): EFSA proactively publishes the documents supporting its scientific outputs, with confidential information and personal data masked. KEvidence prepares the non-confidential version of a PDF.
+
+- **Rules:** EFSA's *Decision of the Executive Director laying down practical arrangements concerning transparency and confidentiality* (ver. 2, 18.01.2021, applicable from 27 March 2021), bundled unmodified at `data/guidance/transparency/` and served at `/api/sanitisation/rules.pdf`. The catalogue (`efsa_2021_pa_transparency_confidentiality_rules.json`) encodes the definition of sanitisation (Art. 3(1)(c)), the personal-data rule for non-confidential versions (Art. 4(5)), publication of updated versions (Art. 6), the closed list and minimum content of requests (Art. 9(4), 10), blackening (Art. 13(2)), review where foreseeable health effects are concerned (Art. 14) and non-disclosure pending decisions (Art. 16(3)), plus the **Annex closed list by sector**: (a) General Food Law, (b) GM food/feed, (c) feed additives, (d) smoke flavourings, (e) food contact materials, (f) food additives/enzymes/flavourings, (g) plant protection products, (h) novel foods. Every rule quotes the decision verbatim; `tests/test_sanitisation.py` fails if a quote, page or anchor drifts. The sector defaults from the domain (`transparency_sector` in `domains.json`; feed → (c)).
+- **Input:** one PDF (confidential), the sector, the applicant's name and address (public under Art. 39e(1)(a)), and optionally the items of the confidentiality request or decision, one per line (`text | legal basis`).
+- **Proposals** (each with its rule, legal basis, reason and boxes on the page):
+  - *personal data*, selected by default — names with study roles or titles, e-mails, phone numbers, signature images; study personnel of GLP/animal studies under Art. 39e(2), others under Art. 39e(1)/Art. 4(5); street addresses proposed but not selected (personal or organisational?);
+  - *request/decision items*, located verbatim and selected;
+  - *Annex candidates* — sentences matching an Annex item of the sector (manufacturing process, commercial links, sourcing/market share, quantitative composition, efficacy study plan, impurity specifications, ...) — **not** selected: they are masked only if claimed or granted, and never if relevant to the safety assessment.
+  - Exceptions are applied: the applicant's name and address and authors in reference lists are never proposed.
+- **AI review (optional, per request):** sends the page text to the OpenAI API to find personal data and Annex items the rules miss and to locate request items described in words. Every AI finding must name a rule that applies to the sector and its text must be found on the cited page; otherwise it is rejected and counted. Findings the AI marks as relevant to the safety assessment are flagged and left unselected. Off unless ticked.
+- **Review:** page previews with the boxes overlaid and a list; click to toggle; bulk actions; "mask more text" finds every occurrence of a string.
+- **Output:** true redaction with PyMuPDF (the text, image pixels and links under each box are removed from the file, not covered), optional legal-basis label in each box; all comments, form fields, mailto links, attachments, JavaScript, document metadata and XMP removed; the file is rewritten (no incremental update). The output is re-read to **verify** that the masked text is gone from the pages where it was masked, and copies left elsewhere are reported. A sanitisation record (Markdown) lists every masked item with its legal basis — it contains the masked text and is confidential.
+- **Limits:** pages without a text layer (scans) cannot be analysed — OCR first; text in images other than signatures is not detected; the decision on confidentiality stays with EFSA (Art. 11 of the arrangements). PyMuPDF is AGPL-3.0; combined with this GPL-3.0 project, network users of a modified deployment must be offered its source.
+- A fictional demo study report is at `static/samples/sanitisation_demo_study_report.pdf` (generated by `scripts/make_sanitisation_demo.py`).
 
 ### AOP-Wiki knowledge base
 
@@ -116,6 +135,7 @@ The Evidence Assistant uses structured workbench context when answering question
 ├── server.py                         # FastAPI backend and risk assessment logic
 ├── docx_export.py                    # Markdown → Word (.docx) for the step 0 output
 ├── characterisation.py               # Step 0: document ingestion, guidance-grounded characterisation and gap analysis
+├── sanitisation.py                   # Publication: proposals, redaction and verification under the Transparency Regulation
 ├── static/index.html                 # Single-page workbench UI
 ├── requirements.txt                  # Python dependencies
 ├── scripts/
@@ -123,9 +143,11 @@ The Evidence Assistant uses structured workbench context when answering question
 │   └── import_epa_bioactivity.py      # EPA ToxCast/Tox21/ToxRefDB-style importer
 ├── tests/
 │   └── test_characterisation.py       # Grounding guard (quotes/anchors vs guidance PDF) and step 0 behaviour
+│   └── test_sanitisation.py           # Rules grounding, detection, AI validation, redaction and verification
 ├── data/
 │   ├── guidance/
 │   │   ├── domains.json                                 # Domain registry (id, label, directory, sources)
+│   │   ├── transparency/                                # EFSA practical arrangements on transparency & confidentiality (PDF + rules catalogue)
 │   │   └── feed/                                        # Everything grounding the feed-additive domain
 │   │       ├── efsa_2017_5023.pdf                       # FEEDAP guidance on identity/characterisation (CC BY-ND 4.0, unmodified)
 │   │       ├── feedap_2017_5023_chemical_requirements.json  # Requirement catalogue with verbatim quotes
@@ -284,6 +306,11 @@ export BIOACTIVITY_SQLITE_PATH="/path/to/bioactivity.db"
 | `/api/characterisation/guidance.pdf?domain=&source=` | GET | A bundled guidance PDF of the domain (`source` = catalogue id; default the primary). |
 | `/api/characterisation/guidance.pdf` | GET | The bundled FEEDAP guidance PDF (unmodified). |
 | `/api/characterisation/analyse` | POST | Multipart: `files` (repeatable), `urls` (newline-separated), `meta` (JSON: `product_name`, `applicant`, `dossier_ref`, `authorisation`, `product_form`, `routes`, `production_types`, `additive_type`, `formulations`, `components`), `allow_external_llm`, `domain`. Returns requirement evaluations, gap summary and `markdown`. |
+| `/api/sanitisation/rules?sector=&domain=` | GET | Rules of EFSA's practical arrangements, their grounding status, and which apply to the sector (Annex a-h). |
+| `/api/sanitisation/rules.pdf` | GET | The bundled EFSA decision (unmodified). |
+| `/api/sanitisation/analyse` | POST | Multipart: `file` (PDF), `sector`, `domain`, `applicant`, `applicant_address`, `requests` (lines `text \| basis`), `allow_external_llm`. Returns proposals with rule, legal basis and boxes, page previews, warnings. |
+| `/api/sanitisation/locate` | POST | Multipart: `file`, `text`, `basis`, `sector`. Every occurrence of a text, as proposals. |
+| `/api/sanitisation/apply` | POST | Multipart: `file`, `redactions` (JSON list of `{page, rects, text, label, ...}`), `label_boxes`, `sector`. Returns the sanitised PDF (base64), the verification report and the sanitisation record. |
 
 ---
 
@@ -354,7 +381,7 @@ Important limitations:
 Recommended checks before opening a pull request:
 
 ```bash
-python -m py_compile server.py characterisation.py scripts/import_openfoodtox.py scripts/import_epa_bioactivity.py
+python -m py_compile server.py characterisation.py sanitisation.py scripts/import_openfoodtox.py scripts/import_epa_bioactivity.py scripts/make_sanitisation_demo.py
 python -m pip install -r requirements-dev.txt
 python -m pytest -q tests
 ```
