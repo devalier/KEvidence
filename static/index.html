@@ -684,11 +684,40 @@
 <script>
 const API_BASE = window.location.pathname.startsWith('/kevidence') ? '/kevidence/api' : '/api';
 const APP_BASE = API_BASE.replace(/\/api$/, '');
-// A 401 means the session ended (sign-out elsewhere, expiry): go back to the sign-in page.
+// A 401 means there is no valid session (never signed in, signed out, expired): go to the sign-in page.
+// Guarded against loops: if we were already sent there twice in the last minute, the sign-in did not stick
+// (typically the web server serves this page itself instead of passing it to KEvidence, or APP_URL does not
+// match the address in the browser), so explain instead of redirecting forever.
 const _fetch = window.fetch.bind(window);
+let signinPending = false;
+function goToSignin(url) {
+  if (signinPending) return;
+  signinPending = true;
+  let recent = [];
+  try { recent = JSON.parse(sessionStorage.getItem('kevidence.signinRedirects') || '[]').filter(t => Date.now() - t < 60000); } catch (e) {}
+  if (recent.length >= 2) { showSigninProblem(url); return; }
+  try { sessionStorage.setItem('kevidence.signinRedirects', JSON.stringify([...recent, Date.now()])); } catch (e) {}
+  window.location.href = url;
+}
+function showSigninProblem(url) {
+  const box = document.createElement('div');
+  box.setAttribute('role', 'alert');
+  box.style.cssText = 'position:fixed;inset:0;z-index:1000;background:rgba(15,23,42,.94);display:flex;align-items:center;justify-content:center;padding:16px';
+  box.innerHTML = `<div style="max-width:620px;background:#1e293b;border:1px solid #f87171;border-radius:14px;padding:24px;color:#f1f5f9;line-height:1.55">
+    <h2 style="margin:0 0 10px;font-size:19px">Sign-in is not working on this server</h2>
+    <p>The page loaded, but KEvidence's API says no one is signed in, and the sign-in page keeps sending you back here.</p>
+    <p style="color:#94a3b8;font-size:14px">For the administrator: (1) the web server must pass <strong>every</strong> path to KEvidence — <code>/</code>, <code>/auth/</code>, <code>/api/</code> and the static files — and must not serve <code>static/index.html</code> itself;
+    (2) <code>APP_URL</code> must be exactly the address in the browser bar (scheme, host and any path prefix); with <code>https://</code> the site must be served over https. See README › Reverse proxy.</p>
+    <p><a href="${url}" style="color:#38bdf8">Try the sign-in page again</a></p></div>`;
+  document.body.appendChild(box);
+}
 window.fetch = async (...args) => {
   const res = await _fetch(...args);
-  if (res.status === 401) { window.location.href = `${APP_BASE}/auth/signin`; }
+  if (res.status === 401) {
+    let url = `${APP_BASE}/auth/signin`;
+    try { url = (await res.clone().json()).signin || url; } catch (e) {}
+    goToSignin(url);
+  }
   return res;
 };
 const state = { chemical: '', context: {}, candidateAops: [], selectedAop: null, selectedAopDetail: null, assessment: null, quantitative: null, openfoodtox: null, characterisation: null, activeTab: 'problem', domain: 'feed' };
@@ -1095,7 +1124,8 @@ function characterisationMeta() {
 async function loadDomains() {
   try {
     const res = await fetch(`${API_BASE}/domains`);
-    const d = await res.json();
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok || !Array.isArray(d.domains)) throw new Error(res.status === 401 ? 'sign-in required' : (d.detail || `HTTP ${res.status}`));
     let saved = '';
     try { saved = localStorage.getItem('kevidence.domain') || ''; } catch (e) {}
     state.domainInfo = Object.fromEntries(d.domains.map(x => [x.id, x]));

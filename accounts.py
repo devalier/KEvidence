@@ -411,16 +411,108 @@ def page(body: str) -> str:
     return _PAGE.format(body=body)
 
 
-def sign_in_page(error: str = "", email: str = "") -> str:
-    err = f'<p class="err" role="alert">{html.escape(error)}</p>' if error else ""
-    return page(f"""<h1>Sign in to KEvidence</h1>
-<p class="sub">Open-source prototype for food and feed safety risk assessment.</p>{err}
-<form method="post" action="{html.escape(app_url())}/auth/email">
+_SPLASH = """<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>KEvidence — open workbench for food and feed safety risk assessment</title>
+<meta name="description" content="Open-source prototype workbench for food and feed safety risk assessment, from dossier to published opinion.">
+<style>
+:root{{--bg:#0b1222;--panel:#131c31;--line:#26324b;--text:#eef2f8;--muted:#9aa8bf;--accent:#38bdf8;--accent2:#818cf8;--ok:#4ade80}}
+*{{box-sizing:border-box;margin:0;padding:0}}
+html,body{{height:100%}}
+body{{background:radial-gradient(1200px 600px at 15% -10%,rgba(56,189,248,.13),transparent 60%),
+radial-gradient(900px 500px at 110% 110%,rgba(129,140,248,.12),transparent 60%),var(--bg);color:var(--text);
+font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.45}}
+a{{color:var(--accent);text-decoration:none}} a:hover{{text-decoration:underline}}
+.wrap{{min-height:100vh;max-width:1280px;margin:0 auto;padding:clamp(16px,3vh,32px) clamp(16px,3vw,40px);
+display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,0.85fr);gap:clamp(20px,3vw,44px);align-items:center}}
+.brand{{display:flex;align-items:center;gap:12px;margin-bottom:clamp(10px,2vh,18px)}}
+.logo{{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b1222;
+font-weight:900;display:flex;align-items:center;justify-content:center;font-size:20px}}
+.brand b{{font-size:20px;letter-spacing:.2px}} .tag{{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:3px 9px;margin-left:4px}}
+h1{{font-size:clamp(22px,min(3vw,4.9vh),38px);line-height:1.12;letter-spacing:-.5px;margin-bottom:clamp(8px,1.4vh,12px)}}
+h1 em{{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}}
+.lead{{color:var(--muted);font-size:clamp(13.5px,min(1.15vw,2vh),16px);max-width:62ch;margin-bottom:clamp(12px,2.2vh,20px)}}
+.flow{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:clamp(12px,2.2vh,20px);counter-reset:s}}
+.flow div{{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:13px;color:var(--muted)}}
+.flow div::before{{counter-increment:s;content:counter(s);display:inline-flex;width:20px;height:20px;border-radius:50%;
+background:rgba(56,189,248,.16);color:var(--accent);font-weight:800;font-size:11px;align-items:center;justify-content:center;margin-bottom:6px}}
+.flow b{{display:block;color:var(--text);font-size:13.5px;margin-bottom:2px}}
+.cols{{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,2vw,22px)}}
+h2{{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--accent);margin-bottom:8px}}
+ul{{list-style:none}} li{{font-size:13.5px;color:var(--muted);margin-bottom:7px;padding-left:16px;position:relative}}
+li::before{{content:"";position:absolute;left:0;top:.6em;width:6px;height:6px;border-radius:50%;background:var(--accent2)}}
+li b{{color:var(--text);font-weight:650}}
+.status{{margin-top:clamp(10px,1.8vh,16px);font-size:12.5px;color:var(--muted);border-left:3px solid var(--ok);padding:4px 0 4px 10px}}
+.card{{background:linear-gradient(180deg,#162037,#121a2e);border:1px solid #33425f;border-radius:18px;padding:clamp(18px,3vh,28px);
+box-shadow:0 20px 60px rgba(0,0,0,.35)}}
+.card h3{{font-size:21px;margin-bottom:4px}} .card .sub{{color:var(--muted);font-size:13.5px;margin-bottom:14px}}
+ol.how{{list-style:none;margin:0 0 14px;counter-reset:h}} ol.how li{{padding-left:28px;margin-bottom:8px;color:var(--text)}}
+ol.how li::before{{counter-increment:h;content:counter(h);top:0;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#0b1222;
+font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}}
+label{{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:700}}
+input{{width:100%;padding:12px 13px;border-radius:11px;border:1px solid #45577a;background:#0b1222;color:var(--text);font-size:15px;outline:none}}
+input:focus{{border-color:var(--accent);box-shadow:0 0 0 3px rgba(56,189,248,.2)}}
+button{{margin-top:12px;width:100%;padding:13px;border:0;border-radius:11px;font-weight:800;font-size:15px;cursor:pointer;
+background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b1222}}
+button:hover{{filter:brightness(1.07)}}
+.err{{color:#fca5a5;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.35);border-radius:10px;padding:8px 10px;font-size:13.5px;margin-bottom:12px}}
+.fine{{font-size:12px;color:var(--muted);margin-top:12px}}
+.mbrand{{display:none;align-items:center;gap:10px;margin-bottom:14px;font-size:12.5px;color:var(--muted);line-height:1.35}}
+.mbrand .logo{{width:34px;height:34px;font-size:17px;flex:0 0 34px}} .mbrand b{{color:var(--text);font-size:15px}}
+.foot{{grid-column:1/-1;font-size:11.5px;color:#7d8aa3;display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between;
+border-top:1px solid var(--line);padding-top:10px;align-self:end}}
+@media (max-width:980px){{.wrap{{grid-template-columns:1fr;align-items:start}} .signin{{order:-1}} .mbrand{{display:flex}} .flow{{grid-template-columns:1fr 1fr}}}}
+@media (max-width:560px){{.cols{{grid-template-columns:1fr}} .flow{{grid-template-columns:1fr}}}}
+@media (min-width:981px) and (max-height:800px){{.flow div{{padding:8px 10px}} li{{margin-bottom:4px;font-size:13px}} .brand{{margin-bottom:8px}} .card ol.how li{{margin-bottom:5px}}}}
+</style></head><body><div class="wrap">
+<section class="intro" aria-label="About KEvidence">
+<div class="brand"><div class="logo">K</div><b>KEvidence</b><span class="tag">open-source prototype</span></div>
+<h1>An open workbench for <em>food and feed safety risk assessment</em>, from dossier to published opinion.</h1>
+<p class="lead">Built in the open so that public administrations and risk assessors can test it, challenge it and build on it.
+Twelve EFSA areas can be selected; the guidance-grounded tools cover feed additives today, and demo files are included.</p>
+<div class="flow">
+<div><b>Characterise</b>Identity and composition checked against guidance, cited by page.</div>
+<div><b>Assess</b>The four Codex steps, with AOPs, NAMs and OpenFoodTox.</div>
+<div><b>Conclude</b>Uncertainty analysis and a draft scientific opinion.</div>
+<div><b>Publish</b>Mask confidential and personal data (Transparency Regulation).</div>
+</div>
+<div class="cols">
+<div><h2>How it works</h2><ul>
+<li><b>Grounded, not generative.</b> Requirements quoted verbatim from official guidance.</li>
+<li><b>It assists; it does not decide.</b> Conclusions stay with experts and authorities.</li>
+<li><b>Your AI, your choice.</b> Your own provider and key (EU or on-premises possible), or none.</li>
+</ul></div>
+<div><h2>Contribute</h2><ul>
+<li><b>Agencies and authorities:</b> try it on demo dossiers; tell us where it misreads.</li>
+<li><b>Risk assessors:</b> review the catalogues, gap and sanitisation rules.</li>
+<li><b>New domains:</b> enzymes, novel foods, pesticides… guidance plus a catalogue, no code.</li>
+<li><a href="https://github.com/devalier/KEvidence">GitHub</a> · <a href="mailto:kevidence@devalier.com">kevidence@devalier.com</a></li>
+</ul></div>
+</div>
+</section>
+<section class="signin" aria-label="Sign in">
+<div class="card">
+<div class="mbrand"><span class="logo">K</span><span><b>KEvidence</b><br>Open workbench for food and feed safety risk assessment</span></div>
+<h3>Sign in to try it</h3>
+<p class="sub">No password, no registration. Any email address works.</p>
+<ol class="how"><li>Enter your email below.</li><li>Open the link we email you (valid 15 minutes, works once).</li><li>Click <b>Sign in</b> on the page it opens.</li></ol>
+{error}
+<form method="post" action="{action}">
 <label for="email">Your email</label>
-<input id="email" name="email" type="email" required autocomplete="email" value="{html.escape(email)}" autofocus>
-<button type="submit">Email me a sign-in link</button></form>
-<p class="muted">No password: we email you a link that works once for 15 minutes. Any email address can sign in.
-Your actions are recorded in an activity log you can see. <a href="https://github.com/devalier/KEvidence">Source code</a> (AGPL-3.0).</p>""")
+<input id="email" name="email" type="email" required autocomplete="email" placeholder="name@organisation.eu" value="{email}" autofocus>
+<button type="submit">Email me a sign-in link →</button>
+</form>
+<p class="fine">What you do is recorded in an activity log you can see. Documents you upload are processed in memory and not stored.</p>
+</div>
+</section>
+<footer class="foot"><span>Prototype decision-support tool — not a source of regulatory conclusions.</span>
+<span>Free software under the <a href="https://github.com/devalier/KEvidence/blob/main/LICENSE">GNU AGPL v3</a> · <a href="https://github.com/devalier/KEvidence">Source code</a> · AOP data: AOP-Wiki, CC BY-SA 4.0</span></footer>
+</div></body></html>"""
+
+
+def sign_in_page(error: str = "", email: str = "") -> str:
+    """The splash page: what KEvidence is, why it exists, how to contribute, and the sign-in form."""
+    err = f'<p class="err" role="alert">{html.escape(error)}</p>' if error else ""
+    return _SPLASH.format(error=err, action=html.escape(app_url()) + "/auth/email", email=html.escape(email))
 
 
 def check_email_page(email: str) -> str:
