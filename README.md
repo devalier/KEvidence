@@ -1,14 +1,50 @@
 # KEvidence
 
-**KEvidence** is an open-source, AOP-guided regulatory risk assessment workbench. It helps scientific officers, toxicologists, NAM developers, and risk assessors move from a chemical or biological concern to structured Adverse Outcome Pathway (AOP) evidence, hazard hypotheses, confidence statements, uncertainty/data-gap summaries, and screening-level quantitative comparisons.
+**An open-source prototype workbench for food and feed safety risk assessment, built in the open so that public administrations and risk assessors can test it, challenge it and build on it.**
 
-KEvidence is not intended to replace expert regulatory judgement. It is a decision-support prototype that combines local AOP-Wiki-derived data, optional OpenFoodTox exports, optional EPA ToxCast/Tox21/ToxRefDB-style exports, and an LLM-assisted evidence assistant.
+KEvidence follows a regulatory scientific assessment from dossier to publication. A scientific officer uploads the applicant's documents and KEvidence:
+
+1. **characterises the substance or product** against the applicable guidance, citing document and page for every value and listing data gaps;
+2. **structures hazard and exposure evidence** along the four Codex risk-assessment steps (Adverse Outcome Pathways, OpenFoodTox reference points, NAM points of departure, exposure estimates, screening margins);
+3. **drafts the uncertainty analysis and the scientific opinion** for expert refinement;
+4. **prepares documents for publication** under the Transparency Regulation, masking confidential information and personal data according to EFSA's rules.
+
+**Grounded, not generative.** Every requirement KEvidence checks is quoted verbatim from official guidance bundled with the code, and the tests fail if a quote or page reference drifts from the source PDF. The assistant answers only from that guidance and says so when it cannot. Extraction runs locally; any use of an external LLM is opt-in per request and its output is checked against the documents.
+
+**It assists experts; it does not decide.** Adequacy, safety conclusions and confidentiality decisions stay with the risk assessor and the competent authority.
+
+**Status:** prototype. The most developed domain is EU **feed additives** (EFSA FEEDAP guidance: identity and characterisation, with consumer, target-species, environment, microorganism, renewal, QPS/WGS and VICH sources). The sanitisation step covers all sectors of the EFSA rules (General Food Law, GMOs, feed additives, smoke flavourings, food contact materials, food improvement agents, plant protection products, novel foods).
+
+## Contribute — public administrations and risk assessment experts welcome
+
+KEvidence is meant to become a shared, inspectable tool rather than one more closed system. Contributions are especially welcome from:
+
+- **Food and feed safety agencies and competent authorities** (EU, Member States and beyond): try it on demo or non-confidential dossiers, tell us where it misreads a document or a requirement, and propose the guidance your assessments rely on.
+- **Risk assessment experts:** review the requirement catalogues, the gap rules, the uncertainty and screening logic, and the sanitisation rules; point out where the tool oversteps expert judgement.
+- **New domains:** food additives, enzymes, flavourings, novel foods, pesticides, food contact materials... A domain is a folder of guidance PDFs plus a catalogue that quotes them verbatim (see *Domains* below); no code change is needed to add one.
+- **Developers:** OCR for scanned dossiers, importers for official data releases, tests, accessibility and UI work.
+
+Open an issue or discussion on [GitHub](https://github.com/devalier/KEvidence), or write to <kevidence@devalier.com>. KEvidence is licensed under the **AGPL-3.0** (compatible with the EUPL): anyone may use, study, adapt and deploy it, and improvements made by any administration or company stay open for all.
+
+## Quick start
+
+```bash
+git clone https://github.com/devalier/KEvidence.git && cd KEvidence
+python -m venv .venv && source .venv/bin/activate
+python -m pip install -r requirements.txt
+KEVIDENCE_HOME=$PWD python server.py      # http://127.0.0.1:3457 — OPENAI_API_KEY optional (assistant, opt-in AI steps)
+```
+
+Then try the fictional demo material (also linked from the *Guide & questions* tab):
+
+- **Characterisation:** upload `static/samples/characterisation_demo_dossier.md` in *0. Substance characterisation* and click *Characterise from documents*.
+- **Sanitisation:** upload `static/samples/sanitisation_demo_study_report.pdf` in *Publication: sanitisation*, applicant `Demo Feed Additives S.A.`, and click *Propose redactions*.
 
 ---
 
-## What KEvidence does
+## How the workflow is organised
 
-KEvidence turns AOP-Wiki data into a workflow-oriented risk assessment interface. **Risk analysis** is the whole governance cycle — risk assessment, risk management, and risk communication (EU General Food Law, Regulation (EC) No 178/2002). KEvidence supports the scientific **risk assessment** part, which Codex defines as four steps. The workbench follows that structure, with problem formulation as the practical framing step:
+**Risk analysis** is the whole governance cycle — risk assessment, risk management, and risk communication (EU General Food Law, Regulation (EC) No 178/2002). KEvidence supports the scientific **risk assessment** part, which Codex defines as four steps. The workbench follows that structure, with problem formulation as the practical framing step:
 
 - **Problem formulation** — define the substance/stressor, product domain, use scenario, endpoint of concern, and decision context. Not one of the four formal Codex steps, but it frames all of them.
 0. **Substance / product characterisation** (feed additives) — establish exactly what is being assessed: identity and composition of the additive and of *each component* of a product, mixture or formulation, impurities, physical properties, manufacturing, stability, homogeneity, conditions of use and methods of analysis, grounded in the EFSA FEEDAP *Guidance on the identity, characterisation and conditions of use of feed additives* (EFSA Journal 2017;15(10):5023). The MVP covers chemical characterisation.
@@ -79,7 +115,7 @@ KEvidence builds a local SQLite database from bundled AOP-Wiki-derived TSV and X
 
 ### Risk assessment workbench UI
 
-The frontend is a single-page workbench with step navigation and a contextual assistant. The workflow is organized around the four Codex risk-assessment steps (hazard identification, hazard characterisation, exposure assessment, risk characterisation), framed by problem formulation and followed by uncertainty analysis and a scientific-opinion draft — rather than around a generic chat page.
+The frontend is a single page (no frameworks, no CDN) with one tab per step: problem formulation, 0. substance characterisation, the four Codex steps (hazard identification, hazard characterisation, exposure assessment, risk characterisation), uncertainty analysis, scientific opinion, publication: sanitisation, and a guide with the demo material. A domain selector in the header sets which guidance grounds the assessment, and the Evidence Assistant sits beside every step except characterisation.
 
 ### Evidence-to-decision assessment
 
@@ -124,7 +160,7 @@ The workbench can then search candidate AC50/POD records for the current chemica
 
 ### Contextual Evidence Assistant
 
-The Evidence Assistant uses structured workbench context when answering questions. If a user asks a short prompt such as “Explain AOP,” the assistant receives the current chemical, selected AOP, use case, route, population, OpenFoodTox summary, and quantitative context.
+The Evidence Assistant uses structured workbench context when answering questions. In the guidance-grounded steps (0. characterisation, 2-4 where the domain has entries for them, and publication: sanitisation) it answers **only** from the bundled guidance entries supplied to it, cites document, section and page, and refuses or redirects to the right step when no entry matches. In the AOP steps, a short prompt such as “Explain AOP” is answered with the current chemical, selected AOP, use case, route, population, OpenFoodTox summary and quantitative context.
 
 ---
 
@@ -132,37 +168,33 @@ The Evidence Assistant uses structured workbench context when answering question
 
 ```text
 .
-├── server.py                         # FastAPI backend and risk assessment logic
-├── docx_export.py                    # Markdown → Word (.docx) for the step 0 output
-├── characterisation.py               # Step 0: document ingestion, guidance-grounded characterisation and gap analysis
-├── sanitisation.py                   # Publication: proposals, redaction and verification under the Transparency Regulation
-├── static/index.html                 # Single-page workbench UI
-├── requirements.txt                  # Python dependencies
+├── server.py                          # FastAPI backend: AOP knowledge base, assessment logic, all API routes
+├── characterisation.py                # Step 0: document ingestion, guidance-grounded characterisation and gap analysis
+├── docx_export.py                     # Markdown → Word (.docx) for the step 0 output
+├── sanitisation.py                    # Publication: redaction proposals, true redaction and verification
+├── static/
+│   ├── index.html                     # Single-page workbench UI
+│   └── samples/                       # Fictional demo dossier and study report, CSV templates
 ├── scripts/
 │   ├── import_openfoodtox.py          # EFSA OpenFoodTox Excel/CSV/XLSX importer
-│   └── import_epa_bioactivity.py      # EPA ToxCast/Tox21/ToxRefDB-style importer
-├── tests/
-│   └── test_characterisation.py       # Grounding guard (quotes/anchors vs guidance PDF) and step 0 behaviour
-│   └── test_sanitisation.py           # Rules grounding, detection, AI validation, redaction and verification
+│   ├── import_epa_bioactivity.py      # EPA ToxCast/Tox21/ToxRefDB-style importer
+│   ├── filter_aopwiki_licences.py     # Keeps only CC BY-SA AOP-Wiki content in data/
+│   └── make_sanitisation_demo.py      # Builds the fictional sanitisation demo PDF
 ├── data/
 │   ├── guidance/
-│   │   ├── domains.json                                 # Domain registry (id, label, directory, sources)
-│   │   ├── transparency/                                # EFSA practical arrangements on transparency & confidentiality (PDF + rules catalogue)
-│   │   └── feed/                                        # Everything grounding the feed-additive domain
-│   │       ├── efsa_2017_5023.pdf                       # FEEDAP guidance on identity/characterisation (CC BY-ND 4.0, unmodified)
-│   │       ├── feedap_2017_5023_chemical_requirements.json  # Requirement catalogue with verbatim quotes
-│   │       ├── efsa_2024_8912_wgs.pdf                   # EFSA WGS statement (CC BY-ND 4.0, unmodified)
-│   │       ├── efsa_2024_8912_wgs_requirements.json     # Supporting catalogue with verbatim quotes
-│       ├── <source>.pdf + <source>_requirements.json   # one pair per supporting source (QPS AMR, QPS list, consumer, target species, microorganisms, environment, renewal, VICH)
-│       ├── efsa_2026_9823_qps_cycle_assessments.json, feedap_2018_5206_mic_cutoffs.json, vich_gl18r2_solvents.json   # structured datasets
-│   │       ├── characterisation_template.md             # Public output template (FEEDAP opinion layout + evidence map)
-│   │       └── local/                                   # Git-ignored: institution's own template (optional)
-│   ├── aop_ke_mie_ao.tsv              # AOP/event/MIE/AO source data
-│   ├── aop_ke_ker.tsv                 # KER source data
-│   ├── aop_ke_ec.tsv                  # Event component source data
-│   ├── aop-wiki-xml.gz                # AOP-Wiki XML-derived source file
+│   │   ├── domains.json               # Domain registry (id, label, directory, sources, datasets, sanitisation sector)
+│   │   ├── feed/                      # Feed-additive domain: guidance PDFs (unmodified) + verbatim-quoted catalogues,
+│   │   │                              #   structured datasets (QPS cycle, MIC cut-offs, VICH solvents), output template,
+│   │   │                              #   local/ (git-ignored) for an institution's own template
+│   │   └── transparency/              # EFSA practical arrangements on transparency & confidentiality (PDF + rules catalogue)
+│   ├── aop-wiki-xml.gz                # AOP-Wiki export (CC BY-SA AOPs only)
+│   ├── aop_ke_mie_ao.tsv, aop_ke_ker.tsv, aop_ke_ec.tsv   # AOP events, KERs, event components
+│   ├── aopwiki_licence_filter.json    # Record of AOP-Wiki content removed for licence reasons
 │   └── aops/                          # Cached AOP text excerpts
-└── LICENSE
+├── tests/                             # Grounding guards, step 0, sanitisation, licensing, Word export, HTTP security
+├── .github/workflows/                 # pytest and pip-audit on every push
+├── requirements.txt, requirements-dev.txt
+└── LICENSE                            # AGPL-3.0
 ```
 
 ---
@@ -191,13 +223,13 @@ python -m pip install -r requirements.txt
 
 ### 4. Configure OpenAI access
 
-KEvidence uses the OpenAI API for the Evidence Assistant.
+KEvidence uses the OpenAI API for the Evidence Assistant and for the opt-in AI steps (narrative drafting in step 0, AI review in sanitisation). Everything else runs without it.
 
 ```bash
 export OPENAI_API_KEY="your-api-key"
 ```
 
-Optional model override:
+Optional model override (default `gpt-4o-mini`):
 
 ```bash
 export LLM_MODEL="gpt-4o-mini"
@@ -219,7 +251,7 @@ http://127.0.0.1:3457
 
 ## Deployment security
 
-- **Authentication:** every endpoint is open unless you set `KEVIDENCE_AUTH_USER` and `KEVIDENCE_AUTH_PASSWORD` (HTTP Basic, checked in constant time on every route) or put an authenticating reverse proxy in front. Serve over HTTPS only. Step 0 handles confidential dossiers; do not expose it without authentication.
+- **Authentication:** every endpoint is open unless you set `KEVIDENCE_AUTH_USER` and `KEVIDENCE_AUTH_PASSWORD` (HTTP Basic, checked in constant time on every route) or put an authenticating reverse proxy in front. Serve over HTTPS only. Step 0 and the sanitisation step handle confidential dossiers; do not expose them without authentication.
 - **CORS:** off by default (the UI is same-origin). To allow other origins, set `KEVIDENCE_CORS_ORIGINS` to a comma-separated list.
 - **Static files:** only files inside `static/` are served; absolute paths, `..` traversal (including percent-encoded), symlinks leading out and dotfiles are refused (`tests/test_server_security.py`).
 - **Headers:** `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` on every response. The interactive API docs (`/docs`, `/openapi.json`) are disabled.
@@ -364,6 +396,7 @@ Important limitations:
 - NAM-to-key-event mapping by text overlap is a prioritization aid, not a validated mechanistic mapping.
 - The Evidence Assistant can draft and explain but should not be treated as a source of regulatory truth.
 - Step 0 characterisation locates evidence; it does not judge adequacy or compliance. "Not located" can reflect extraction limits (scanned PDFs, images, unusual tables) as well as true data gaps.
+- Sanitisation proposes what to mask; whether information is confidential is decided by EFSA (Art. 11 of its practical arrangements). Pages without a text layer and text inside images (other than signatures) are not analysed. Check every sanitised PDF before publication.
 
 ---
 
@@ -415,15 +448,17 @@ Potential future improvements include:
 - Direct integration with validated IVIVE/HTTK or PBPK workflows.
 - Source-specific parsers for official ToxCast/Tox21 and ToxRefDB release formats.
 - Configurable regulatory thresholds by jurisdiction, endpoint, and use case.
-- Exportable assessment reports in Markdown, Word, or PDF.
+- Word/PDF export of the full assessment (step 0 already exports to Markdown and Word).
+- More domains (food additives, enzymes, novel foods, pesticides) and production-strain characterisation for microbial feed additives.
+- OCR for scanned dossiers.
 - User authentication and assessment-session persistence.
-- Dedicated tests for backend scoring, importers, and frontend workflow behavior.
+- Tests for backend scoring, importers, and frontend workflow behaviour (grounding, step 0, sanitisation, licensing and HTTP security are covered).
 
 ---
 
 ## Contributing
 
-Contributions are welcome. Useful contributions include:
+See *Contribute* at the top for who we are looking for. Useful contributions include:
 
 - Bug reports and reproducible examples.
 - Improved importers for specific official data releases.
@@ -431,10 +466,11 @@ Contributions are welcome. Useful contributions include:
 - UI/UX improvements for regulatory workflows.
 - Documentation and example datasets.
 - Scientific review of scoring logic, uncertainty labels, and NAM/AOP mapping assumptions.
+- New guidance domains: guidance PDFs plus a catalogue quoting them verbatim, registered in `data/guidance/domains.json`.
 
 Before contributing, please open an issue or discussion describing the proposed change, especially for scientific scoring, regulatory interpretation, or data-source integrations.
 
-Feature requests can also be submitted from the in-app **Questions?** tab, by opening the GitHub repository at <https://github.com/devalier/KEvidence>, or by emailing <kevidence@devalier.com>.
+Feature requests can also be submitted from the in-app **Guide & questions** tab, by opening the GitHub repository at <https://github.com/devalier/KEvidence>, or by emailing <kevidence@devalier.com>.
 
 ---
 

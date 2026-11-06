@@ -34,7 +34,7 @@ STATIC_DIR = KEVIDENCE_HOME / "static"
 STATIC_ROOT = STATIC_DIR.resolve()
 AOP_CACHE_DIR = DATA_DIR / "aops"
 DB_PATH = DATA_DIR / "kevidence.db"
-LLM_MODEL = "gpt-4o-mini"  # cheap, good enough for protoype
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")  # cheap, good enough for a prototype
 
 app = FastAPI(title="KEvidence — Risk Assessment Workbench", docs_url=None, redoc_url=None, openapi_url=None)
 
