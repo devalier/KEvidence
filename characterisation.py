@@ -1,4 +1,4 @@
-"""Step 0 — substance/product characterisation of feed additives (chemical MVP).
+"""Identity & characterisation — substance/product characterisation of feed additives (chemical MVP).
 
 Grounding model
 ---------------
@@ -130,6 +130,15 @@ class UnknownDomain(KeyError):
     """The requested domain is not in the registry, so no guidance is available to ground it."""
 
 
+class DomainNotGrounded(UnknownDomain):
+    """The domain is registered (the workflow and sanitisation apply) but no guidance is bundled for it yet."""
+
+
+def is_grounded(entry: dict[str, Any]) -> bool:
+    """A domain is grounded when it has a guidance directory and a primary catalogue."""
+    return bool(entry.get("directory") and entry.get("primary"))
+
+
 def load_domains(path: Path = DOMAINS_PATH) -> dict[str, Any]:
     with open(path, encoding="utf-8") as f:
         registry = json.load(f)
@@ -138,6 +147,10 @@ def load_domains(path: Path = DOMAINS_PATH) -> dict[str, Any]:
         raise ValueError("Duplicate domain ids in guidance registry")
     if registry["default_domain"] not in ids:
         raise ValueError("default_domain is not a registered domain")
+    for d in registry["domains"]:
+        for key in ("id", "label", "transparency_sector"):
+            if not d.get(key):
+                raise ValueError(f"domain {d.get('id')!r} is missing '{key}'")
     return registry
 
 
@@ -173,6 +186,8 @@ def load_domain_bundle(domain_id: Optional[str] = None, root: Path = GUIDANCE_RO
     entry = next((d for d in registry["domains"] if d["id"] == domain_id), None)
     if entry is None:
         raise UnknownDomain(domain_id)
+    if not is_grounded(entry):
+        raise DomainNotGrounded(domain_id)
     directory = root / entry["directory"]
     primary_cat = load_catalogue(directory / entry["primary"]["catalogue"])
     sources = [{"role": "primary", "catalogue": primary_cat,
@@ -2106,7 +2121,7 @@ def render_markdown(result: dict[str, Any], catalogue: dict[str, Any], template_
           if meta.get("applicant") or meta.get("dossier_ref") else []),
         f"*Product form:* {meta.get('product_form') or 'not stated'} · *Routes:* {', '.join(meta.get('routes') or []) or 'not stated'} · "
         f"*Production type:* {', '.join(meta.get('production_types') or []) or 'not stated'} · *Additive type:* {meta.get('additive_type') or 'not stated'}  ",
-        f"*Generated:* {result['generated_at']} by KEvidence step 0 (chemical characterisation MVP) against "
+        f"*Generated:* {result['generated_at']} by KEvidence identity & characterisation (chemical MVP) against "
         f"{catalogue['guidance']['citation']}  ",
         "**Draft for scientific-officer verification — contains confidential dossier information.**",
     ])

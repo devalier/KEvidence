@@ -4,6 +4,8 @@
     {
       "id": "feed",
       "label": "Feed additives",
+      "panel": "FEEDAP",
+      "description": "Additives used in animal nutrition (Regulation (EC) No 1831/2003): identity, characterisation, safety for target species, consumers, users and the environment, efficacy.",
       "directory": "feed",
       "assistant_role": "EFSA scientific officers assessing feed additives",
       "transparency_sector": "c",
@@ -12,21 +14,116 @@
         "template": "characterisation_template.md"
       },
       "supporting": [
-        {"catalogue": "efsa_2024_8912_wgs_requirements.json"},
-        {"catalogue": "efsa_2023_8323_qps_amr_requirements.json"},
-        {"catalogue": "efsa_2026_9823_qps_requirements.json"},
-        {"catalogue": "efsa_2017_5022_consumer_requirements.json"},
-        {"catalogue": "efsa_2017_5021_target_species_requirements.json"},
-        {"catalogue": "efsa_2018_5206_microorganisms_requirements.json"},
-        {"catalogue": "efsa_2019_5648_environment_requirements.json"},
-        {"catalogue": "efsa_2021_6340_renewal_requirements.json"},
-        {"catalogue": "vich_gl18r2_requirements.json"}
+        {
+          "catalogue": "efsa_2024_8912_wgs_requirements.json"
+        },
+        {
+          "catalogue": "efsa_2023_8323_qps_amr_requirements.json"
+        },
+        {
+          "catalogue": "efsa_2026_9823_qps_requirements.json"
+        },
+        {
+          "catalogue": "efsa_2017_5022_consumer_requirements.json"
+        },
+        {
+          "catalogue": "efsa_2017_5021_target_species_requirements.json"
+        },
+        {
+          "catalogue": "efsa_2018_5206_microorganisms_requirements.json"
+        },
+        {
+          "catalogue": "efsa_2019_5648_environment_requirements.json"
+        },
+        {
+          "catalogue": "efsa_2021_6340_renewal_requirements.json"
+        },
+        {
+          "catalogue": "vich_gl18r2_requirements.json"
+        }
       ],
       "datasets": {
         "qps": "efsa_2026_9823_qps_cycle_assessments.json",
         "mic": "feedap_2018_5206_mic_cutoffs.json",
         "vich": "vich_gl18r2_solvents.json"
       }
+    },
+    {
+      "id": "food-additives",
+      "label": "Food additives",
+      "panel": "FAF",
+      "description": "Additives intentionally added to food (Regulation (EC) No 1333/2008), including re-evaluations.",
+      "transparency_sector": "f"
+    },
+    {
+      "id": "flavourings",
+      "label": "Food flavourings and smoke flavourings",
+      "panel": "FAF",
+      "description": "Flavouring substances (Regulation (EC) No 1334/2008) and smoke flavourings (Regulation (EC) No 2065/2003).",
+      "transparency_sector": "f"
+    },
+    {
+      "id": "food-enzymes",
+      "label": "Food enzymes",
+      "panel": "FEZ",
+      "description": "Food enzymes (Regulation (EC) No 1332/2008), including production strains.",
+      "transparency_sector": "f"
+    },
+    {
+      "id": "fcm",
+      "label": "Food contact materials",
+      "panel": "FCM",
+      "description": "Substances in materials and articles in contact with food (Regulation (EC) No 1935/2004).",
+      "transparency_sector": "e"
+    },
+    {
+      "id": "novel-foods",
+      "label": "Novel foods, nutrition and food supplements",
+      "panel": "NDA",
+      "description": "Novel and traditional foods (Regulation (EU) 2015/2283), nutrient sources, health claims.",
+      "transparency_sector": "h"
+    },
+    {
+      "id": "gmo",
+      "label": "Genetically modified organisms",
+      "panel": "GMO",
+      "description": "GM food and feed (Regulation (EC) No 1829/2003) and environmental release (Directive 2001/18/EC).",
+      "transparency_sector": "b"
+    },
+    {
+      "id": "pesticides",
+      "label": "Plant protection products and residues",
+      "panel": "PPR",
+      "description": "Active substances (Regulation (EC) No 1107/2009) and maximum residue levels (Regulation (EC) No 396/2005).",
+      "transparency_sector": "g"
+    },
+    {
+      "id": "contaminants",
+      "label": "Contaminants in the food chain",
+      "panel": "CONTAM",
+      "description": "Chemical contaminants and undesirable substances in food and feed.",
+      "transparency_sector": "a"
+    },
+    {
+      "id": "biohaz",
+      "label": "Biological hazards",
+      "panel": "BIOHAZ",
+      "description": "Microbiological hazards, food hygiene, QPS, antimicrobial resistance.",
+      "transparency_sector": "a"
+    },
+    {
+      "id": "nams",
+      "label": "Chemical hazard assessment with NAMs and AOPs",
+      "panel": "Cross-cutting",
+      "description": "New approach methodologies, Adverse Outcome Pathways and in-vitro to in-vivo extrapolation for any chemical.",
+      "transparency_sector": "a"
+    },
+    {
+      "id": "other",
+      "label": "Other / not listed",
+      "panel": "—",
+      "description": "Any other food or feed safety question.",
+      "transparency_sector": "a"
     }
   ]
 }

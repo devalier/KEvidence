@@ -19,7 +19,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 os.environ.setdefault("KEVIDENCE_HOME", str(ROOT))
-os.environ.setdefault("OPENAI_API_KEY", "sk-test-not-used")
 
 import characterisation as c  # noqa: E402
 import sanitisation as s  # noqa: E402
@@ -239,7 +238,10 @@ def test_bundled_sample_matches_generator():
 def client():
     from fastapi.testclient import TestClient
     import server
-    return TestClient(server.app)
+    from conftest import sign_in
+    c = TestClient(server.app)
+    sign_in(c)
+    return c
 
 
 def test_api_rules_and_pdf(client):
