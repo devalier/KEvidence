@@ -6,6 +6,7 @@
       "label": "Feed additives",
       "directory": "feed",
       "assistant_role": "EFSA scientific officers assessing feed additives",
+      "transparency_sector": "c",
       "primary": {
         "catalogue": "feedap_2017_5023_chemical_requirements.json",
         "template": "characterisation_template.md"

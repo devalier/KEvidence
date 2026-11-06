@@ -239,6 +239,32 @@
     .step { min-width: 190px; }
     .grid, .grid-3, .metric-grid { grid-template-columns: 1fr; }
   }
+  /* Sanitisation (publication) */
+  .sani-layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+  @media (max-width: 1250px) { .sani-layout { grid-template-columns: 1fr; } }
+  .sani-pages { max-height: 78vh; overflow-y: auto; display: grid; gap: 12px; padding-right: 4px; }
+  .sani-page { position: relative; background: #fff; border-radius: 6px; overflow: hidden; }
+  .sani-page img { display: block; width: 100%; height: auto; }
+  .sani-page .pno { position: absolute; top: 4px; right: 6px; background: var(--surface); color: var(--text2); font-size: 11px; padding: 2px 6px; border-radius: 6px; }
+  .sani-box { position: absolute; border: 1.5px dashed; cursor: pointer; }
+  .sani-box.k-personal_data { border-color: #dc2626; }
+  .sani-box.k-confidential_item { border-color: #d97706; }
+  .sani-box.k-request { border-color: #7c3aed; }
+  .sani-box.on { background: rgba(0, 0, 0, 0.82); border-style: solid; }
+  .sani-box.hl, .sani-row.hl { outline: 3px solid var(--accent); }
+  .sani-list { max-height: 78vh; overflow-y: auto; }
+  .sani-list td { font-size: 12.5px; }
+  .sani-list .badge { white-space: nowrap; }
+  .sani-list td:last-child { font-size: 11.5px; line-height: 1.4; }
+  .sani-list .txt { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-word; }
+  .sani-row.off .txt { color: var(--text2); }
+  .badge.k-personal_data { color: #fca5a5; }
+  .badge.k-confidential_item { color: var(--warning); }
+  .badge.k-request { color: #c4b5fd; }
+  .badge.flag { color: var(--danger); border: 1px solid rgba(248,113,113,.5); }
+  .sani-legend span { margin-right: 12px; font-size: 12px; }
+  .sani-check-ok { color: var(--success); font-weight: 700; }
+  .sani-check-ko { color: var(--danger); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -267,6 +293,7 @@
     <button class="step" data-tab="risk-char"><span>4. Risk characterisation</span>Integrate hazard × exposure</button>
     <button class="step" data-tab="uncertainty"><span>Uncertainty analysis</span>Confidence and data gaps</button>
     <button class="step" data-tab="opinion"><span>Scientific opinion</span>Draft advice for risk managers</button>
+    <button class="step" data-tab="sanitisation"><span>Publication: sanitisation</span>Transparency Regulation — mask confidential info &amp; personal data</button>
     <button class="step" data-tab="questions"><span>Guide & questions</span>Manual, samples, feedback</button>
   </nav>
 
@@ -446,6 +473,59 @@
       </div>
     </section>
 
+    <section id="sanitisation" class="tab-content">
+      <div class="panel">
+        <h2>Publication — sanitisation under the Transparency Regulation</h2>
+        <p class="help">Before EFSA publishes a document (Art. 38 of the General Food Law as amended by Regulation (EU) 2019/1381), confidential information and personal data are masked. KEvidence proposes what to mask in a PDF according to <strong>EFSA's practical arrangements concerning transparency and confidentiality</strong> (Decision of the Executive Director, 2021): personal data (Art. 39e GFL; Art. 4(5)), the items listed in the confidentiality request or decision you supply (Art. 3(1)(c), Art. 13), and, as candidates only, passages matching the Annex closed list for the sector. You review every proposal; KEvidence then removes the selected content from the PDF (true redaction, not a black box over the text), scrubs metadata, comments, links and attachments, and verifies the output.</p>
+        <details class="muted"><summary>About the rules grounding</summary><div id="saniRulesStatus" style="margin-top:6px">Loading rules…</div></details>
+      </div>
+
+      <div class="panel">
+        <h3>Step 1 — Document and context</h3>
+        <div class="grid">
+          <div><label for="saniFile">PDF to sanitise (confidential)</label><input id="saniFile" type="file" accept=".pdf,application/pdf"><div id="saniFileInfo" class="muted" style="margin-top:6px"></div></div>
+          <div><label for="saniSector">Sector (Annex section of the practical arrangements)</label><select id="saniSector"></select></div>
+          <div><label for="saniApplicant">Applicant name — stays public (Art. 39e(1)(a))</label><input id="saniApplicant" placeholder="e.g., the legal entity submitting the application"></div>
+          <div><label for="saniApplicantAddress">Applicant address — stays public</label><input id="saniApplicantAddress" placeholder="e.g., street, postcode, city"></div>
+        </div>
+        <label for="saniRequests" style="margin-top:12px">Confidentiality request or decision — text to mask, one item per line (optional: <code>text | legal basis</code>)</label>
+        <textarea id="saniRequests" style="min-height:80px" placeholder="recrystallisation from ethanol at 45 °C for 6 hours | Art. 39(2)(a) GFL&#10;Fictional Chemicals Ltd | Art. 39(2)(c) GFL"></textarea>
+        <div class="check-row"><label><input type="checkbox" id="saniAllowLlm"> AI review: also send the page text to the external LLM (OpenAI API) to find personal data and Annex items the rules miss, and to locate request items described in words. Leave unticked unless approved for confidential documents.</label></div>
+        <div class="actions"><button class="primary" id="saniAnalyseBtn" disabled>Propose redactions</button><span class="muted" id="saniRunHint" style="align-self:center">Choose a PDF first.</span></div>
+        <div class="warning-box">The document is processed in memory for one request and is not stored. Local rules run without any LLM. Scanned pages without a text layer cannot be read: run OCR first. KEvidence proposes; the decision on confidentiality is EFSA's (Art. 11 of the practical arrangements).</div>
+      </div>
+
+      <div class="panel" id="saniReview" hidden>
+        <h3>Step 2 — Review the proposals</h3>
+        <div id="saniSummary"></div>
+        <div class="sani-legend muted" style="margin:6px 0"><span style="color:#fca5a5">■ personal data</span><span style="color:var(--warning)">■ Annex item (claimable)</span><span style="color:#c4b5fd">■ confidentiality request/decision</span><span>dashed = proposed, filled = will be masked; click a box or a row to toggle</span></div>
+        <div class="actions">
+          <button class="secondary" id="saniSelPersonal">Select all personal data</button>
+          <button class="secondary" id="saniSelRequests">Select all request items</button>
+          <button class="ghost" id="saniClearAnnex">Deselect Annex candidates</button>
+          <button class="ghost" id="saniSelNone">Deselect all</button>
+          <select id="saniFilter" style="width:auto"><option value="all">Show all</option><option value="selected">Selected only</option><option value="personal_data">Personal data</option><option value="confidential_item">Annex items</option><option value="request">Request/decision items</option><option value="ai">From the AI review</option><option value="flag">Flagged for review</option></select>
+        </div>
+        <div class="grid" style="margin-top:8px">
+          <div><label for="saniAddText">Mask more text (every occurrence)</label><input id="saniAddText" placeholder="exact text as it appears in the PDF"></div>
+          <div><label for="saniAddBasis">Legal basis</label><select id="saniAddBasis"></select></div>
+        </div>
+        <div class="actions"><button class="ghost" id="saniAddBtn">+ Find and add</button><span class="muted" id="saniAddHint" style="align-self:center"></span></div>
+        <div class="sani-layout" style="margin-top:10px">
+          <div class="sani-pages" id="saniPages"></div>
+          <div class="sani-list"><table class="sample-table"><thead><tr><th></th><th>p.</th><th>Text</th><th>Basis</th><th>Why</th></tr></thead><tbody id="saniRows"></tbody></table></div>
+        </div>
+      </div>
+
+      <div class="panel" id="saniOutputPanel" hidden>
+        <h3>Step 3 — Produce the non-confidential version</h3>
+        <div class="check-row"><label><input type="checkbox" id="saniLabelBoxes"> Print the legal basis inside each black box (e.g. “Art. 39e(2) GFL”)</label></div>
+        <div class="actions"><button class="primary" id="saniApplyBtn">Generate sanitised PDF</button><button class="secondary" id="saniPdfBtn" disabled>Download sanitised PDF</button><button class="secondary" id="saniLogBtn" disabled>Download sanitisation record (.md)</button></div>
+        <div id="saniResult"><div class="muted">Not generated yet.</div></div>
+        <div class="warning-box">The sanitisation record lists the masked text: it is an internal, confidential record — do not publish it. Check the sanitised PDF before publication.</div>
+      </div>
+    </section>
+
     <section id="questions" class="tab-content">
       <div class="panel">
         <h2>Quick user manual</h2>
@@ -459,6 +539,7 @@
             <div class="manual-step"><strong>Exposure assessment — who, how much, how often, route.</strong><span class="muted">Record concentration in food × consumption × population × use conditions, and the resulting exposure estimate.</span></div>
             <div class="manual-step"><strong>Risk characterisation — integrate hazard × exposure.</strong><span class="muted">Compare the POD with the exposure estimate to obtain a screening margin (BER/MOE). Interpret as prioritisation support, not a final regulatory conclusion.</span></div>
             <div class="manual-step"><strong>Uncertainty & scientific opinion.</strong><span class="muted">Run the uncertainty & data-gap analysis, then build a draft scientific opinion that separates curated evidence, user-entered data, assumptions, and gaps for handoff to risk managers.</span></div>
+            <div class="manual-step"><strong>Publication — sanitisation.</strong><span class="muted">Before a document is published under the Transparency Regulation, upload the PDF in <em>Publication: sanitisation</em>, choose the sector, enter the applicant (stays public) and paste the items of the confidentiality request or decision. KEvidence proposes personal data and request items (selected) and Annex candidates (not selected), each with its article of EFSA's practical arrangements; you review, then it redacts, scrubs metadata and verifies the output.</span></div>
           </div>
           <div class="app-screenshot" aria-label="Annotated KEvidence workflow screenshot mock-up">
             <div class="shot-header"></div>
@@ -477,6 +558,7 @@
           <thead><tr><th>Need</th><th>Use this</th><th>What to do in KEvidence</th></tr></thead>
           <tbody>
             <tr><td>Feed additive characterisation (step 0)</td><td><a href="samples/characterisation_demo_dossier.md" download>Download fictional demo dossier</a><br><a href="api/characterisation/guidance.pdf?domain=feed" target="_blank" rel="noopener">FEEDAP identity/characterisation guidance (PDF)</a><br><a href="api/characterisation/guidance.pdf?domain=feed&source=efsa-2024-8912-wgs" target="_blank" rel="noopener">EFSA 2024 WGS statement (PDF)</a></td><td>Upload the demo dossier in step 0 and click <em>Characterise from documents</em>; KEvidence identifies vanillin from it. For exemptions, open <em>Optional details</em> and set additive type "flavouring compound" and routes. It is deliberately incomplete (3 batches instead of 5, no residual solvents, no SDS) so the gap analysis has findings.</td></tr>
+            <tr><td>Sanitisation for publication</td><td><a href="samples/sanitisation_demo_study_report.pdf" download>Download fictional demo study report (PDF)</a><br><a href="api/sanitisation/rules.pdf" target="_blank" rel="noopener">EFSA practical arrangements on transparency and confidentiality (PDF)</a></td><td>Upload it in <em>Publication: sanitisation</em> with sector (c) and applicant “Demo Feed Additives S.A.”. Study personnel, e-mail, phone and the signature are proposed and selected; the applicant and the reference-list authors are not; manufacturing process, composition and sourcing sentences are proposed as Annex candidates. Paste <code>recrystallisation from ethanol at 45 °C for 6 hours | Art. 39(2)(a) GFL</code> as a request item to see it located.</td></tr>
             <tr><td>NAM POD / AC50 example</td><td><a href="samples/nam_pod_examples.csv" download>Download local CSV template</a><br><a href="https://www.epa.gov/comptox-tools/exploring-toxcast-data" target="_blank" rel="noopener">EPA ToxCast/Tox21 data portal</a><br><a href="https://epa.figshare.com/articles/dataset/ToxCast_Database_invitroDB_/6062623" target="_blank" rel="noopener">EPA invitroDB on Figshare</a></td><td>Copy assay, POD type, POD value/unit, and mapped event ID into the hazard characterisation step (POD). Use the EPA bioactivity import script for larger local searches.</td></tr>
             <tr><td>OpenFoodTox reference points</td><td><a href="https://zenodo.org/records/19388272" target="_blank" rel="noopener">OpenFoodTox 3.0 on Zenodo</a><br><a href="https://zenodo.org/records/8120114" target="_blank" rel="noopener">Earlier OpenFoodTox Zenodo record</a></td><td>Download the Excel export, build the local SQLite index, then query the hazard characterisation step by substance name, CAS, EC number, or synonym.</td></tr>
             <tr><td>AOP structure and event IDs</td><td><a href="https://aopwiki.org/downloads" target="_blank" rel="noopener">AOP-Wiki quarterly downloads</a><br><a href="https://zenodo.org/records/17499488" target="_blank" rel="noopener">AOP-Wiki RDF on Zenodo</a></td><td>Use event IDs to map NAM assays to MIE/KE/AO records during hazard identification and characterisation.</td></tr>
@@ -488,7 +570,7 @@
       <div class="panel">
         <h2>Questions?</h2>
         <p class="help">Suggest improvements, report missing data sources, or propose new risk-assessment workflow features. You can open the GitHub repository directly or send a feature request by email.</p>
-        <div class="actions"><a class="secondary" id="githubRepoLink" href="https://github.com/LyzDevalier/KEvidence" target="_blank" rel="noopener">Open GitHub repository</a></div>
+        <div class="actions"><a class="secondary" id="githubRepoLink" href="https://github.com/devalier/KEvidence" target="_blank" rel="noopener">Open GitHub repository</a></div>
         <div class="grid">
           <div><label for="featureName">Your name</label><input id="featureName" placeholder="Optional"></div>
           <div><label for="featureEmail">Your email</label><input id="featureEmail" type="email" placeholder="Optional reply address"></div>
@@ -501,6 +583,11 @@
         <div class="warning-box">This form opens your email client and sends to kevidence@devalier.com. No request is stored by KEvidence unless you send the email.</div>
       </div>
     </section>
+    <footer class="muted" style="font-size:12px;padding:14px 4px;border-top:1px solid var(--surface2);margin-top:12px">
+      KEvidence is free software under the <a href="https://github.com/devalier/KEvidence/blob/main/LICENSE" target="_blank" rel="noopener" style="color:var(--accent)">GNU AGPL v3</a> — <a href="https://github.com/devalier/KEvidence" target="_blank" rel="noopener" style="color:var(--accent)">Source code</a>.
+      AOP data: <a href="https://aopwiki.org" target="_blank" rel="noopener" style="color:var(--accent)">AOP-Wiki</a> (OECD AOP Knowledge Base), content by the AOP authors under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener" style="color:var(--accent)">CC BY-SA 4.0</a>, converted and limited to BY-SA AOPs.
+      EFSA guidance documents are reproduced unmodified with citation.
+    </footer>
   </main>
 
   <aside class="assistant">
@@ -511,6 +598,8 @@
       <div class="prompt-row">
         <button class="prompt-chip" data-assistant-prompt="Which characterisation data gaps matter most, and what exactly does the guidance require for each?" data-char-only="1">Explain gaps</button>
         <button class="prompt-chip" data-assistant-prompt="What does the guidance require for batch-to-batch variation and impurities analyses?" data-char-only="1">Batches &amp; impurities</button>
+        <button class="prompt-chip" data-assistant-prompt="Which personal data must be masked in a non-confidential version, and which names stay public?" data-sani-only="1">Personal data</button>
+        <button class="prompt-chip" data-assistant-prompt="Which items can an applicant claim confidential in this sector, and what is excluded because it is relevant to the safety assessment?" data-sani-only="1">Claimable items</button>
         <button class="prompt-chip" data-assistant-prompt="Find AOPs for the current chemical and explain why they matter.">Find AOPs</button>
         <button class="prompt-chip" data-assistant-prompt="Explain the selected AOP in risk-assessment terms.">Explain AOP</button>
         <button class="prompt-chip" data-assistant-prompt="Summarize weight of evidence and data gaps for the selected AOP.">Summarize evidence</button>
@@ -611,6 +700,7 @@ $('assistantSend').addEventListener('click', sendAssistant);
 $('assistantInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendAssistant(); });
 document.querySelectorAll('[data-assistant-prompt]').forEach(btn => btn.addEventListener('click', () => {
   if (btn.dataset.charOnly) showTab('characterisation');
+  if (btn.dataset.saniOnly) showTab('sanitisation');
   sendAssistant(btn.dataset.assistantPrompt);
 }));
 
@@ -857,7 +947,9 @@ async function sendAssistant(prompt) {
   addMessage('Thinking…', 'bot', 'typing');
   const charGaps = state.characterisation ? characterisationGapSummary() : [];
   const assistantContext = {
-    workflow_step: ['characterisation', 'hazard-char', 'exposure', 'risk-char'].includes(state.activeTab) ? state.activeTab : '',
+    workflow_step: ['characterisation', 'hazard-char', 'exposure', 'risk-char', 'sanitisation'].includes(state.activeTab) ? state.activeTab : '',
+    sanitisation_sector: state.sanitisation?.sector?.id || $('saniSector')?.value || '',
+    sanitisation_summary: state.sanitisation ? { proposals: state.sanitisation.summary, selected: saniSelected().length, unlocated_requests: (state.sanitisation.unlocated_requests || []).length, warnings: state.sanitisation.warnings } : null,
     domain: state.domain,
     characterisation_product: state.characterisation?.meta?.product_name || '',
     characterisation_gaps: charGaps,
@@ -930,6 +1022,7 @@ async function loadDomains() {
     state.domain = ids.includes(saved) ? saved : d.default;
     $('domainSelect').innerHTML = d.domains.map(x => `<option value="${escapeHtml(x.id)}" title="${escapeHtml(x.sources.join('; '))}">${escapeHtml(x.label)}</option>`).join('');
     $('domainSelect').value = state.domain;
+    state.domainSectors = Object.fromEntries(d.domains.map(x => [x.id, x.transparency_sector || 'a']));
   } catch (e) { /* the static default option stays; the backend rejects unknown domains */ }
 }
 $('domainSelect').addEventListener('change', () => {
@@ -939,6 +1032,7 @@ $('domainSelect').addEventListener('change', () => {
   state.characterisation = null;
   $('charOutput').innerHTML = '<div class="muted">Domain changed. Add documents and run the characterisation again.</div>';
   loadCharacterisationGuidance();
+  if (!state.saniSectorTouched) { $('saniSector').value = state.domainSectors?.[state.domain] || $('saniSector').value; loadSanitisationRules(); }
 });
 async function loadCharacterisationGuidance() {
   try {
@@ -1156,7 +1250,225 @@ $('charFiles').addEventListener('change', () => {
 });
 $('charUrls').addEventListener('input', updateCharRunState);
 addComponentRow();
-loadDomains().then(loadCharacterisationGuidance);
+// ---------------------------------------------------------------------------
+// Publication — sanitisation (Transparency Regulation; EFSA practical arrangements)
+// ---------------------------------------------------------------------------
+const SANI_KIND = { personal_data: 'Personal data', confidential_item: 'Annex item', request: 'Request/decision' };
+function saniSelected() { return (state.sanitisation?.proposals || []).filter(p => p.selected); }
+async function loadSanitisationRules() {
+  try {
+    const sector = $('saniSector').value;
+    const res = await fetch(`${API_BASE}/sanitisation/rules?sector=${encodeURIComponent(sector)}&domain=${encodeURIComponent(state.domain)}`);
+    const r = await res.json();
+    if (!res.ok) throw new Error(r.detail || `HTTP ${res.status}`);
+    state.saniRules = r;
+    if (!$('saniSector').options.length) {
+      $('saniSector').innerHTML = Object.entries(r.sectors).map(([k, v]) => `<option value="${escapeHtml(k)}">(${escapeHtml(k)}) ${escapeHtml(v.label)} — ${escapeHtml(v.legislation)}</option>`).join('');
+      $('saniSector').value = r.sector;
+    }
+    const applicable = r.entries.filter(e => e.applies);
+    $('saniAddBasis').innerHTML = applicable.map(e => `<option value="${escapeHtml(e.id)}">${escapeHtml(e.label)} — ${escapeHtml(e.title)}</option>`).join('') + '<option value="">As stated in the request/decision</option>';
+    const anchored = r.verification_counts?.anchored_in_guidance_text || 0;
+    $('saniRulesStatus').innerHTML = `${escapeHtml(r.guidance.citation)} <a href="${API_BASE}/sanitisation/rules.pdf" target="_blank" rel="noopener" style="color:var(--accent)">Open PDF</a>
+      <br><span class="badge">${r.guidance_text_loaded ? 'Decision text loaded' : 'Decision text NOT loaded'}</span>${anchored}/${r.entries.length} rules quoted verbatim and anchored in the decision text${r.broken.length ? ` — <strong class="status-gap">review: ${r.broken.map(escapeHtml).join(', ')}</strong>` : ''}.
+      <table class="sample-table" style="margin-top:8px"><thead><tr><th>Rule</th><th>Applies to (${escapeHtml(r.sector)})</th><th>Default</th><th>Text of the decision</th></tr></thead><tbody>
+      ${r.entries.filter(e => e.kind !== 'procedure').map(e => `<tr><td><span class="badge k-${escapeHtml(e.kind)}">${escapeHtml(e.label)}</span><br>${escapeHtml(e.title)}<br><span class="muted">${escapeHtml(e.section)}, p.${e.page}</span></td><td>${e.applies ? 'yes' : '—'}</td><td>${e.default_action === 'mask' ? 'Masked' : 'Only if claimed'}</td><td class="muted">“${escapeHtml(e.quote)}”</td></tr>`).join('')}
+      </tbody></table>`;
+  } catch (e) {
+    $('saniRulesStatus').textContent = `Rules unavailable: ${e.message}`;
+  }
+}
+function updateSaniRunState() {
+  const f = $('saniFile').files[0];
+  $('saniAnalyseBtn').disabled = !f;
+  $('saniFileInfo').textContent = f ? `${f.name} (${Math.ceil(f.size / 1024)} kB)` : '';
+  $('saniRunHint').textContent = f ? 'Ready.' : 'Choose a PDF first.';
+}
+async function runSanitisationAnalysis() {
+  const f = $('saniFile').files[0];
+  if (!f) return;
+  const fd = new FormData();
+  fd.append('file', f, f.name);
+  fd.append('sector', $('saniSector').value);
+  fd.append('domain', state.domain);
+  fd.append('applicant', fieldValue('saniApplicant'));
+  fd.append('applicant_address', fieldValue('saniApplicantAddress'));
+  fd.append('requests', $('saniRequests').value);
+  fd.append('allow_external_llm', $('saniAllowLlm').checked ? 'true' : 'false');
+  $('saniAnalyseBtn').disabled = true;
+  $('saniRunHint').textContent = $('saniAllowLlm').checked ? 'Reading the PDF and running the AI review…' : 'Reading the PDF…';
+  try {
+    const res = await fetch(`${API_BASE}/sanitisation/analyse`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    state.sanitisation = data;
+    state.saniFile = f;
+    state.saniOutput = null;
+    $('saniPdfBtn').disabled = true; $('saniLogBtn').disabled = true;
+    $('saniResult').innerHTML = '<div class="muted">Not generated yet.</div>';
+    renderSanitisation();
+    $('saniRunHint').textContent = 'Done. Review the proposals below.';
+  } catch (e) {
+    $('saniRunHint').textContent = `Failed: ${e.message}`;
+  } finally {
+    $('saniAnalyseBtn').disabled = !$('saniFile').files[0];
+  }
+}
+function saniVisible(p) {
+  const f = $('saniFilter').value;
+  if (f === 'all') return true;
+  if (f === 'selected') return p.selected;
+  if (f === 'ai') return p.sources.includes('ai');
+  if (f === 'flag') return p.flags.length > 0 || p.confidence === 'low';
+  return p.group === f;
+}
+function renderSanitisation() {
+  const d = state.sanitisation;
+  if (!d) return;
+  $('saniReview').hidden = false;
+  $('saniOutputPanel').hidden = false;
+  const s = d.summary || {};
+  const ai = d.ai || {};
+  const aiLine = !ai.requested ? 'AI review not requested (local rules only).'
+    : ai.used ? `AI review: ${ai.accepted} finding(s) accepted; rejected — not found on the page ${ai.rejected?.not_on_page || 0}, rule not applicable ${ai.rejected?.unknown_rule || 0}, public by exception ${ai.rejected?.exception || 0}.`
+    : 'AI review requested but not run.';
+  $('saniSummary').innerHTML = `<div><span class="badge">${escapeHtml(d.document.name)}</span>${d.document.pages} page(s), ${d.document.text_pages} with text • <span class="badge">Sector (${escapeHtml(d.sector.id)})</span>${escapeHtml(d.sector.label)}</div>
+    <div style="margin-top:6px">${Object.entries(SANI_KIND).map(([k, v]) => `<span class="badge k-${k}">${v}: ${s[k] || 0}</span>`).join('')} <strong id="saniSelCount"></strong></div>
+    <div class="muted" style="margin-top:6px">${escapeHtml(aiLine)}${(ai.errors || []).map(e => `<br>${escapeHtml(e)}`).join('')}</div>
+    <div class="muted">Also removed on output: ${d.document.metadata_fields.length ? `metadata (${escapeHtml(d.document.metadata_fields.join(', '))})` : 'no metadata'}, ${d.document.annotations} comment(s)/annotation(s), ${d.document.embedded_files} attachment(s), mailto links.</div>
+    ${d.notes?.skipped_exceptions ? `<div class="muted">Kept public by exception: ${d.notes.skipped_exceptions.applicant} applicant mention(s); reference list(s) on page(s) ${escapeHtml((d.notes.reference_pages || []).join(', ') || 'none')} not scanned for names (authors of published studies, Art. 39e(1)(b)).</div>` : ''}
+    ${(d.warnings || []).map(w => `<div class="warning-box">${escapeHtml(w)}</div>`).join('')}
+    ${(d.unlocated_requests || []).length ? `<div class="muted">Not found verbatim: ${d.unlocated_requests.map(u => `“${escapeHtml(u.text)}”`).join('; ')}</div>` : ''}`;
+  const byPage = {};
+  d.proposals.forEach(p => (byPage[p.page] = byPage[p.page] || []).push(p));
+  $('saniPages').innerHTML = (d.previews || []).map(pv => `<div class="sani-page" data-page="${pv.page}"><img src="${pv.image}" alt="Page ${pv.page}"><span class="pno">p.${pv.page}</span>
+    ${(byPage[pv.page] || []).flatMap(p => p.view_rects.map(r => `<div class="sani-box k-${escapeHtml(p.group)}" data-id="${escapeHtml(p.id)}" title="${escapeHtml(p.label)}: ${escapeHtml(p.text.slice(0, 120))}"
+      style="left:${(r[0] / pv.width * 100).toFixed(3)}%;top:${(r[1] / pv.height * 100).toFixed(3)}%;width:${((r[2] - r[0]) / pv.width * 100).toFixed(3)}%;height:${((r[3] - r[1]) / pv.height * 100).toFixed(3)}%"></div>`)).join('')}</div>`).join('')
+    + (d.document.pages > (d.previews || []).length ? `<div class="muted">Preview limited to the first ${d.preview_limit} pages; proposals on later pages are in the list.</div>` : '');
+  $('saniRows').innerHTML = d.proposals.map(p => `<tr class="sani-row" data-id="${escapeHtml(p.id)}">
+    <td><input type="checkbox" data-id="${escapeHtml(p.id)}"></td><td>${p.page}</td>
+    <td class="txt">${escapeHtml(p.text.length > 220 ? p.text.slice(0, 220) + '…' : p.text)}</td>
+    <td><span class="badge k-${escapeHtml(p.group)}" title="${escapeHtml(p.legal_basis)}">${escapeHtml(p.label)}</span></td>
+    <td class="muted">${p.sources.map(x => `<span class="badge">${escapeHtml(x)}</span>`).join('')}${p.flags.includes('safety_relevant') ? '<span class="badge flag">relevant to safety assessment — not claimable</span>' : ''}${p.confidence === 'low' ? '<span class="badge">candidate</span>' : ''}<br>${escapeHtml(p.reason)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Nothing proposed. Add text to mask above if needed.</td></tr>';
+  document.querySelectorAll('#saniRows input[type=checkbox]').forEach(cb => cb.addEventListener('change', () => toggleSani(cb.dataset.id, cb.checked)));
+  document.querySelectorAll('.sani-box').forEach(b => {
+    b.addEventListener('click', () => toggleSani(b.dataset.id));
+    b.addEventListener('mouseenter', () => highlightSani(b.dataset.id, true));
+    b.addEventListener('mouseleave', () => highlightSani(b.dataset.id, false));
+  });
+  document.querySelectorAll('.sani-row').forEach(r => {
+    r.addEventListener('mouseenter', () => highlightSani(r.dataset.id, true));
+    r.addEventListener('mouseleave', () => highlightSani(r.dataset.id, false));
+    r.querySelector('.txt').addEventListener('click', () => { const box = document.querySelector(`.sani-box[data-id="${r.dataset.id}"]`); if (box) box.scrollIntoView({ block: 'center', behavior: 'smooth' }); });
+  });
+  syncSani();
+}
+function toggleSani(id, value) {
+  const p = (state.sanitisation?.proposals || []).find(x => x.id === id);
+  if (!p) return;
+  p.selected = value === undefined ? !p.selected : value;
+  syncSani();
+}
+function highlightSani(id, on) { document.querySelectorAll(`[data-id="${id}"]`).forEach(el => (el.closest('.sani-row') || el).classList.toggle('hl', on)); }
+function syncSani() {
+  const props = state.sanitisation?.proposals || [];
+  props.forEach(p => {
+    document.querySelectorAll(`.sani-box[data-id="${p.id}"]`).forEach(b => b.classList.toggle('on', p.selected));
+    const row = document.querySelector(`.sani-row[data-id="${p.id}"]`);
+    if (row) { row.classList.toggle('off', !p.selected); row.querySelector('input').checked = p.selected; row.hidden = !saniVisible(p); }
+  });
+  const n = saniSelected().length;
+  if ($('saniSelCount')) $('saniSelCount').textContent = `${n} selected for masking`;
+  $('saniApplyBtn').disabled = n === 0;
+}
+function bulkSani(fn) { (state.sanitisation?.proposals || []).forEach(fn); syncSani(); }
+async function addSaniText() {
+  const text = fieldValue('saniAddText');
+  if (!text || !state.saniFile) return;
+  const fd = new FormData();
+  fd.append('file', state.saniFile, state.saniFile.name);
+  fd.append('sector', state.sanitisation.sector.id);
+  fd.append('text', text);
+  fd.append('basis', $('saniAddBasis').value);
+  $('saniAddHint').textContent = 'Searching…';
+  try {
+    const res = await fetch(`${API_BASE}/sanitisation/locate`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    const d = state.sanitisation;
+    let next = d.proposals.length + 1;
+    let added = 0;
+    data.proposals.forEach(p => {
+      const dup = d.proposals.find(x => x.page === p.page && x.text.toLowerCase() === p.text.toLowerCase());
+      if (dup) { dup.selected = true; return; }
+      d.proposals.push({ ...p, id: `M${next++}` });
+      added++;
+    });
+    d.proposals.sort((a, b) => a.page - b.page || (a.rects[0]?.[1] || 0) - (b.rects[0]?.[1] || 0));
+    $('saniAddHint').textContent = data.proposals.length ? `Found on ${new Set(data.proposals.map(p => p.page)).size} page(s); ${added} added, selected.` : 'Not found in the PDF (check spelling and spacing).';
+    if (data.proposals.length) { $('saniAddText').value = ''; renderSanitisation(); }
+  } catch (e) {
+    $('saniAddHint').textContent = `Failed: ${e.message}`;
+  }
+}
+function b64ToBlob(b64, type) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type });
+}
+function downloadBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+}
+async function applySanitisation() {
+  const sel = saniSelected();
+  if (!sel.length || !state.saniFile) return;
+  const fd = new FormData();
+  fd.append('file', state.saniFile, state.saniFile.name);
+  fd.append('redactions', JSON.stringify(sel.map(p => ({ id: p.id, page: p.page, rects: p.rects, text: p.text, label: p.label, category: p.category, sources: p.sources, reason: p.reason }))));
+  fd.append('label_boxes', $('saniLabelBoxes').checked ? 'true' : 'false');
+  fd.append('sector', state.sanitisation.sector.id);
+  $('saniApplyBtn').disabled = true;
+  $('saniResult').innerHTML = '<div class="muted">Redacting and verifying…</div>';
+  try {
+    const res = await fetch(`${API_BASE}/sanitisation/apply`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    state.saniOutput = data;
+    const r = data.report, v = r.verification;
+    const check = (ok, label) => `<li><span class="${ok ? 'sani-check-ok' : 'sani-check-ko'}">${ok ? '✓' : '✗'}</span> ${escapeHtml(label)}</li>`;
+    $('saniResult').innerHTML = `<p><strong class="${v.passed ? 'sani-check-ok' : 'sani-check-ko'}">${v.passed ? 'Verification passed' : 'Verification FAILED — do not publish'}</strong> — ${r.redaction_boxes} box(es) on ${r.pages_redacted} page(s).</p>
+      <ul class="clean">${check(v.checks.masked_text_removed, 'Masked text no longer present on the pages where it was masked (re-read from the output file)')}
+      ${check(v.checks.metadata_cleared && v.checks.no_xmp_metadata, `Document metadata and XMP cleared${r.metadata_cleared.length ? ` (${r.metadata_cleared.join(', ')})` : ''}`)}
+      ${check(v.checks.no_annotations, `No comments/annotations (${r.annotations_removed} removed; ${r.form_fields_removed} form field(s) removed)`)}
+      ${check(v.checks.no_embedded_files, `No attachments (${r.embedded_files_removed} removed)`)}
+      ${check(true, `${r.links_removed} link(s) removed (mailto and links under masked areas)`)}</ul>
+      ${v.residual.length ? `<div class="warning-box">${v.residual.length} masked item(s) still appear unmasked elsewhere: ${v.residual.map(x => `${escapeHtml(x.id)} (masked p.${x.page}) on p.${x.still_on_pages.join(', ')}${x.same_page ? ' — SAME PAGE' : ''}`).join('; ')}. Use “Mask more text” to cover every occurrence if it must be masked.</div>` : ''}`;
+    $('saniPdfBtn').disabled = false; $('saniLogBtn').disabled = false;
+  } catch (e) {
+    $('saniResult').innerHTML = `<div class="muted">Sanitisation failed: ${escapeHtml(e.message)}</div>`;
+  } finally {
+    $('saniApplyBtn').disabled = saniSelected().length === 0;
+  }
+}
+$('saniFile').addEventListener('change', updateSaniRunState);
+$('saniSector').addEventListener('change', () => { state.saniSectorTouched = true; loadSanitisationRules(); });
+$('saniAnalyseBtn').addEventListener('click', runSanitisationAnalysis);
+$('saniFilter').addEventListener('change', syncSani);
+$('saniSelPersonal').addEventListener('click', () => bulkSani(p => { if (p.group === 'personal_data') p.selected = true; }));
+$('saniSelRequests').addEventListener('click', () => bulkSani(p => { if (p.group === 'request') p.selected = true; }));
+$('saniClearAnnex').addEventListener('click', () => bulkSani(p => { if (p.group === 'confidential_item') p.selected = false; }));
+$('saniSelNone').addEventListener('click', () => bulkSani(p => { p.selected = false; }));
+$('saniAddBtn').addEventListener('click', addSaniText);
+$('saniApplyBtn').addEventListener('click', applySanitisation);
+$('saniPdfBtn').addEventListener('click', () => state.saniOutput && downloadBlob(b64ToBlob(state.saniOutput.pdf_base64, 'application/pdf'), state.saniOutput.filename));
+$('saniLogBtn').addEventListener('click', () => state.saniOutput && downloadBlob(new Blob([state.saniOutput.log_markdown], { type: 'text/markdown;charset=utf-8' }), state.saniOutput.filename.replace(/\.pdf$/, '_record.md')));
+loadDomains().then(() => { loadCharacterisationGuidance(); loadSanitisationRules(); });
 updateContext();
 </script>
 </body>

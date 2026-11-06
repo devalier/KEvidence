@@ -23,6 +23,7 @@ from openai import OpenAI
 
 import characterisation as charmod
 import docx_export
+import sanitisation as sanmod
 
 # ---------------------------------------------------------------------------
 # Config
@@ -107,6 +108,8 @@ def load_aop_list():
             if not row or not row[0].startswith("Aop:"):
                 continue
             aop_id = int(row[0].replace("Aop:", ""))
+            if aop_id in AOPWIKI_EXCLUDED_IDS:
+                continue
             if aop_id not in aops:
                 aops[aop_id] = {
                     "id": aop_id,
@@ -119,12 +122,50 @@ def load_aop_list():
     return aops
 
 
+# Only AOP-Wiki content licensed CC BY-SA is redistributed and displayed. "All rights reserved" needs the
+# authors' written permission and "Open for adoption" grants no licence (scripts/filter_aopwiki_licences.py
+# removes them from the bundled data; this guard also covers a freshly downloaded export).
+AOPWIKI_ALLOWED_LICENCES = {"BY-SA"}
+DB_DATA_TAG = "aopwiki-by-sa-only-v1"
+
+
+def _aopwiki_excluded():
+    """(AOP-Wiki ids, AOP uuids) of AOPs in the export whose licence does not allow redistribution."""
+    import gzip
+    xml_path = DATA_DIR / "aop-wiki-xml.gz"
+    if not xml_path.exists():
+        return set(), set()
+    xml = gzip.decompress(xml_path.read_bytes()).decode("utf-8", "replace")
+    wiki_ids = dict(re.findall(r'<aop-reference id="([^"]+)" aop-wiki-id="(\d+)"/>', xml))
+    uuids = set()
+    for m in re.finditer(r'<aop id="([^"]+)">.*?</aop>', xml, re.S):
+        lic = re.search(r"<wiki-license>([^<]*)</wiki-license>", m.group(0))
+        if (lic.group(1).strip() if lic else "") not in AOPWIKI_ALLOWED_LICENCES:
+            uuids.add(m.group(1))
+    return {int(wiki_ids[u]) for u in uuids if u in wiki_ids}, uuids
+
+
+AOPWIKI_EXCLUDED_IDS, AOPWIKI_EXCLUDED_UUIDS = _aopwiki_excluded()
+if AOPWIKI_EXCLUDED_IDS:
+    print(f"AOP-Wiki export contains {len(AOPWIKI_EXCLUDED_IDS)} AOPs not licensed CC BY-SA; they are excluded. "
+          "Run scripts/filter_aopwiki_licences.py to remove them from data/.")
+
+
 def build_db():
     """Load TSV data into SQLite for fast querying."""
     if DB_PATH.exists():
-        return
+        try:
+            with sqlite3.connect(str(DB_PATH)) as c:
+                tag = c.execute("SELECT value FROM meta WHERE key = 'data_tag'").fetchone()
+        except sqlite3.Error:
+            tag = None
+        if tag and tag[0] == DB_DATA_TAG:
+            return
+        DB_PATH.unlink()  # built before the licence filter: rebuild
     conn = sqlite3.connect(str(DB_PATH))
     cur = conn.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)")
+    cur.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('data_tag', ?)", (DB_DATA_TAG,))
     cur.execute("""
         CREATE TABLE IF NOT EXISTS aops (
             id INTEGER PRIMARY KEY,
@@ -176,6 +217,8 @@ def build_db():
             if not row or not row[0].startswith("Aop:"):
                 continue
             aop_id = int(row[0].replace("Aop:", ""))
+            if aop_id in AOPWIKI_EXCLUDED_IDS:
+                continue
             event_id = int(row[1].replace("Event:", ""))
             event_type = row[2]
             event_name = row[3]
@@ -216,6 +259,8 @@ def build_db():
             if not row or not row[0].startswith("Aop:"):
                 continue
             aop_id = int(row[0].replace("Aop:", ""))
+            if aop_id in AOPWIKI_EXCLUDED_IDS:
+                continue
             up = int(row[1].replace("Event:", ""))
             down = int(row[2].replace("Event:", ""))
             rel_id = int(row[3].replace("Relationship:", ""))
@@ -234,6 +279,8 @@ def build_db():
             if not row or not row[0].startswith("Aop:"):
                 continue
             aop_id = int(row[0].replace("Aop:", ""))
+            if aop_id in AOPWIKI_EXCLUDED_IDS:
+                continue
             event_id = int(row[1].replace("Event:", ""))
             action = row[2]
             obj_src = row[3] if len(row) > 3 else ""
@@ -340,6 +387,8 @@ def _build_chemical_index():
         if not aop_uid_match:
             continue
         aop_uid = aop_uid_match.group(1)
+        if aop_uid in AOPWIKI_EXCLUDED_UUIDS:
+            continue
         aop_body = m.group()
 
         # Stressor refs
@@ -798,6 +847,8 @@ def find_aops_by_chemical(chemical_name: str) -> list:
             for fpath in AOP_CACHE_DIR.glob("aop_*.txt"):
                 try:
                     aop_id = int(fpath.stem.replace("aop_", ""))
+                    if aop_id in AOPWIKI_EXCLUDED_IDS:
+                        continue
                     text = fpath.read_text().lower()
 
                     # Only match if stressor name appears in the PROTOTYPICAL STRESSOR section
@@ -2252,6 +2303,8 @@ async def chat(body: dict):
     step = workbench_context.get("workflow_step")
     if step == "characterisation":
         return characterisation_chat(query, workbench_context)
+    if step == "sanitisation":
+        return sanitisation_chat(query, workbench_context)
     if step in STEP_GUIDANCE_STEPS:
         guided = step_guidance_chat(query, workbench_context, step)
         if guided:
@@ -2601,7 +2654,8 @@ async def characterisation_domains():
     return {
         "default": CHAR_REGISTRY["default_domain"],
         "domains": [{"id": b["id"], "label": b["label"],
-                     "sources": [charmod.source_short_name(s["catalogue"]) for s in b["sources"]]}
+                     "sources": [charmod.source_short_name(s["catalogue"]) for s in b["sources"]],
+                     "transparency_sector": next((d.get("transparency_sector", "a") for d in CHAR_REGISTRY["domains"] if d["id"] == b["id"]), "a")}
                     for b in CHAR_DOMAINS.values()],
     }
 
@@ -2796,6 +2850,171 @@ def step_guidance_chat(query: str, workbench_context: dict, step: str) -> Option
         resp = llm.chat.completions.create(
             model=LLM_MODEL, temperature=0.1, max_tokens=1200,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
+        answer = resp.choices[0].message.content
+    except Exception as e:
+        return {"answer": f"I encountered an error querying the LLM: {str(e)}", "sources": [], "guidance_requirements": ids}
+    return {"answer": answer, "sources": [], "guidance_requirements": ids}
+
+
+# ---------------------------------------------------------------------------
+# Publication — sanitisation under the Transparency Regulation (Art. 38-39e GFL; EFSA practical arrangements)
+# ---------------------------------------------------------------------------
+SANI_RULES = sanmod.load_rules()
+
+SANI_SYSTEM_PROMPT = """You are the KEvidence sanitisation assistant for EFSA staff preparing documents for publication under the
+Transparency Regulation (Regulation (EU) 2019/1381, Articles 38 to 39e of Regulation (EC) No 178/2002).
+You answer ONLY from the entries of EFSA's practical arrangements on transparency and confidentiality supplied below
+({citation}), each with a verbatim quote and the decision text.
+
+Rules:
+1. Ground every statement in the supplied entries. Cite the article and page, e.g. (PA Art. 4(5), p.7), and the entry ID.
+2. Quote the decision verbatim when the exact wording matters (exceptions, the 5% turnover threshold, the five-year rule).
+3. If the entries do not answer the question, say the loaded practical arrangements do not address it. Never fill gaps from
+   general knowledge, and never invent items, deadlines or articles.
+4. Keep the roles apart: the applicant requests confidentiality, EFSA decides (it is not the assistant's or the user's call
+   whether an item IS confidential). Personal data are masked by default, except the applicant's name and address, authors of
+   published studies and participants/observers of EFSA scientific meetings.
+5. Annex items that exclude 'information which is relevant to the assessment of safety' cannot be masked for that information.
+6. When a proposal summary is supplied, relate the answer to it, but do not assume document content beyond it."""
+
+
+def _sani_sector(sector: str, domain: str = "") -> str:
+    if not sector:
+        entry = next((d for d in CHAR_REGISTRY["domains"] if d["id"] == (domain or CHAR_REGISTRY["default_domain"])), None)
+        sector = (entry or {}).get("transparency_sector", "a")
+    if sector not in SANI_RULES["catalogue"]["sectors"]:
+        raise HTTPException(400, f"Unknown sector '{sector}'. Available: {', '.join(SANI_RULES['catalogue']['sectors'])}.")
+    return sector
+
+
+def _llm_json_long(system: str, user: str) -> str:
+    resp = llm.chat.completions.create(
+        model=LLM_MODEL,
+        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+        temperature=0,
+        max_tokens=4000,
+        response_format={"type": "json_object"},
+    )
+    return resp.choices[0].message.content or ""
+
+
+def _read_pdf_upload(file: UploadFile) -> bytes:
+    content = file.file.read(sanmod.MAX_FILE_BYTES + 1)
+    if len(content) > sanmod.MAX_FILE_BYTES:
+        raise HTTPException(413, f"File exceeds {sanmod.MAX_FILE_BYTES // (1024 * 1024)} MB.")
+    return content
+
+
+@app.get("/api/sanitisation/rules")
+async def sanitisation_rules(sector: str = "", domain: str = ""):
+    """The confidentiality/personal-data rules of the EFSA practical arrangements, their grounding status, and which apply to a sector."""
+    status = sanmod.rules_status(SANI_RULES, _sani_sector(sector, domain))
+    status["sector"] = _sani_sector(sector, domain)
+    return status
+
+
+@app.get("/api/sanitisation/rules.pdf")
+async def sanitisation_rules_pdf():
+    """The bundled EFSA decision on practical arrangements concerning transparency and confidentiality (unmodified)."""
+    pdf = SANI_RULES["directory"] / SANI_RULES["catalogue"]["guidance"]["bundled_file"]
+    if not pdf.exists():
+        raise HTTPException(404, "Practical arrangements PDF not bundled in this instance")
+    return FileResponse(str(pdf), media_type="application/pdf", filename="EFSA_practical_arrangements_transparency_confidentiality.pdf")
+
+
+@app.post("/api/sanitisation/analyse")
+def sanitisation_analyse(
+    file: UploadFile = File(...),
+    sector: str = Form(""),
+    domain: str = Form(""),
+    applicant: str = Form(""),
+    applicant_address: str = Form(""),
+    requests: str = Form(""),
+    allow_external_llm: str = Form("false"),
+):
+    """Propose redactions for one PDF. Processed in memory for this request only; nothing is stored.
+    The AI review sends the page text to the OpenAI API and runs only when allow_external_llm is set."""
+    sector = _sani_sector(sector, domain)
+    content = _read_pdf_upload(file)
+    use_llm = str(allow_external_llm).lower() in ("1", "true", "yes", "on")
+    complete = None
+    llm_error = ""
+    if use_llm:
+        if os.environ.get("OPENAI_API_KEY"):
+            complete = _llm_json_long
+        else:
+            llm_error = "OPENAI_API_KEY is not configured; AI review skipped (local rules only)."
+    try:
+        result = sanmod.propose(content, SANI_RULES, sector, filename=(file.filename or "document.pdf")[:200],
+                                applicant=applicant[:300], applicant_address=applicant_address[:500],
+                                requests_raw=requests[:100_000], complete=complete)
+    except sanmod.SanitisationError as exc:
+        raise HTTPException(400, str(exc))
+    if llm_error:
+        result["ai"] = {"requested": True, "used": False, "errors": [llm_error]}
+    return result
+
+
+@app.post("/api/sanitisation/locate")
+def sanitisation_locate(file: UploadFile = File(...), text: str = Form(...), basis: str = Form(""), sector: str = Form(""), domain: str = Form("")):
+    """Every occurrence of a text the reviewer adds by hand, with its boxes. Nothing is stored."""
+    sector = _sani_sector(sector, domain)
+    content = _read_pdf_upload(file)
+    try:
+        return {"proposals": sanmod.locate_text(content, SANI_RULES, sector, text, basis[:80])}
+    except sanmod.SanitisationError as exc:
+        raise HTTPException(400, str(exc))
+
+
+@app.post("/api/sanitisation/apply")
+def sanitisation_apply(
+    file: UploadFile = File(...),
+    redactions: str = Form(...),
+    label_boxes: str = Form("false"),
+    sector: str = Form(""),
+    domain: str = Form(""),
+):
+    """Burn the selected redactions into the PDF, scrub metadata/annotations/attachments, verify, and return the
+    sanitised PDF (base64) with a verification report and an internal sanitisation record. Nothing is stored."""
+    sector = _sani_sector(sector, domain)
+    content = _read_pdf_upload(file)
+    try:
+        items = json.loads(redactions)
+    except ValueError:
+        raise HTTPException(400, "redactions must be JSON")
+    name = re.sub(r"[^A-Za-z0-9._-]+", "_", (file.filename or "document.pdf").rsplit(".", 1)[0])[:80].strip("._") or "document"
+    try:
+        pdf, report = sanmod.apply(content, items, label_boxes=str(label_boxes).lower() in ("1", "true", "yes", "on"),
+                                   title=f"{name} — non-confidential version")
+    except sanmod.SanitisationError as exc:
+        raise HTTPException(400, str(exc))
+    sector_info = {"id": sector, **SANI_RULES["catalogue"]["sectors"][sector]}
+    applied = [i for i in items if isinstance(i, dict)]
+    return {
+        "filename": f"{name}_sanitised.pdf",
+        "pdf_base64": base64.b64encode(pdf).decode("ascii"),
+        "report": report,
+        "log_markdown": sanmod.log_markdown(file.filename or "document.pdf", sector_info, applied, report, SANI_RULES),
+    }
+
+
+def sanitisation_chat(query: str, workbench_context: dict) -> dict:
+    ctx, ids = charmod.domain_context_for_question(query, SANI_RULES, step=sanmod.STEP)
+    if not ctx:
+        return {"answer": "I could not match this question to EFSA's practical arrangements on transparency and confidentiality. "
+                          "In the sanitisation step I only answer from that decision — try naming the topic (personal data, "
+                          "manufacturing process, quantitative composition, blackening, justification, 5% turnover, impurities) "
+                          "or the article (e.g. Art. 10).",
+                "sources": [], "guidance_requirements": [], "no_data": True}
+    summary = workbench_context.get("sanitisation_summary")
+    summary_txt = json.dumps(summary)[:3000] if isinstance(summary, (dict, list)) else "No document analysed yet."
+    sector = str(workbench_context.get("sanitisation_sector") or "")[:2]
+    user = (f"Entries of the practical arrangements:\n\n{ctx}\n\n---\n\nSector (Annex letter): {sector or 'not set'}\n"
+            f"Proposal summary: {summary_txt}\n\n---\n\nQuestion: {query}")
+    system = SANI_SYSTEM_PROMPT.format(citation=SANI_RULES["catalogue"]["guidance"]["citation"])
+    try:
+        resp = llm.chat.completions.create(model=LLM_MODEL, temperature=0.1, max_tokens=1200,
+                                           messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
         answer = resp.choices[0].message.content
     except Exception as e:
         return {"answer": f"I encountered an error querying the LLM: {str(e)}", "sources": [], "guidance_requirements": ids}

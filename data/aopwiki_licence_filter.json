@@ -1,0 +1,336 @@
+{
+  "source": "AOP-Wiki XML export (https://aopwiki.org/downloads)",
+  "export_version": "2026-06-04 04:00:57 +0000",
+  "kept_licences": [
+    "BY-SA"
+  ],
+  "kept_aops": 522,
+  "removed_aops": [
+    {
+      "wiki_id": 8,
+      "licence": "Open for adoption",
+      "title": "Upregulation of Thyroid Hormone Catabolism via Activation of Hepatic Nuclear Receptors, and Subsequent Adverse Neurodevelopmental Outcomes in Mammals"
+    },
+    {
+      "wiki_id": 19,
+      "licence": "Open for adoption",
+      "title": "Androgen receptor antagonism leading to adverse effects in the male foetus (mammals)"
+    },
+    {
+      "wiki_id": 26,
+      "licence": "Open for adoption",
+      "title": "Calcium-mediated neuronal ROS production and energy imbalance"
+    },
+    {
+      "wiki_id": 31,
+      "licence": "Open for adoption",
+      "title": "Oxidation of iron in hemoglobin leading to hematotoxicity"
+    },
+    {
+      "wiki_id": 33,
+      "licence": "Open for adoption",
+      "title": "Kidney toxicity induced by activation of 5HT2C"
+    },
+    {
+      "wiki_id": 117,
+      "licence": "Open for adoption",
+      "title": "Androgen receptor activation leading to hepatocellular adenomas and carcinomas (in mouse and rat)"
+    },
+    {
+      "wiki_id": 139,
+      "licence": "Open for adoption",
+      "title": "Alkylation of DNA leading to cancer 1"
+    },
+    {
+      "wiki_id": 146,
+      "licence": "Open for adoption",
+      "title": "Estrogen Receptor Activation and Female Precocious Puberty"
+    },
+    {
+      "wiki_id": 200,
+      "licence": "Open for adoption",
+      "title": "Estrogen receptor activation leading to breast cancer  "
+    },
+    {
+      "wiki_id": 213,
+      "licence": "Open for adoption",
+      "title": "Inhibition of fatty acid beta oxidation leading to nonalcoholic steatohepatitis (NASH)"
+    },
+    {
+      "wiki_id": 214,
+      "licence": "Open for adoption",
+      "title": "Network of SSRIs (selective serotonin reuptake inhibitors)"
+    },
+    {
+      "wiki_id": 215,
+      "licence": "Open for adoption",
+      "title": "Molecular events lead to epilepsy"
+    },
+    {
+      "wiki_id": 217,
+      "licence": "Open for adoption",
+      "title": "Gastric ulcer formation"
+    },
+    {
+      "wiki_id": 221,
+      "licence": "Open for adoption",
+      "title": "Mental stress to depression"
+    },
+    {
+      "wiki_id": 222,
+      "licence": "Open for adoption",
+      "title": "Mental stress to agitation"
+    },
+    {
+      "wiki_id": 223,
+      "licence": "Open for adoption",
+      "title": "Serotonin transporter activation to seizure"
+    },
+    {
+      "wiki_id": 224,
+      "licence": "Open for adoption",
+      "title": "Serotonin transporter activation to depression"
+    },
+    {
+      "wiki_id": 225,
+      "licence": "Open for adoption",
+      "title": "Serotonin transporter activation to agitation"
+    },
+    {
+      "wiki_id": 226,
+      "licence": "Open for adoption",
+      "title": "SSRI (Selective serotonin reuptake inhibitor) to hypertension"
+    },
+    {
+      "wiki_id": 227,
+      "licence": "Open for adoption",
+      "title": "NSAID induced PTGS1 inactivation to gastric ulcer"
+    },
+    {
+      "wiki_id": 228,
+      "licence": "Open for adoption",
+      "title": "NSAID induced PTGS2 inactivation to gastric ulcer"
+    },
+    {
+      "wiki_id": 229,
+      "licence": "Open for adoption",
+      "title": "Helicobacter pylori to gastric ulcer"
+    },
+    {
+      "wiki_id": 230,
+      "licence": "Open for adoption",
+      "title": "presynaptic neuron 1 activation to epilepsy"
+    },
+    {
+      "wiki_id": 231,
+      "licence": "Open for adoption",
+      "title": "presynaptic neuron 2 repression to epilepsy"
+    },
+    {
+      "wiki_id": 232,
+      "licence": "Open for adoption",
+      "title": "NFE2/Nrf2 repression to steatosis"
+    },
+    {
+      "wiki_id": 242,
+      "licence": "Open for adoption",
+      "title": "Inhibition of lysyl oxidase leading to enhanced chronic fish toxicity"
+    },
+    {
+      "wiki_id": 364,
+      "licence": "All rights reserved",
+      "title": "Thyroperoxidase inhibition leading to altered visual function via decreased eye size"
+    },
+    {
+      "wiki_id": 365,
+      "licence": "All rights reserved",
+      "title": "Thyroperoxidase inhibition leading to altered visual function via altered photoreceptor patterning"
+    },
+    {
+      "wiki_id": 379,
+      "licence": "All rights reserved",
+      "title": "Binding to ACE2 leading to thrombosis and disseminated intravascular coagulation"
+    },
+    {
+      "wiki_id": 457,
+      "licence": "Open for adoption",
+      "title": "Succinate dehydrogenase inhibition leading to increased insulin resistance through reduction in circulating thyroxine"
+    },
+    {
+      "wiki_id": 458,
+      "licence": "Open for adoption",
+      "title": "AhR activation in the liver leading to Subsequent Adverse Neurodevelopmental Outcomes in Mammals"
+    },
+    {
+      "wiki_id": 459,
+      "licence": "Open for adoption",
+      "title": "AhR activation in the thyroid leading to Subsequent Adverse Neurodevelopmental Outcomes in Mammals"
+    },
+    {
+      "wiki_id": 475,
+      "licence": "All rights reserved",
+      "title": "Binding of chemicals to ionotropic glutamate receptors leads to impairment of learning and memory via loss of drebrin from dendritic spines of neurons"
+    },
+    {
+      "wiki_id": 498,
+      "licence": "Open for adoption",
+      "title": "Increased LCN2/iron complex leading to neurological disorders"
+    },
+    {
+      "wiki_id": 501,
+      "licence": "Open for adoption",
+      "title": "Excessive iron accumulation leading to neurological disorders"
+    },
+    {
+      "wiki_id": 506,
+      "licence": "All rights reserved",
+      "title": "Binding of Influenza A Virus (IAV) to Sialic Acid Glycan Receptor leads to viral infection proliferation"
+    },
+    {
+      "wiki_id": 519,
+      "licence": "Open for adoption",
+      "title": "Cardiac ion channels blockade  leading to  increased incidence of cardiovascular morbidity and mortality "
+    },
+    {
+      "wiki_id": 520,
+      "licence": "Open for adoption",
+      "title": "Retinoic acid receptor agonism during neurodevelopment leading to impaired learning and memory"
+    },
+    {
+      "wiki_id": 522,
+      "licence": "Open for adoption",
+      "title": "Estrogen antagonism leading to increased risk of autism-like behavior"
+    },
+    {
+      "wiki_id": 523,
+      "licence": "Open for adoption",
+      "title": "Retinoic acid receptor agonism during neurodevelopment leading to microcephaly"
+    },
+    {
+      "wiki_id": 525,
+      "licence": "Open for adoption",
+      "title": "Reduced oligodendrocyte differentiation during neurodevelopment leading to impaired learning and memory"
+    },
+    {
+      "wiki_id": 532,
+      "licence": "Open for adoption",
+      "title": "Retinoic acid receptor agonism during cerebellar development leading to impaired locomotor function"
+    },
+    {
+      "wiki_id": 533,
+      "licence": "Open for adoption",
+      "title": "Retinoic acid receptor antagonism during neurodevelopment leading to impaired learning and memory"
+    },
+    {
+      "wiki_id": 547,
+      "licence": "All rights reserved",
+      "title": "Androgen receptor agonism leading to long anogenital distance in female offspring"
+    },
+    {
+      "wiki_id": 551,
+      "licence": "Open for adoption",
+      "title": "Increased Muscarinic M2 Receptor leading to Arrhythmia"
+    },
+    {
+      "wiki_id": 560,
+      "licence": "Open for adoption",
+      "title": "Inhibition of Funny current (If) leading to Arrhythmias"
+    },
+    {
+      "wiki_id": 580,
+      "licence": "All rights reserved",
+      "title": "Mineralocorticoid Receptor Activation Leading to Increased Body Mass Index"
+    },
+    {
+      "wiki_id": 581,
+      "licence": "All rights reserved",
+      "title": "Glucocorticoid receptor (GR) activation during development leads to cognitive function (COG) decrease"
+    },
+    {
+      "wiki_id": 582,
+      "licence": "All rights reserved",
+      "title": "Inhibition of EphA2 phosphorylation leads to liver damage via the ERK/ MDM2/p53 axis"
+    },
+    {
+      "wiki_id": 583,
+      "licence": "All rights reserved",
+      "title": "Vascular endothelial HER2 inhibition disrupts cardiomyocyte calcium homeostasis via EGFR/STAT3/PTX3 axis leading to cardiac contractile dysfunction"
+    },
+    {
+      "wiki_id": 584,
+      "licence": "All rights reserved",
+      "title": "SQLE accumulation leads to hepatotoxicity via cholesterol/sphingolipid metabolic disturbance and lysosomal damage"
+    },
+    {
+      "wiki_id": 585,
+      "licence": "All rights reserved",
+      "title": "AKT Inhibition blocks the autophagy flow through the PRKAA/AMPK pathway and leads to cardiotoxicity"
+    },
+    {
+      "wiki_id": 586,
+      "licence": "All rights reserved",
+      "title": "The increasing accumulation of HMGB1 in the nucleus causes cardiomyocyte death via HMGB1/HSPB1/CCN2 pathway"
+    },
+    {
+      "wiki_id": 594,
+      "licence": "All rights reserved",
+      "title": "Micro plastic effect on reproduction"
+    },
+    {
+      "wiki_id": 595,
+      "licence": "All rights reserved",
+      "title": "Emerging OPFRS reproductive outcome pathway"
+    },
+    {
+      "wiki_id": 604,
+      "licence": "All rights reserved",
+      "title": "Binding of Alpha 1-Adrenergics to Agonists Leading to Depression"
+    },
+    {
+      "wiki_id": 607,
+      "licence": "All rights reserved",
+      "title": "Per and Polyfluoro Alkylating Substances and Microbiota-Gut-Brain Axis"
+    },
+    {
+      "wiki_id": 608,
+      "licence": "All rights reserved",
+      "title": "Thyroid Hormone Excess Leading to Reduced, Swimming Performance via Hypomyelination"
+    },
+    {
+      "wiki_id": 610,
+      "licence": "All rights reserved",
+      "title": "Decreased thyroid hormone levels in the brain regulated via transport, metabolism and TR activation leading to decreased cognition and motor function"
+    },
+    {
+      "wiki_id": 615,
+      "licence": "All rights reserved",
+      "title": "Suppression of Keap1 cysteine oxidation leading to liver inflammation"
+    },
+    {
+      "wiki_id": 616,
+      "licence": "All rights reserved",
+      "title": "organic UV filter and its Photoproducts reproductive toxicity pathways "
+    },
+    {
+      "wiki_id": 617,
+      "licence": "All rights reserved",
+      "title": "The adverse outcome pathway of vascular calcification"
+    },
+    {
+      "wiki_id": 620,
+      "licence": "All rights reserved",
+      "title": "The Adverse Outcome Pathway to Deposition of Energy Leading to Female Decreased Fertility"
+    },
+    {
+      "wiki_id": 621,
+      "licence": "Open for adoption",
+      "title": "NOX2 Driven Oxidative Stress-Induced α-Synuclein Radical Formation and Tau Nitration Leading to Neurodegeneration"
+    },
+    {
+      "wiki_id": 636,
+      "licence": "All rights reserved",
+      "title": "Increase in reactive oxygen species (ROS) leading to human amyotrophic lateral sclerosis (ALS)"
+    }
+  ],
+  "removed_orphan_key_events_and_relationships": 453
+}
