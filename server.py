@@ -6,7 +6,6 @@ Use case #7 from the AOP Wiki analysis: "Regulatory Augmented Chatbot"
 
 import base64
 import csv
-import hmac
 import json
 import os
 import re
@@ -18,9 +17,10 @@ from typing import Any, Optional
 import httpx
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response
-from openai import OpenAI
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 
+import accounts
+import ai
 import characterisation as charmod
 import docx_export
 import sanitisation as sanmod
@@ -34,7 +34,6 @@ STATIC_DIR = KEVIDENCE_HOME / "static"
 STATIC_ROOT = STATIC_DIR.resolve()
 AOP_CACHE_DIR = DATA_DIR / "aops"
 DB_PATH = DATA_DIR / "kevidence.db"
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")  # cheap, good enough for a prototype
 
 app = FastAPI(title="KEvidence — Risk Assessment Workbench", docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -48,17 +47,21 @@ if CORS_ORIGINS:
         allow_headers=["Content-Type", "Authorization"],
     )
 
-# Optional HTTP Basic authentication for every route. Set both variables to enable it.
-AUTH_USER = os.getenv("KEVIDENCE_AUTH_USER", "")
-AUTH_PASSWORD = os.getenv("KEVIDENCE_AUTH_PASSWORD", "")
-if not (AUTH_USER and AUTH_PASSWORD):
-    print("WARNING: KEVIDENCE_AUTH_USER/KEVIDENCE_AUTH_PASSWORD not set — every endpoint is open to anyone who can reach "
-          "this server. Set them, or put an authenticating reverse proxy in front.")
+# Email sign-in (accounts.py) gates every route except the sign-in flow itself and the health check.
+accounts.init_db()
+_config_problems = accounts.check_configuration()
+if _config_problems:
+    raise accounts.ConfigurationError("KEvidence cannot start in production: " + "; ".join(_config_problems))
+if accounts.mail_transport() == "console":
+    print("NOTE: no RESEND_API_KEY or SMTP_HOST set — sign-in links are printed to this console (development only).")
+PUBLIC_PATHS = ("/auth/", "/api/health", "/robots.txt")
 
 SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
-    "Referrer-Policy": "no-referrer",
+    # same-origin, not no-referrer: with no-referrer browsers send "Origin: null" on form posts, which the
+    # cross-site check must refuse. URLs (and sign-in tokens in them) still never leave the site.
+    "Referrer-Policy": "same-origin",
     "Cross-Origin-Opener-Policy": "same-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     # The single-page UI uses inline script/styles; everything else is restricted to this origin.
@@ -68,26 +71,190 @@ SECURITY_HEADERS = {
 }
 
 
-def _authorised(header: str) -> bool:
-    if not header.startswith("Basic "):
-        return False
-    try:
-        user, _, password = base64.b64decode(header[6:], validate=True).decode("utf-8").partition(":")
-    except (ValueError, UnicodeDecodeError):
-        return False
-    return hmac.compare_digest(user.encode(), AUTH_USER.encode()) & hmac.compare_digest(password.encode(), AUTH_PASSWORD.encode())
+def _client_ip(request: Request) -> str:
+    # Behind a reverse proxy set TRUST_PROXY=1: the last X-Forwarded-For hop is the one the proxy appended.
+    if os.getenv("TRUST_PROXY"):
+        hops = [h.strip() for h in request.headers.get("x-forwarded-for", "").split(",") if h.strip()]
+        if hops:
+            return hops[-1]
+    return request.client.host if request.client else ""
+
+
+def _same_origin(request: Request) -> bool:
+    """Refuse cross-site writes: a browser always sends Origin on a cross-site POST."""
+    origin = request.headers.get("origin")
+    if not origin:
+        return True
+    allowed = {accounts.app_origin(), f"{request.url.scheme}://{request.headers.get('host', '')}"}
+    return origin in allowed
 
 
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
-    if AUTH_USER and AUTH_PASSWORD and not _authorised(request.headers.get("authorization", "")):
-        response = Response("Authentication required", status_code=401,
-                            headers={"WWW-Authenticate": 'Basic realm="KEvidence", charset="UTF-8"'})
+    path = request.url.path
+    accounts.CURRENT_IP.set(_client_ip(request))
+    user = accounts.authenticate(request.cookies.get(accounts.session_cookie_name()))
+    accounts.CURRENT_USER.set(user)
+    request.state.user = user
+    if request.method not in ("GET", "HEAD", "OPTIONS") and not _same_origin(request):
+        response = JSONResponse({"detail": "Cross-site request refused."}, status_code=403)
+    elif user is None and not path.startswith(PUBLIC_PATHS):
+        if path.startswith("/api/"):
+            response = JSONResponse({"detail": "Sign in required.", "signin": f"{accounts.app_url()}/auth/signin"}, status_code=401)
+        else:
+            response = RedirectResponse(f"{accounts.app_url()}/auth/signin", status_code=303)
     else:
         response = await call_next(request)
     for key, value in SECURITY_HEADERS.items():
         response.headers.setdefault(key, value)
+    if path.startswith(("/api/", "/auth/")):
+        response.headers.setdefault("Cache-Control", "no-store")
     return response
+
+
+def _html(body: str, status: int = 200, cookie: Optional[str] = None) -> HTMLResponse:
+    resp = HTMLResponse(body, status_code=status)
+    if cookie:
+        resp.headers.append("set-cookie", cookie)
+    return resp
+
+
+def _auth_throttled(request: Request) -> bool:
+    limit, window = accounts.AUTH_REQUESTS_PER_IP
+    return accounts.rate_limited(f"auth:{_client_ip(request)}", limit, window)
+
+
+@app.get("/auth/signin")
+def auth_signin(request: Request):
+    if request.state.user:
+        return RedirectResponse(f"{accounts.app_url()}/", status_code=303)
+    return _html(accounts.sign_in_page())
+
+
+@app.post("/auth/email")
+def auth_email(request: Request, email: str = Form("")):
+    address = accounts.normalise_email(email)
+    if not address:
+        return _html(accounts.sign_in_page("Enter a valid email address.", email[:254]), 400)
+    if _auth_throttled(request):
+        return _html(accounts.sign_in_page("Too many attempts. Wait a few minutes and try again.", address), 429)
+    # Same answer whether or not the address hit its hourly limit, so the form cannot probe accounts.
+    token = accounts.issue_login_token(address)
+    if token:
+        try:
+            accounts.send_sign_in_link(address, f"{accounts.app_url()}/auth/verify?token={token}")
+        except Exception as exc:
+            print(f"[KEvidence] Could not send sign-in email: {type(exc).__name__}: {exc}")
+            return _html(accounts.sign_in_page("The sign-in email could not be sent. Try again later.", address), 502)
+    accounts.log("signin.requested", {"email_domain": address.split("@", 1)[1]}, user={"id": None, "email": None})
+    return _html(accounts.check_email_page(address))
+
+
+@app.get("/auth/verify")
+def auth_verify_page(token: str = ""):
+    email = accounts.login_token_email(token[:200])
+    if not email:
+        return _html(accounts.message_page("This link has expired", "Sign-in links work once and expire after 15 minutes."), 400)
+    return _html(accounts.confirm_page(email, token[:200]))
+
+
+@app.post("/auth/verify")
+def auth_verify(request: Request, token: str = Form("")):
+    if _auth_throttled(request):
+        return _html(accounts.message_page("Slow down", "Too many attempts. Wait a few minutes and try again."), 429)
+    email = accounts.redeem_login_token(token[:200])
+    if not email:
+        return _html(accounts.message_page("This link has expired", "Sign-in links work once and expire after 15 minutes."), 400)
+    user = accounts.find_or_create_user(email)
+    session = accounts.start_session(user["id"], _client_ip(request), request.headers.get("user-agent", ""))
+    accounts.log("signin", "", user)
+    resp = RedirectResponse(f"{accounts.app_url()}/", status_code=303)
+    resp.headers.append("set-cookie", accounts.session_cookie(session))
+    return resp
+
+
+@app.post("/auth/logout")
+def auth_logout(request: Request):
+    if request.state.user:
+        accounts.log("signout", "", request.state.user)
+    accounts.end_session(request.cookies.get(accounts.session_cookie_name()))
+    resp = RedirectResponse(f"{accounts.app_url()}/auth/signin", status_code=303)
+    resp.headers.append("set-cookie", accounts.session_cookie("", clear=True))
+    return resp
+
+
+@app.get("/robots.txt")
+def robots():
+    return Response("User-agent: *\nDisallow: /\n", media_type="text/plain")
+
+
+@app.get("/api/me")
+def me(request: Request):
+    user = request.state.user
+    return {"email": user["email"], "admin": user["admin"], "ai": ai.public_config(user["id"]),
+            "mail_transport": accounts.mail_transport()}
+
+
+@app.get("/api/activity")
+def activity_log(request: Request, scope: str = "mine"):
+    user = request.state.user
+    everyone = scope == "all"
+    if everyone and not user["admin"]:
+        raise HTTPException(403, "Only administrators (KEVIDENCE_ADMIN_EMAILS) can see everyone's activity.")
+    return {"scope": "all" if everyone else "mine", "admin": user["admin"], "events": accounts.activity(user, everyone)}
+
+
+# --- AI configuration (per user; see ai.py) ---------------------------------
+@app.get("/api/ai/providers")
+def ai_providers():
+    return {"providers": {k: {kk: v[kk] for kk in ("label", "requires_key", "requires_endpoint", "hint")} for k, v in ai.PROVIDERS.items()}}
+
+
+@app.get("/api/ai/config")
+def ai_get_config(request: Request):
+    return {"config": ai.public_config(request.state.user["id"])}
+
+
+@app.post("/api/ai/config")
+def ai_save_config(request: Request, body: dict):
+    user = request.state.user
+    key = body.get("api_key")
+    try:
+        cfg = ai.save_config(user["id"], str(body.get("provider") or ""), str(body.get("model") or ""),
+                             str(body.get("endpoint") or ""), None if key is None else str(key)[:500])
+    except ai.AIError as exc:
+        raise HTTPException(400, str(exc))
+    accounts.log("ai.config_saved", {"provider": cfg["provider"], "model": cfg["model"], "endpoint": bool(cfg["endpoint"]),
+                                     "key": "set" if cfg["api_key_hint"] else "none"}, user)
+    return {"config": cfg}
+
+
+@app.delete("/api/ai/config")
+def ai_delete_config(request: Request):
+    ai.delete_config(request.state.user["id"])
+    accounts.log("ai.config_removed", "", request.state.user)
+    return {"config": None}
+
+
+@app.post("/api/ai/config/test")
+def ai_test_config(request: Request):
+    try:
+        cfg = ai.check_config(request.state.user["id"])
+    except ai.AIError as exc:
+        raise HTTPException(400, str(exc))
+    accounts.log("ai.config_tested", {"ok": cfg["last_check_ok"]}, request.state.user)
+    return {"config": cfg}
+
+
+@app.post("/api/ai/models")
+def ai_models(body: dict):
+    """Models the entered key can use; the key is used for this one call and never stored."""
+    try:
+        models = ai.list_models(str(body.get("provider") or ""), str(body.get("api_key") or "")[:500], str(body.get("endpoint") or "")[:400])
+    except ai.AIError as exc:
+        raise HTTPException(400, str(exc))
+    return {"models": models}
+
 
 # ---------------------------------------------------------------------------
 # Data loading
@@ -616,7 +783,7 @@ def get_all_aops():
 # ---------------------------------------------------------------------------
 # LLM client
 # ---------------------------------------------------------------------------
-llm = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+# Every call goes through ai.llm_chat(), with the signed-in user's own AI configuration (ai.py).
 
 SYSTEM_PROMPT = """You are **kevidence**, an AI regulatory science assistant specialised in Adverse Outcome Pathways (AOPs). You help regulatory scientists, toxicologists, and risk assessors understand AOPs, weight of evidence, chemical-pathway associations, and OECD review status.
 
@@ -930,16 +1097,10 @@ def _decompose_query(query: str) -> list:
     """Ask the LLM to suggest AOP-relevant entities the query might relate to.
     Returns list of entity name strings, or empty list if no plausible connection."""
     try:
-        resp = llm.chat.completions.create(
-            model=LLM_MODEL,
-            messages=[
-                {"role": "system", "content": DECOMPOSE_SYSTEM_PROMPT},
-                {"role": "user", "content": f"Decompose this query: {query}"},
-            ],
-            temperature=0.1,
-            max_tokens=200,
-        )
-        content = resp.choices[0].message.content.strip()
+        content = ai.llm_chat(
+            [{"role": "system", "content": DECOMPOSE_SYSTEM_PROMPT},
+             {"role": "user", "content": f"Decompose this query: {query}"}],
+            feature="assistant.decompose", temperature=0.1, max_tokens=200).strip()
         # Parse JSON array from response
         if content.startswith("[") and content.endswith("]"):
             entities = json.loads(content)
@@ -1036,16 +1197,8 @@ def _decompose_with_verification(query: str, aop_count: int) -> Optional[dict]:
                 f"Explain the chain: the user asked about '{query}' → relates to '{best['entity']}' → triggers this AOP."
             )
             try:
-                resp = llm.chat.completions.create(
-                    model=LLM_MODEL,
-                    messages=[
-                        {"role": "system", "content": system},
-                        {"role": "user", "content": user_msg},
-                    ],
-                    temperature=0.3,
-                    max_tokens=1200,
-                )
-                answer = resp.choices[0].message.content
+                answer = ai.llm_chat([{"role": "system", "content": system}, {"role": "user", "content": user_msg}],
+                                     feature="assistant.aop", temperature=0.3, max_tokens=1200)
                 refs = re.findall(r"AOP\s+(\d+)", answer)
                 source_aops = []
                 for rid in refs[:5]:
@@ -2293,7 +2446,7 @@ async def get_aop(aop_id: int):
 
 
 @app.post("/api/chat")
-async def chat(body: dict):
+def chat(body: dict):
     """Main chat endpoint — accepts user query, returns LLM answer grounded in AOP data."""
     query = body.get("message", "").strip()
     if not query:
@@ -2301,6 +2454,7 @@ async def chat(body: dict):
 
     workbench_context = body.get("context") if isinstance(body.get("context"), dict) else {}
     step = workbench_context.get("workflow_step")
+    accounts.log("assistant.question", {"step": str(step or "aop")[:30], "domain": str(workbench_context.get("domain") or "")[:40]})
     if step == "characterisation":
         return characterisation_chat(query, workbench_context)
     if step == "sanitisation":
@@ -2448,15 +2602,9 @@ async def chat(body: dict):
     ]
 
     try:
-        resp = llm.chat.completions.create(
-            model=LLM_MODEL,
-            messages=messages,
-            temperature=0.3,
-            max_tokens=1500,
-        )
-        answer = resp.choices[0].message.content
-    except Exception as e:
-        return {"answer": f"I encountered an error querying the LLM: {str(e)}", "sources": []}
+        answer = ai.llm_chat(messages, feature="assistant.aop", temperature=0.3, max_tokens=1500)
+    except ai.AIError as e:
+        return {"answer": str(e), "sources": [], "no_ai": isinstance(e, ai.AINotConfigured)}
 
     # Extract AOP references from the answer for source citation
     refs = re.findall(r"AOP\s+(\d+)", answer)
@@ -2579,10 +2727,17 @@ async def weight_of_evidence(chemical: str, aop_id: Optional[int] = None):
 
 
 # ---------------------------------------------------------------------------
-# Step 0 — substance/product characterisation (feed additives, chemical MVP)
+# Identity & characterisation (guidance-grounded; feed additives today, chemical MVP)
 # ---------------------------------------------------------------------------
 CHAR_REGISTRY = charmod.load_domains()
-CHAR_DOMAINS = {d["id"]: charmod.load_domain_bundle(d["id"]) for d in CHAR_REGISTRY["domains"]}
+# Every registered domain gets the workflow and sanitisation; only grounded ones (guidance bundled) get the
+# guidance-grounded characterisation and assistant.
+DOMAIN_INFO = {d["id"]: d for d in CHAR_REGISTRY["domains"]}
+CHAR_DOMAINS = {d["id"]: charmod.load_domain_bundle(d["id"]) for d in CHAR_REGISTRY["domains"] if charmod.is_grounded(d)}
+NOT_GROUNDED_MESSAGE = ("No guidance is bundled for {label} yet, so the guidance-grounded characterisation and assistant are not "
+                        "available for it. The risk-assessment workflow, AOP/NAM tools and sanitisation work for every domain. "
+                        "Grounded today: {grounded}. To add {label}, contribute its guidance PDFs and a catalogue quoting them "
+                        "(see README, Domains).")
 
 CHAR_SYSTEM_PROMPT = """You are the KEvidence characterisation assistant for {role}.
 Domain: {domain}. You answer ONLY from the guidance entries supplied below, each with a verbatim quote and guidance text excerpts.
@@ -2609,10 +2764,13 @@ Rules:
 def _char_domain(domain: Optional[str]) -> dict:
     """Resolve a domain id to its grounding bundle. An unknown domain is an error: the backend never
     falls back to another domain's guidance."""
-    try:
-        return CHAR_DOMAINS[domain or CHAR_REGISTRY["default_domain"]]
-    except KeyError:
-        raise HTTPException(400, f"Unknown domain '{domain}'. Available: {', '.join(CHAR_DOMAINS)}.")
+    domain = domain or CHAR_REGISTRY["default_domain"]
+    if domain in CHAR_DOMAINS:
+        return CHAR_DOMAINS[domain]
+    if domain in DOMAIN_INFO:
+        raise HTTPException(400, NOT_GROUNDED_MESSAGE.format(label=DOMAIN_INFO[domain]["label"],
+                                                             grounded=", ".join(b["label"] for b in CHAR_DOMAINS.values())))
+    raise HTTPException(400, f"Unknown domain '{domain}'. Available: {', '.join(DOMAIN_INFO)}.")
 
 
 def _char_meta(raw: str) -> dict:
@@ -2637,26 +2795,16 @@ def _char_meta(raw: str) -> dict:
     return meta
 
 
-def _llm_complete(system: str, user: str) -> str:
-    resp = llm.chat.completions.create(
-        model=LLM_MODEL,
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-        temperature=0,
-        max_tokens=2500,
-        response_format={"type": "json_object"},
-    )
-    return resp.choices[0].message.content or ""
-
-
 @app.get("/api/domains")
 async def characterisation_domains():
     """Domains with grounding guidance loaded in this instance, and the default."""
     return {
         "default": CHAR_REGISTRY["default_domain"],
-        "domains": [{"id": b["id"], "label": b["label"],
-                     "sources": [charmod.source_short_name(s["catalogue"]) for s in b["sources"]],
-                     "transparency_sector": next((d.get("transparency_sector", "a") for d in CHAR_REGISTRY["domains"] if d["id"] == b["id"]), "a")}
-                    for b in CHAR_DOMAINS.values()],
+        "domains": [{"id": d["id"], "label": d["label"], "panel": d.get("panel", ""), "description": d.get("description", ""),
+                     "grounded": d["id"] in CHAR_DOMAINS,
+                     "sources": [charmod.source_short_name(s["catalogue"]) for s in CHAR_DOMAINS[d["id"]]["sources"]] if d["id"] in CHAR_DOMAINS else [],
+                     "transparency_sector": d["transparency_sector"]}
+                    for d in CHAR_REGISTRY["domains"]],
     }
 
 
@@ -2723,18 +2871,22 @@ def characterisation_analyse(
 
     result = charmod.analyse_dossier(docs, meta_obj, catalogue, guidance_pages, notes)
     result["domain"] = {"id": bundle["id"], "label": bundle["label"]}
+    accounts.log("characterisation.analysed", {"domain": bundle["id"], "documents": len(docs),
+                                               "ai_narrative_requested": str(allow_external_llm).lower() in ("1", "true", "yes", "on")})
     template_path = charmod.domain_template_path(bundle)
 
     use_llm = str(allow_external_llm).lower() in ("1", "true", "yes", "on")
     result["llm"] = {"requested": use_llm, "used": False}
     if use_llm:
-        if not os.environ.get("OPENAI_API_KEY"):
-            result["llm"]["error"] = "OPENAI_API_KEY is not configured; narrative drafting skipped."
+        if not ai.user_has_ai():
+            result["llm"]["error"] = ai.NOT_CONFIGURED
         else:
             try:
-                result["narrative"] = charmod.draft_narrative(result, _llm_complete)
+                result["narrative"] = charmod.draft_narrative(result, ai.json_completer("characterisation.narrative"))
                 result["llm"]["used"] = bool(result["narrative"])
                 result["markdown"] = charmod.render_markdown(result, catalogue, template_path)
+            except ai.AIError as exc:
+                result["llm"]["error"] = f"Narrative drafting failed: {exc}"
             except Exception as exc:
                 result["llm"]["error"] = f"Narrative drafting failed: {type(exc).__name__}"
     return result
@@ -2751,6 +2903,7 @@ def characterisation_export_docx(body: dict):
         raise HTTPException(413, "Characterisation is too large to export")
     name = re.sub(r"\.{2,}", ".", re.sub(r"[^A-Za-z0-9._-]+", "_", str(body.get("product_name") or "additive")))[:60].strip("._") or "additive"
     title = str(body.get("title") or f"Characterisation of the additive — {body.get('product_name') or ''}").strip()[:200]
+    accounts.log("characterisation.exported_docx", {"chars": len(markdown)})
     try:
         content = docx_export.markdown_to_docx(markdown, title)
     except ValueError as exc:
@@ -2765,8 +2918,9 @@ def characterisation_chat(query: str, workbench_context: dict) -> dict:
         bundle = _char_domain(domain)
     except HTTPException:
         # Another domain was chosen but no guidance for it is loaded: refuse rather than answer from feed guidance.
-        return {"answer": f"No guidance is loaded for the domain '{domain}', so I cannot ground an answer. "
-                          f"Available domains: {', '.join(CHAR_DOMAINS)}.",
+        label = DOMAIN_INFO.get(domain, {}).get("label", domain)
+        return {"answer": NOT_GROUNDED_MESSAGE.format(label=label, grounded=", ".join(b["label"] for b in CHAR_DOMAINS.values()))
+                          if domain in DOMAIN_INFO else f"Unknown domain '{domain}'. Available: {', '.join(DOMAIN_INFO)}.",
                 "sources": [], "guidance_requirements": [], "no_data": True}
     gap_summary = workbench_context.get("characterisation_gaps") or []
     if not isinstance(gap_summary, list):
@@ -2791,7 +2945,7 @@ def characterisation_chat(query: str, workbench_context: dict) -> dict:
                     "sources": [], "guidance_requirements": [], "no_data": True}
         return {
             "answer": f"I could not match this question to the guidance loaded for {bundle['label']} ({'; '.join(names)}). "
-                      "In step 0 I only answer from that guidance — try naming the topic (e.g. batches, impurities, "
+                      "In Identity & characterisation I only answer from that guidance — try naming the topic (e.g. batches, impurities, "
                       "dusting potential, stability, homogeneity, WGS depth, ANI) or the section (e.g. §2.1.4).",
             "sources": [], "guidance_requirements": [], "no_data": True,
         }
@@ -2808,15 +2962,10 @@ def characterisation_chat(query: str, workbench_context: dict) -> dict:
         role=bundle["assistant_role"] or "scientific officers", domain=bundle["label"], step="characterisation",
         sources="\n".join(f"- {s['catalogue']['guidance']['citation']}" for s in bundle["sources"]))
     try:
-        resp = llm.chat.completions.create(
-            model=LLM_MODEL,
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-            temperature=0.1,
-            max_tokens=1200,
-        )
-        answer = resp.choices[0].message.content
-    except Exception as e:
-        return {"answer": f"I encountered an error querying the LLM: {str(e)}", "sources": [], "guidance_requirements": ids}
+        answer = ai.llm_chat([{"role": "system", "content": system}, {"role": "user", "content": user}],
+                             feature="assistant.characterisation", temperature=0.1, max_tokens=1200)
+    except ai.AIError as e:
+        return {"answer": str(e), "sources": [], "guidance_requirements": ids, "no_ai": isinstance(e, ai.AINotConfigured)}
     return {"answer": answer, "sources": [], "guidance_requirements": ids}
 
 
@@ -2847,12 +2996,10 @@ def step_guidance_chat(query: str, workbench_context: dict, step: str) -> Option
         role=bundle["assistant_role"] or "scientific officers", domain=bundle["label"], step=STEP_LABELS[step],
         sources="\n".join(f"- {s['catalogue']['guidance']['citation']}" for s in bundle["sources"]))
     try:
-        resp = llm.chat.completions.create(
-            model=LLM_MODEL, temperature=0.1, max_tokens=1200,
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
-        answer = resp.choices[0].message.content
-    except Exception as e:
-        return {"answer": f"I encountered an error querying the LLM: {str(e)}", "sources": [], "guidance_requirements": ids}
+        answer = ai.llm_chat([{"role": "system", "content": system}, {"role": "user", "content": user}],
+                             feature=f"assistant.{step}", temperature=0.1, max_tokens=1200)
+    except ai.AIError as e:
+        return {"answer": str(e), "sources": [], "guidance_requirements": ids, "no_ai": isinstance(e, ai.AINotConfigured)}
     return {"answer": answer, "sources": [], "guidance_requirements": ids}
 
 
@@ -2885,17 +3032,6 @@ def _sani_sector(sector: str, domain: str = "") -> str:
     if sector not in SANI_RULES["catalogue"]["sectors"]:
         raise HTTPException(400, f"Unknown sector '{sector}'. Available: {', '.join(SANI_RULES['catalogue']['sectors'])}.")
     return sector
-
-
-def _llm_json_long(system: str, user: str) -> str:
-    resp = llm.chat.completions.create(
-        model=LLM_MODEL,
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-        temperature=0,
-        max_tokens=4000,
-        response_format={"type": "json_object"},
-    )
-    return resp.choices[0].message.content or ""
 
 
 def _read_pdf_upload(file: UploadFile) -> bytes:
@@ -2933,17 +3069,17 @@ def sanitisation_analyse(
     allow_external_llm: str = Form("false"),
 ):
     """Propose redactions for one PDF. Processed in memory for this request only; nothing is stored.
-    The AI review sends the page text to the OpenAI API and runs only when allow_external_llm is set."""
+    The AI review sends the page text to the user's own AI provider and runs only when allow_external_llm is set."""
     sector = _sani_sector(sector, domain)
     content = _read_pdf_upload(file)
     use_llm = str(allow_external_llm).lower() in ("1", "true", "yes", "on")
     complete = None
     llm_error = ""
     if use_llm:
-        if os.environ.get("OPENAI_API_KEY"):
-            complete = _llm_json_long
+        if ai.user_has_ai():
+            complete = ai.json_completer("sanitisation.ai_review", max_tokens=4000)
         else:
-            llm_error = "OPENAI_API_KEY is not configured; AI review skipped (local rules only)."
+            llm_error = ai.NOT_CONFIGURED
     try:
         result = sanmod.propose(content, SANI_RULES, sector, filename=(file.filename or "document.pdf")[:200],
                                 applicant=applicant[:300], applicant_address=applicant_address[:500],
@@ -2952,6 +3088,8 @@ def sanitisation_analyse(
         raise HTTPException(400, str(exc))
     if llm_error:
         result["ai"] = {"requested": True, "used": False, "errors": [llm_error]}
+    accounts.log("sanitisation.analysed", {"sector": sector, "pages": result["document"]["pages"],
+                                           "proposals": len(result["proposals"]), "ai_review": bool(result["ai"].get("used"))})
     return result
 
 
@@ -2989,6 +3127,8 @@ def sanitisation_apply(
     except sanmod.SanitisationError as exc:
         raise HTTPException(400, str(exc))
     sector_info = {"id": sector, **SANI_RULES["catalogue"]["sectors"][sector]}
+    accounts.log("sanitisation.applied", {"sector": sector, "boxes": report["redaction_boxes"],
+                                          "verified": report["verification"]["passed"]})
     applied = [i for i in items if isinstance(i, dict)]
     return {
         "filename": f"{name}_sanitised.pdf",
@@ -3013,11 +3153,10 @@ def sanitisation_chat(query: str, workbench_context: dict) -> dict:
             f"Proposal summary: {summary_txt}\n\n---\n\nQuestion: {query}")
     system = SANI_SYSTEM_PROMPT.format(citation=SANI_RULES["catalogue"]["guidance"]["citation"])
     try:
-        resp = llm.chat.completions.create(model=LLM_MODEL, temperature=0.1, max_tokens=1200,
-                                           messages=[{"role": "system", "content": system}, {"role": "user", "content": user}])
-        answer = resp.choices[0].message.content
-    except Exception as e:
-        return {"answer": f"I encountered an error querying the LLM: {str(e)}", "sources": [], "guidance_requirements": ids}
+        answer = ai.llm_chat([{"role": "system", "content": system}, {"role": "user", "content": user}],
+                             feature="assistant.sanitisation", temperature=0.1, max_tokens=1200)
+    except ai.AIError as e:
+        return {"answer": str(e), "sources": [], "guidance_requirements": ids, "no_ai": isinstance(e, ai.AINotConfigured)}
     return {"answer": answer, "sources": [], "guidance_requirements": ids}
 
 

@@ -1,4 +1,4 @@
-"""Word export of the step 0 characterisation: the .docx must carry exactly what the screen shows."""
+"""Word export of the identity & characterisation output: the .docx must carry exactly what the screen shows."""
 
 import io
 import os
@@ -14,7 +14,6 @@ from docx.oxml.ns import qn
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.environ.setdefault("KEVIDENCE_HOME", str(ROOT))
-os.environ.setdefault("OPENAI_API_KEY", "sk-test-not-used")
 
 import characterisation as c  # noqa: E402
 import docx_export as dx  # noqa: E402
@@ -156,11 +155,14 @@ def test_oversized_markdown_is_refused():
 from fastapi.testclient import TestClient  # noqa: E402
 
 import server  # noqa: E402
+from conftest import sign_in  # noqa: E402
 
 
 @pytest.fixture()
 def client():
-    return TestClient(server.app)
+    c = TestClient(server.app)
+    sign_in(c)
+    return c
 
 
 def test_endpoint_returns_a_valid_word_file(client):

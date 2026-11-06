@@ -1,6 +1,5 @@
-"""HTTP-level security tests: static file confinement, CORS, headers, optional auth."""
+"""HTTP-level security tests: static file confinement, CORS, headers, domain routing (signed-in client)."""
 
-import base64
 import os
 import sys
 from pathlib import Path
@@ -10,19 +9,22 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 os.environ.setdefault("KEVIDENCE_HOME", str(ROOT))
-os.environ.setdefault("OPENAI_API_KEY", "sk-test-not-used")
 os.environ.pop("KEVIDENCE_CORS_ORIGINS", None)
 
 from fastapi.testclient import TestClient  # noqa: E402
 
+import ai  # noqa: E402
 import server  # noqa: E402
+from conftest import sign_in  # noqa: E402
 
-INDEX_MARKER = "KEvidence Risk Assessment Workbench"
+INDEX_MARKER = 'id="domainGrid"'
 
 
 @pytest.fixture()
 def client():
-    return TestClient(server.app)
+    c = TestClient(server.app)
+    sign_in(c)
+    return c
 
 
 @pytest.mark.parametrize("path", [
@@ -75,23 +77,26 @@ def test_openapi_docs_disabled(client):
     assert '"openapi"' not in client.get("/openapi.json").text
 
 
-def test_basic_auth_when_configured(client, monkeypatch):
-    monkeypatch.setattr(server, "AUTH_USER", "officer")
-    monkeypatch.setattr(server, "AUTH_PASSWORD", "s3cret")
-    assert client.get("/api/health").status_code == 401
-    bad = base64.b64encode(b"officer:wrong").decode()
-    assert client.get("/api/health", headers={"Authorization": f"Basic {bad}"}).status_code == 401
-    good = base64.b64encode(b"officer:s3cret").decode()
-    ok = client.get("/api/health", headers={"Authorization": f"Basic {good}"})
-    assert ok.status_code == 200 and ok.headers["x-frame-options"] == "DENY"
+# --- Domain routing for guidance grounding ------------------------------------------------
 
-
-# --- Domain routing for step 0 grounding ---------------------------------------------------
-
-def test_domains_endpoint_lists_feed_only(client):
+def test_domains_endpoint_lists_all_areas_with_grounding_status(client):
     data = client.get("/api/domains").json()
     assert data["default"] == "feed"
-    assert [d["id"] for d in data["domains"]] == ["feed"]
+    by_id = {d["id"]: d for d in data["domains"]}
+    assert by_id["feed"]["grounded"] and by_id["feed"]["sources"]
+    assert {"food-enzymes", "gmo", "nams", "pesticides", "novel-foods"} <= set(by_id)
+    assert not any(d["grounded"] for i, d in by_id.items() if i != "feed")
+    assert by_id["gmo"]["transparency_sector"] == "b" and by_id["pesticides"]["transparency_sector"] == "g"
+
+
+def test_workflow_only_domain_explains_instead_of_failing_silently(client, monkeypatch):
+    monkeypatch.setattr(ai, "llm_chat", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no LLM")))
+    r = client.post("/api/characterisation/analyse", data={"urls": "x", "domain": "food-enzymes"})
+    assert r.status_code == 400 and "No guidance is bundled for Food enzymes" in r.json()["detail"]
+    body = client.post("/api/chat", json={"message": "batch requirements?",
+                                          "context": {"workflow_step": "characterisation", "domain": "food-enzymes"}}).json()
+    assert body["no_data"] and "Food enzymes" in body["answer"]
+    assert client.get("/api/sanitisation/rules?domain=gmo").json()["sector"] == "b"
 
 
 def test_guidance_status_reports_every_source_of_the_domain(client):
@@ -127,7 +132,7 @@ def test_analyse_rejects_unknown_domain(client):
 def test_chat_in_an_unloaded_domain_refuses_instead_of_answering_from_feed(client, monkeypatch):
     def boom(*a, **k):
         raise AssertionError("LLM must not be called without grounding")
-    monkeypatch.setattr(server.llm.chat.completions, "create", boom)
+    monkeypatch.setattr(ai, "llm_chat", boom)
     r = client.post("/api/chat", json={"message": "What are the batch requirements?",
                                        "context": {"workflow_step": "characterisation", "domain": "food"}})
     body = r.json()
@@ -145,12 +150,9 @@ class _FakeLLM:
     def __init__(self):
         self.calls = []
 
-    def create(self, **kw):
-        self.calls.append(kw)
-        class _M: content = "stub answer"
-        class _C: message = _M()
-        class _R: choices = [_C()]
-        return _R()
+    def create(self, messages, **kw):
+        self.calls.append({"messages": messages, **kw})
+        return "stub answer"
 
 
 @pytest.mark.parametrize("step,question,entry", [
@@ -160,7 +162,7 @@ class _FakeLLM:
 ])
 def test_later_steps_answer_from_their_own_guidance_entries(client, monkeypatch, step, question, entry):
     fake = _FakeLLM()
-    monkeypatch.setattr(server.llm.chat.completions, "create", fake.create)
+    monkeypatch.setattr(ai, "llm_chat", fake.create)
     r = client.post("/api/chat", json={"message": question, "context": {"workflow_step": step, "domain": "feed"}}).json()
     assert entry in r["guidance_requirements"] and r["answer"] == "stub answer"
     system = fake.calls[0]["messages"][0]["content"]
@@ -171,7 +173,7 @@ def test_later_steps_answer_from_their_own_guidance_entries(client, monkeypatch,
 def test_characterisation_tab_points_to_the_step_that_holds_the_answer(client, monkeypatch):
     def boom(*a, **k):
         raise AssertionError("LLM must not be called")
-    monkeypatch.setattr(server.llm.chat.completions, "create", boom)
+    monkeypatch.setattr(ai, "llm_chat", boom)
     r = client.post("/api/chat", json={"message": "95th percentile consumption of honey and offals",
                                        "context": {"workflow_step": "characterisation", "domain": "feed"}}).json()
     assert r["no_data"] is True and "3. Exposure assessment" in r["answer"]
@@ -179,7 +181,7 @@ def test_characterisation_tab_points_to_the_step_that_holds_the_answer(client, m
 
 def test_dataset_only_question_is_answered_with_the_partial_qps_block(client, monkeypatch):
     fake = _FakeLLM()
-    monkeypatch.setattr(server.llm.chat.completions, "create", fake.create)
+    monkeypatch.setattr(ai, "llm_chat", fake.create)
     r = client.post("/api/chat", json={"message": "Is Bacillus sonorensis QPS?",
                                        "context": {"workflow_step": "characterisation", "domain": "feed"}}).json()
     assert r["answer"] == "stub answer"

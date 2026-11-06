@@ -46,9 +46,6 @@
   }
   h1 { font-size: 19px; font-weight: 700; }
   .subtitle { font-size: 13px; color: var(--text2); margin-top: 2px; }
-  .domain-picker { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-  .domain-picker label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
-  .domain-picker select { width: auto; min-width: 170px; }
   .status-pill {
     border: 1px solid rgba(251, 191, 36, 0.45);
     color: var(--warning);
@@ -265,46 +262,77 @@
   .sani-legend span { margin-right: 12px; font-size: 12px; }
   .sani-check-ok { color: var(--success); font-weight: 700; }
   .sani-check-ko { color: var(--danger); font-weight: 700; }
+  /* Navigation: phases with steps */
+  .nav-group { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); margin: 14px 4px 6px; }
+  .nav-group:first-child { margin-top: 0; }
+  nav .step { padding: 8px 10px; margin-bottom: 4px; display: flex; gap: 8px; align-items: flex-start; }
+  nav .step .num { flex: 0 0 20px; height: 20px; border-radius: 50%; background: var(--surface2); color: var(--text); font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+  nav .step .num.blank { background: transparent; }
+  nav .step .lbl { display: block; }
+  nav .step .lbl small { display: block; color: var(--text2); font-weight: 400; font-size: 11.5px; margin-top: 2px; }
+  nav .step.active .num { background: var(--accent); color: var(--bg); }
+  .nav-sep { border-top: 1px solid var(--surface2); margin: 14px 0 10px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--surface3); vertical-align: middle; }
+  .dot.ok { background: var(--success); } .dot.bad { background: var(--danger); }
+  .account { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); }
+  .account form { margin: 0; }
+  .account button { white-space: nowrap; }
+  .domain-chip { border: 1px solid var(--surface3); background: var(--bg); color: var(--text); border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .domain-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin: 8px 0 14px; }
+  .domain-card { text-align: left; background: var(--bg); border: 1px solid var(--surface2); border-radius: var(--radius); padding: 11px 12px; color: var(--text); cursor: pointer; }
+  .domain-card:hover { border-color: var(--surface3); }
+  .domain-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(56,189,248,.25); }
+  .domain-card strong { display: block; font-size: 14px; }
+  .domain-card .muted { font-size: 12px; margin-top: 4px; }
+  .badge.grounded { color: var(--success); } .badge.workflow { color: var(--text2); }
 </style>
 </head>
 <body>
 <header>
   <div class="brand">
-    <div class="logo">⚡</div>
+    <div class="logo">K</div>
     <div>
-      <h1>KEvidence Risk Assessment Workbench</h1>
-      <div class="subtitle">Codex-aligned risk assessment: problem formulation → substance characterisation → hazard identification → hazard characterisation → exposure assessment → risk characterisation</div>
+      <h1>KEvidence</h1>
+      <div class="subtitle">Open-source prototype workbench for food and feed safety risk assessment — from dossier to published opinion</div>
     </div>
   </div>
-  <div class="domain-picker">
-    <label for="domainSelect">Domain</label>
-    <select id="domainSelect" aria-label="Regulatory domain used to ground the assessment"><option value="feed">Feed additives</option></select>
-  </div>
-  <div class="status-pill">Prototype • supports the scientific risk-assessment step of risk analysis, not risk management decisions</div>
+  <button class="domain-chip" id="domainChip" data-jump="problem" title="Change the domain in Mandate &amp; question">Domain: …</button>
+  <div class="status-pill">Prototype • supports risk assessment, not risk-management decisions</div>
+  <div class="account"><span id="accountEmail"></span><form method="post" id="logoutForm"><button class="ghost" type="submit">Sign out</button></form></div>
 </header>
 
 <div class="app-shell">
-  <nav aria-label="Codex risk assessment workflow">
-    <button class="step active" data-tab="problem"><span>Problem formulation</span>Question, scope, decision context</button>
-    <button class="step" data-tab="characterisation"><span>0. Substance characterisation</span>Feed additive identity &amp; composition (FEEDAP 2017)</button>
-    <button class="step" data-tab="hazard-id"><span>1. Hazard identification</span>Can this agent cause harm?</button>
-    <button class="step" data-tab="hazard-char"><span>2. Hazard characterisation</span>Nature, severity, dose-response</button>
-    <button class="step" data-tab="exposure"><span>3. Exposure assessment</span>Who, how much, how often, route</button>
-    <button class="step" data-tab="risk-char"><span>4. Risk characterisation</span>Integrate hazard × exposure</button>
-    <button class="step" data-tab="uncertainty"><span>Uncertainty analysis</span>Confidence and data gaps</button>
-    <button class="step" data-tab="opinion"><span>Scientific opinion</span>Draft advice for risk managers</button>
-    <button class="step" data-tab="sanitisation"><span>Publication: sanitisation</span>Transparency Regulation — mask confidential info &amp; personal data</button>
-    <button class="step" data-tab="questions"><span>Guide & questions</span>Manual, samples, feedback</button>
+  <nav aria-label="Assessment workflow">
+    <div class="nav-group">Assessment</div>
+    <button class="step active" data-tab="problem"><span class="num blank">◆</span><span class="lbl">Mandate &amp; question<small>Domain, question, scope</small></span></button>
+    <div class="nav-group">Dossier evaluation</div>
+    <button class="step" data-tab="characterisation"><span class="num blank">◆</span><span class="lbl">Identity &amp; characterisation<small id="navCharSub">What exactly is assessed</small></span></button>
+    <div class="nav-group">Risk assessment</div>
+    <button class="step" data-tab="hazard-id"><span class="num">1</span><span class="lbl">Hazard identification<small>Can it cause harm?</small></span></button>
+    <button class="step" data-tab="hazard-char"><span class="num">2</span><span class="lbl">Hazard characterisation<small>Nature, severity, dose-response</small></span></button>
+    <button class="step" data-tab="exposure"><span class="num">3</span><span class="lbl">Exposure assessment<small>Who, how much, how often, route</small></span></button>
+    <button class="step" data-tab="risk-char"><span class="num">4</span><span class="lbl">Risk characterisation<small>Hazard × exposure</small></span></button>
+    <button class="step" data-tab="uncertainty"><span class="num blank">◆</span><span class="lbl">Uncertainty analysis<small>Confidence and data gaps</small></span></button>
+    <div class="nav-group">Output</div>
+    <button class="step" data-tab="opinion"><span class="num blank">◆</span><span class="lbl">Scientific opinion<small>Draft advice for risk managers</small></span></button>
+    <button class="step" data-tab="sanitisation"><span class="num blank">◆</span><span class="lbl">Publication<small>Sanitisation (Transparency Regulation)</small></span></button>
+    <div class="nav-sep"></div>
+    <button class="step" data-tab="ai-config"><span class="num blank">⚙</span><span class="lbl">AI configuration<small><span class="dot" id="aiDot"></span><span id="navAiSub">Your own provider and key</span></small></span></button>
+    <button class="step" data-tab="activity"><span class="num blank">≡</span><span class="lbl">Activity log<small>What you did, when</small></span></button>
+    <button class="step" data-tab="questions"><span class="num blank">?</span><span class="lbl">Guide &amp; samples<small>Manual, demo files, feedback</small></span></button>
   </nav>
 
   <main>
     <section id="problem" class="tab-content active">
       <div class="panel">
-        <h2>Problem formulation</h2>
+        <h2>Mandate &amp; question</h2>
+        <h3 style="margin-top:4px">Domain</h3>
+        <p class="help" style="margin-bottom:4px">Choose the area of the assessment. Every domain gets the risk-assessment workflow, the AOP/NAM tools and publication (sanitisation). Domains marked <span class="badge grounded">guidance grounded</span> also get the identity &amp; characterisation tool and an assistant that answers only from the bundled guidance. Your area is not grounded yet? Its guidance can be added without code — see the Guide.</p>
+        <div class="domain-grid" id="domainGrid"><div class="muted">Loading domains…</div></div>
+        <h3>Problem formulation</h3>
         <p class="help">Problem formulation is the practical first step of a modern risk assessment — it is not one of the four formal Codex steps, but it frames all of them. Define the question, scope, population, endpoint, product/use scenario, data needs, and decision context. KEvidence carries this structured context into hazard identification, hazard characterisation, exposure assessment, and risk characterisation.</p>
         <div class="grid">
           <div><label for="chemicalInput">Substance / stressor identity</label><input id="chemicalInput" placeholder="e.g., rotenone; CAS/EC/InChIKey if known"></div>
-          <div><label for="productDomainInput">Regulated product domain</label><select id="productDomainInput"><option value="">Select domain…</option><option>Food additive</option><option>Pesticide / plant protection product</option><option>Feed additive</option><option>Novel food</option><option>Contaminant</option><option>Food contact material</option><option>Food enzyme</option><option>Flavouring</option><option>GMO / derived product</option><option>Other regulated product</option></select></div>
           <div><label for="assessmentTypeInput">Assessment type</label><select id="assessmentTypeInput"><option value="">Select assessment type…</option><option>New application</option><option>Renewal / re-evaluation</option><option>Read-across support</option><option>TTC consideration</option><option>Genotoxicity follow-up</option><option>Endocrine activity follow-up</option><option>Cumulative assessment</option><option>Data-gap analysis</option></select></div>
           <div><label for="outputPurposeInput">Required output purpose</label><select id="outputPurposeInput" required><option value="">Select purpose…</option><option value="triage">Triage / prioritization</option><option value="data-gap planning">Data-gap planning</option><option value="evidence mapping">Evidence mapping</option><option value="read-across support">Read-across support</option><option value="draft narrative support">Draft narrative support</option></select></div>
           <div><label for="regulatoryQuestionInput">Regulatory question</label><input id="regulatoryQuestionInput" placeholder="e.g., Does the proposed use raise a neurotoxicity concern?"></div>
@@ -319,18 +347,20 @@
           <div><label for="legalContextInput">Legal / regulatory context</label><input id="legalContextInput" placeholder="e.g., EU food additive re-evaluation; pesticide MRL support"></div>
           <div><label for="decisionContextInput">Decision context</label><input id="decisionContextInput" placeholder="e.g., screen for follow-up studies; support expert evidence map"></div>
         </div>
-        <div class="actions"><button class="primary" id="startAssessmentBtn">Start hazard identification</button><button class="secondary" data-jump="characterisation">Characterise the substance/product first (step 0)</button><button class="secondary" data-jump="hazard-id">Go to hazard identification</button></div>
+        <div class="actions"><button class="primary" id="startAssessmentBtn">Start hazard identification</button><button class="secondary" data-jump="characterisation">Characterise the substance/product first</button><button class="secondary" data-jump="hazard-id">Go to hazard identification</button></div>
         <div class="warning-box">Select an output purpose before starting. This workbench organizes evidence for expert review across the four Codex risk-assessment steps; it does not produce risk-management decisions, EFSA conclusions, health-based guidance values, ADIs, ARfDs, or acceptability decisions. AOP structure comes from local AOP-Wiki-derived data; NAM PODs, exposure estimates, IVIVE factors, and thresholds are user-supplied or heuristic unless explicitly connected to curated sources.</div>
       </div>
     </section>
 
     <section id="characterisation" class="tab-content">
       <div class="panel">
-        <h2>0. Substance / product characterisation</h2>
+        <h2>Identity &amp; characterisation</h2>
+        <div class="warning-box" id="charNotGrounded" hidden></div>
         <p class="help">Upload the applicant's documents (technical dossier sections, specifications, certificates of analysis, study reports). KEvidence identifies the additive and its components from them, drafts the characterisation in the FEEDAP opinion layout (§1.1.1, Table 1/2, Appendix A) and lists the data gaps against the <strong>FEEDAP Guidance on the identity, characterisation and conditions of use of feed additives</strong> (EFSA Journal 2017;15(10):5023). MVP: chemical characterisation, including plant extracts by their constituents; production-strain characterisation is out of scope.</p>
         <details class="muted"><summary>About the guidance grounding</summary><div id="charGuidanceStatus" style="margin-top:6px">Loading guidance grounding status…</div></details>
       </div>
 
+      <div id="charGroundedTool">
       <div class="panel">
         <h3>Step 1 — Add the applicant's documents (confidential)</h3>
         <div class="grid">
@@ -370,8 +400,9 @@
         <div class="actions"><button class="primary" id="charRerunBtn">Run again with these answers</button></div>
       </div>
 
-      <div class="panel" id="charOutput"><div class="muted">No characterisation run yet. Add documents in step 1 and click <em>Characterise from documents</em>. A fictional demo dossier is available in the Guide &amp; questions tab.</div></div>
-      <div class="actions" id="charNext" hidden><button class="ghost" id="charUseIdentityBtn">Continue with this substance in problem formulation (hazard workflow) →</button></div>
+      <div class="panel" id="charOutput"><div class="muted">No characterisation run yet. Add documents in step 1 and click <em>Characterise from documents</em>. A fictional demo dossier is available in Guide &amp; samples.</div></div>
+      <div class="actions" id="charNext" hidden><button class="ghost" id="charUseIdentityBtn">Continue with this substance in Mandate &amp; question (hazard workflow) →</button></div>
+      </div>
     </section>
 
     <section id="hazard-id" class="tab-content">
@@ -409,7 +440,7 @@
 
       <div class="panel">
         <h3>Dose-response point of departure (POD)</h3>
-        <p class="help">Record the NAM / dose-response point of departure that characterises the hazard. This POD is carried into risk characterisation (step 4) and compared against the exposure estimate from step 3.</p>
+        <p class="help">Record the NAM / dose-response point of departure that characterises the hazard. This POD is carried into risk characterisation (4) and compared against the exposure estimate from step 3.</p>
         <div class="grid-3">
           <div><label for="quantAssay">NAM assay</label><input id="quantAssay" placeholder="e.g., complex I inhibition assay"></div>
           <div><label for="quantEvent">Mapped KE/Event ID</label><input id="quantEvent" type="number" placeholder="e.g., 887"></div>
@@ -448,7 +479,7 @@
     <section id="risk-char" class="tab-content">
       <div class="panel">
         <h2>4. Risk characterisation</h2>
-        <p class="help">Risk characterisation is the <strong>integration step</strong>: given the hazard (step 2) and the exposure (step 3), what is the risk? KEvidence compares the dose-response POD with the exposure estimate to produce a screening margin (BER / MOE) and a hazard-quotient-style ratio. Hazard is intrinsic potential for harm; risk is that hazard under actual exposure conditions.</p>
+        <p class="help">Risk characterisation is the <strong>integration step</strong>: given the hazard (2) and the exposure (3), what is the risk? KEvidence compares the dose-response POD with the exposure estimate to produce a screening margin (BER / MOE) and a hazard-quotient-style ratio. Hazard is intrinsic potential for harm; risk is that hazard under actual exposure conditions.</p>
         <div class="actions"><button class="primary" id="runQuantBtn">Integrate POD × exposure → screening margin</button></div>
         <div class="warning-box">This is a prototype screening calculator, not a validated regulatory threshold framework. Screening margins support prioritization and hypothesis refinement unless validated sources and program-specific thresholds are configured.</div>
       </div>
@@ -526,20 +557,58 @@
       </div>
     </section>
 
+    <section id="ai-config" class="tab-content">
+      <div class="panel">
+        <h2>AI configuration</h2>
+        <p class="help">KEvidence's AI features use <strong>your own</strong> provider, model and key. Nobody else's key is used for you, and yours is used only for you: it is encrypted (AES-256-GCM, bound to your account) and never shown again — only its last four characters. Without a configuration the AI features are off for you; everything that runs locally (characterisation, gap analysis, sanitisation rules, redaction, AOP search, screening calculations) keeps working.</p>
+        <div id="aiCurrent" class="card"><div class="muted">Loading…</div></div>
+      </div>
+      <div class="panel">
+        <h3>Set or change your model</h3>
+        <div class="grid">
+          <div><label for="aiProvider">Provider</label><select id="aiProvider"></select><div class="muted" id="aiProviderHint" style="margin-top:6px"></div></div>
+          <div id="aiEndpointWrap"><label for="aiEndpoint">Endpoint URL</label><input id="aiEndpoint" type="url" maxlength="400" placeholder="https://llm.your-institution.example/v1"></div>
+          <div><label for="aiKey">API key</label><input id="aiKey" type="password" autocomplete="new-password" maxlength="500" placeholder="Leave blank to keep the stored key"></div>
+          <div><label for="aiModel">Model identifier</label><input id="aiModel" list="aiModelOptions" maxlength="160" placeholder="e.g. mistral-large-latest"><datalist id="aiModelOptions"></datalist></div>
+        </div>
+        <div class="actions"><button class="secondary" id="aiLoadModels">Load models for this key</button><button class="primary" id="aiSave">Save</button><button class="secondary" id="aiTest">Test connection</button><button class="ghost" id="aiRemove">Remove configuration</button><span class="muted" id="aiStatus" style="align-self:center"></span></div>
+      </div>
+      <div class="panel">
+        <h3>What is sent to your provider, and when</h3>
+        <table class="sample-table"><thead><tr><th>Feature</th><th>When</th><th>What is sent</th></tr></thead><tbody>
+          <tr><td>Evidence Assistant</td><td>Each question you ask</td><td>Your question, the guidance or AOP excerpts it is answered from, and the structured workbench context (substance, route, population…).</td></tr>
+          <tr><td>Characterisation narratives</td><td>Only when ticked for that run</td><td>Excerpts extracted from the dossier documents.</td></tr>
+          <tr><td>Sanitisation AI review</td><td>Only when ticked for that run</td><td>The text of the pages of the PDF.</td></tr>
+        </tbody></table>
+        <p class="muted" style="margin-top:8px">Choose a provider your organisation has approved for the documents you process — for confidential dossiers, typically an EU-hosted or on-premises model. Every AI call is recorded in your activity log (feature, provider, model, token counts; never the content).</p>
+      </div>
+    </section>
+
+    <section id="activity" class="tab-content">
+      <div class="panel">
+        <h2>Activity log</h2>
+        <p class="help">What was done under your account: sign-ins, analyses, exports, AI calls and configuration changes. Document content, questions and keys are never logged — only feature names, counts and settings.</p>
+        <div class="actions"><button class="secondary" id="actRefresh">Refresh</button><select id="actScope" style="width:auto" hidden><option value="mine">My activity</option><option value="all">Everyone (administrator)</option></select></div>
+        <div id="actTable" style="margin-top:10px"><div class="muted">Loading…</div></div>
+      </div>
+    </section>
+
     <section id="questions" class="tab-content">
       <div class="panel">
         <h2>Quick user manual</h2>
         <p class="help">A one-page guide to the Codex risk-assessment workflow. Risk assessment is the scientific part of risk analysis (which also covers risk management and risk communication). Problem formulation frames the four Codex steps below; keep every generated statement traceable to source data and expert judgement.</p>
         <div class="manual-grid">
           <div class="manual-steps">
-            <div class="manual-step"><strong>Problem formulation — define the question.</strong><span class="muted">Enter the substance/stressor, product domain, use scenario, endpoint of concern, and decision context. This pre-step frames all four Codex steps.</span></div>
-            <div class="manual-step"><strong>0. Substance characterisation — what exactly is being assessed?</strong><span class="muted">For feed additives, upload or link the applicant's documents and click <em>Characterise from documents</em>. KEvidence identifies the additive and its components from the documents (optional details only to correct it), maps the evidence to each requirement of the FEEDAP identity/characterisation guidance (EFSA Journal 2017;15(10):5023), cites document and page for every value, lists data gaps, and exports the characterisation as Markdown.</span></div>
+            <div class="manual-step"><strong>Mandate &amp; question — domain and problem formulation.</strong><span class="muted">Choose the domain (every domain gets the workflow and publication; grounded domains also get guidance-checked characterisation), then enter the substance/stressor, use scenario, endpoint of concern and decision context. This frames the four Codex steps.</span></div>
+            <div class="manual-step"><strong>Identity &amp; characterisation — what exactly is being assessed?</strong><span class="muted">In a grounded domain (today: feed additives), upload or link the applicant's documents and click <em>Characterise from documents</em>. KEvidence identifies the additive and its components from the documents (optional details only to correct it), maps the evidence to each requirement of the FEEDAP identity/characterisation guidance (EFSA Journal 2017;15(10):5023), cites document and page for every value, lists data gaps, and exports the characterisation as Markdown.</span></div>
             <div class="manual-step"><strong>Hazard identification — can it cause harm?</strong><span class="muted">Search AOPs by chemical, key event, adverse outcome, or AOP ID, and select the pathway representing a plausible route from MIE to adverse outcome.</span></div>
             <div class="manual-step"><strong>Hazard characterisation — nature, severity, dose.</strong><span class="muted">Review KER evidence, pull reference points/HBGVs from OpenFoodTox, and set a dose-response point of departure (POD) mapped to a key event.</span></div>
             <div class="manual-step"><strong>Exposure assessment — who, how much, how often, route.</strong><span class="muted">Record concentration in food × consumption × population × use conditions, and the resulting exposure estimate.</span></div>
             <div class="manual-step"><strong>Risk characterisation — integrate hazard × exposure.</strong><span class="muted">Compare the POD with the exposure estimate to obtain a screening margin (BER/MOE). Interpret as prioritisation support, not a final regulatory conclusion.</span></div>
             <div class="manual-step"><strong>Uncertainty & scientific opinion.</strong><span class="muted">Run the uncertainty & data-gap analysis, then build a draft scientific opinion that separates curated evidence, user-entered data, assumptions, and gaps for handoff to risk managers.</span></div>
-            <div class="manual-step"><strong>Publication — sanitisation.</strong><span class="muted">Before a document is published under the Transparency Regulation, upload the PDF in <em>Publication: sanitisation</em>, choose the sector, enter the applicant (stays public) and paste the items of the confidentiality request or decision. KEvidence proposes personal data and request items (selected) and Annex candidates (not selected), each with its article of EFSA's practical arrangements; you review, then it redacts, scrubs metadata and verifies the output.</span></div>
+            <div class="manual-step"><strong>Publication — sanitisation.</strong><span class="muted">Before a document is published under the Transparency Regulation, upload the PDF in <em>Publication</em>, choose the sector, enter the applicant (stays public) and paste the items of the confidentiality request or decision. KEvidence proposes personal data and request items (selected) and Annex candidates (not selected), each with its article of EFSA's practical arrangements; you review, then it redacts, scrubs metadata and verifies the output.</span></div>
+            <div class="manual-step"><strong>AI configuration and activity log.</strong><span class="muted">AI features (assistant, narratives, sanitisation AI review) use the provider, model and key you set in <em>AI configuration</em>; without one they are off and everything local still works. <em>Activity log</em> shows what was done under your account.</span></div>
+            <div class="manual-step"><strong>Your domain is not grounded yet?</strong><span class="muted">Every domain gets the workflow. To ground one (e.g. food enzymes, novel foods, pesticides), contribute its guidance PDFs and a catalogue quoting them verbatim, registered in <code>data/guidance/domains.json</code> — no code change. Open an issue on GitHub or email kevidence@devalier.com.</span></div>
           </div>
           <div class="app-screenshot" aria-label="Annotated KEvidence workflow screenshot mock-up">
             <div class="shot-header"></div>
@@ -557,8 +626,8 @@
         <table class="sample-table">
           <thead><tr><th>Need</th><th>Use this</th><th>What to do in KEvidence</th></tr></thead>
           <tbody>
-            <tr><td>Feed additive characterisation (step 0)</td><td><a href="samples/characterisation_demo_dossier.md" download>Download fictional demo dossier</a><br><a href="api/characterisation/guidance.pdf?domain=feed" target="_blank" rel="noopener">FEEDAP identity/characterisation guidance (PDF)</a><br><a href="api/characterisation/guidance.pdf?domain=feed&source=efsa-2024-8912-wgs" target="_blank" rel="noopener">EFSA 2024 WGS statement (PDF)</a></td><td>Upload the demo dossier in step 0 and click <em>Characterise from documents</em>; KEvidence identifies vanillin from it. For exemptions, open <em>Optional details</em> and set additive type "flavouring compound" and routes. It is deliberately incomplete (3 batches instead of 5, no residual solvents, no SDS) so the gap analysis has findings.</td></tr>
-            <tr><td>Sanitisation for publication</td><td><a href="samples/sanitisation_demo_study_report.pdf" download>Download fictional demo study report (PDF)</a><br><a href="api/sanitisation/rules.pdf" target="_blank" rel="noopener">EFSA practical arrangements on transparency and confidentiality (PDF)</a></td><td>Upload it in <em>Publication: sanitisation</em> with sector (c) and applicant “Demo Feed Additives S.A.”. Study personnel, e-mail, phone and the signature are proposed and selected; the applicant and the reference-list authors are not; manufacturing process, composition and sourcing sentences are proposed as Annex candidates. Paste <code>recrystallisation from ethanol at 45 °C for 6 hours | Art. 39(2)(a) GFL</code> as a request item to see it located.</td></tr>
+            <tr><td>Feed additive characterisation</td><td><a href="samples/characterisation_demo_dossier.md" download>Download fictional demo dossier</a><br><a href="api/characterisation/guidance.pdf?domain=feed" target="_blank" rel="noopener">FEEDAP identity/characterisation guidance (PDF)</a><br><a href="api/characterisation/guidance.pdf?domain=feed&source=efsa-2024-8912-wgs" target="_blank" rel="noopener">EFSA 2024 WGS statement (PDF)</a></td><td>Upload the demo dossier in Identity &amp; characterisation and click <em>Characterise from documents</em>; KEvidence identifies vanillin from it. For exemptions, open <em>Optional details</em> and set additive type "flavouring compound" and routes. It is deliberately incomplete (3 batches instead of 5, no residual solvents, no SDS) so the gap analysis has findings.</td></tr>
+            <tr><td>Sanitisation for publication</td><td><a href="samples/sanitisation_demo_study_report.pdf" download>Download fictional demo study report (PDF)</a><br><a href="api/sanitisation/rules.pdf" target="_blank" rel="noopener">EFSA practical arrangements on transparency and confidentiality (PDF)</a></td><td>Upload it in <em>Publication</em> with sector (c) and applicant “Demo Feed Additives S.A.”. Study personnel, e-mail, phone and the signature are proposed and selected; the applicant and the reference-list authors are not; manufacturing process, composition and sourcing sentences are proposed as Annex candidates. Paste <code>recrystallisation from ethanol at 45 °C for 6 hours | Art. 39(2)(a) GFL</code> as a request item to see it located.</td></tr>
             <tr><td>NAM POD / AC50 example</td><td><a href="samples/nam_pod_examples.csv" download>Download local CSV template</a><br><a href="https://www.epa.gov/comptox-tools/exploring-toxcast-data" target="_blank" rel="noopener">EPA ToxCast/Tox21 data portal</a><br><a href="https://epa.figshare.com/articles/dataset/ToxCast_Database_invitroDB_/6062623" target="_blank" rel="noopener">EPA invitroDB on Figshare</a></td><td>Copy assay, POD type, POD value/unit, and mapped event ID into the hazard characterisation step (POD). Use the EPA bioactivity import script for larger local searches.</td></tr>
             <tr><td>OpenFoodTox reference points</td><td><a href="https://zenodo.org/records/19388272" target="_blank" rel="noopener">OpenFoodTox 3.0 on Zenodo</a><br><a href="https://zenodo.org/records/8120114" target="_blank" rel="noopener">Earlier OpenFoodTox Zenodo record</a></td><td>Download the Excel export, build the local SQLite index, then query the hazard characterisation step by substance name, CAS, EC number, or synonym.</td></tr>
             <tr><td>AOP structure and event IDs</td><td><a href="https://aopwiki.org/downloads" target="_blank" rel="noopener">AOP-Wiki quarterly downloads</a><br><a href="https://zenodo.org/records/17499488" target="_blank" rel="noopener">AOP-Wiki RDF on Zenodo</a></td><td>Use event IDs to map NAM assays to MIE/KE/AO records during hazard identification and characterisation.</td></tr>
@@ -614,6 +683,14 @@
 
 <script>
 const API_BASE = window.location.pathname.startsWith('/kevidence') ? '/kevidence/api' : '/api';
+const APP_BASE = API_BASE.replace(/\/api$/, '');
+// A 401 means the session ended (sign-out elsewhere, expiry): go back to the sign-in page.
+const _fetch = window.fetch.bind(window);
+window.fetch = async (...args) => {
+  const res = await _fetch(...args);
+  if (res.status === 401) { window.location.href = `${APP_BASE}/auth/signin`; }
+  return res;
+};
 const state = { chemical: '', context: {}, candidateAops: [], selectedAop: null, selectedAopDetail: null, assessment: null, quantitative: null, openfoodtox: null, characterisation: null, activeTab: 'problem', domain: 'feed' };
 
 const $ = id => document.getElementById(id);
@@ -634,6 +711,8 @@ function showTab(tabId) {
   document.body.classList.toggle('char-mode', tabId === 'characterisation');
   steps.forEach(s => s.classList.toggle('active', s.dataset.tab === tabId));
   tabs.forEach(t => t.classList.toggle('active', t.id === tabId));
+  if (tabId === 'activity') loadActivity();
+  if (tabId === 'ai-config') loadAiConfig();
 }
 function fieldValue(id) { return $(id)?.value?.trim() || ''; }
 function updateContext() {
@@ -644,7 +723,7 @@ function captureProblem() {
   state.chemical = fieldValue('chemicalInput');
   state.context = {
     substance_identity: state.chemical,
-    product_domain: fieldValue('productDomainInput'),
+    product_domain: state.domainInfo?.[state.domain]?.label || state.domain,
     assessment_type: fieldValue('assessmentTypeInput'),
     output_purpose: fieldValue('outputPurposeInput'),
     regulatory_question: fieldValue('regulatoryQuestionInput'),
@@ -678,7 +757,7 @@ function problemFormulationReady() {
 }
 steps.forEach(step => step.addEventListener('click', () => showTab(step.dataset.tab)));
 document.querySelectorAll('[data-jump]').forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.jump)));
-$('startAssessmentBtn').addEventListener('click', () => { captureProblem(); if (!problemFormulationReady()) { alert('Enter substance identity and select product domain, assessment type, and required output purpose before starting.'); return; } showTab('hazard-id'); searchAops(); });
+$('startAssessmentBtn').addEventListener('click', () => { captureProblem(); if (!problemFormulationReady()) { alert('Enter the substance identity, choose a domain, an assessment type and the required output purpose before starting.'); return; } showTab('hazard-id'); searchAops(); });
 $('searchAopsBtn').addEventListener('click', searchAops);
 $('loadNotableBtn').addEventListener('click', () => loadAops(''));
 $('runAssessBtn').addEventListener('click', runAssessment);
@@ -969,6 +1048,7 @@ async function sendAssistant(prompt) {
     removeTyping();
     const cited = (data.guidance_requirements || []).length ? `\n\nGuidance entries used: ${data.guidance_requirements.join(', ')}` : '';
     addMessage((data.answer || 'No answer returned.') + cited, 'bot');
+    if (data.no_ai) { const b = document.createElement('button'); b.className = 'secondary'; b.textContent = 'Open AI configuration'; b.style.margin = '0 0 10px 44px'; b.onclick = () => showTab('ai-config'); messagesEl.appendChild(b); }
   } catch (e) {
     removeTyping();
     addMessage('Assistant request failed.', 'bot');
@@ -985,7 +1065,7 @@ function addMessage(text, role, id) {
 function removeTyping() { const el = $('typing'); if (el) el.remove(); }
 
 // ---------------------------------------------------------------------------
-// Step 0 — substance / product characterisation
+// Identity & characterisation
 // ---------------------------------------------------------------------------
 const STATUS_TEXT = { gap: 'Not located', partial: 'Partial', conditional: 'Applicability to confirm', manual_review: 'SO review', evidence_located: 'Evidence located', not_applicable: 'Not applicable' };
 function addComponentRow(comp = {}) {
@@ -1018,22 +1098,42 @@ async function loadDomains() {
     const d = await res.json();
     let saved = '';
     try { saved = localStorage.getItem('kevidence.domain') || ''; } catch (e) {}
-    const ids = d.domains.map(x => x.id);
-    state.domain = ids.includes(saved) ? saved : d.default;
-    $('domainSelect').innerHTML = d.domains.map(x => `<option value="${escapeHtml(x.id)}" title="${escapeHtml(x.sources.join('; '))}">${escapeHtml(x.label)}</option>`).join('');
-    $('domainSelect').value = state.domain;
+    state.domainInfo = Object.fromEntries(d.domains.map(x => [x.id, x]));
     state.domainSectors = Object.fromEntries(d.domains.map(x => [x.id, x.transparency_sector || 'a']));
-  } catch (e) { /* the static default option stays; the backend rejects unknown domains */ }
+    state.domain = state.domainInfo[saved] ? saved : d.default;
+    $('domainGrid').innerHTML = d.domains.map(x => `<button type="button" class="domain-card" data-domain="${escapeHtml(x.id)}">
+      <strong>${escapeHtml(x.label)}</strong>
+      <span class="badge ${x.grounded ? 'grounded' : 'workflow'}">${x.grounded ? 'guidance grounded' : 'workflow only'}</span>${x.panel && x.panel !== '—' ? `<span class="badge">${escapeHtml(x.panel)}</span>` : ''}
+      <div class="muted">${escapeHtml(x.description)}</div></button>`).join('');
+    document.querySelectorAll('.domain-card').forEach(b => b.addEventListener('click', () => setDomain(b.dataset.domain)));
+    applyDomain();
+  } catch (e) { $('domainGrid').innerHTML = `<div class="muted">Domains unavailable: ${escapeHtml(e.message)}</div>`; }
 }
-$('domainSelect').addEventListener('change', () => {
-  state.domain = $('domainSelect').value;
+function applyDomain() {
+  const info = state.domainInfo?.[state.domain] || { label: state.domain, grounded: false };
+  document.querySelectorAll('.domain-card').forEach(b => b.classList.toggle('selected', b.dataset.domain === state.domain));
+  $('domainChip').textContent = `Domain: ${info.label}${info.grounded ? ' ✓' : ''}`;
+  $('domainChip').title = info.grounded ? `Guidance grounded: ${(info.sources || []).join('; ')}` : 'Workflow only: no guidance bundled for this domain yet';
+  $('navCharSub').textContent = info.grounded ? 'Grounded in the domain guidance' : 'Guidance not loaded for this domain';
+  $('charGroundedTool').hidden = !info.grounded;
+  $('charNotGrounded').hidden = !!info.grounded;
+  const grounded = Object.values(state.domainInfo || {}).filter(x => x.grounded).map(x => x.label).join(', ');
+  $('charNotGrounded').innerHTML = `No guidance is bundled for <strong>${escapeHtml(info.label)}</strong> yet, so this tool cannot check a dossier against its requirements. Grounded today: ${escapeHtml(grounded)}.
+    Everything else works for ${escapeHtml(info.label)}: the risk-assessment steps, the AOP/NAM tools, the scientific opinion and publication (sanitisation).
+    To ground this domain, contribute its guidance documents and a catalogue quoting them verbatim — no code change is needed (see the Guide, or <a href="https://github.com/devalier/KEvidence" target="_blank" rel="noopener" style="color:var(--accent)">GitHub</a>).`;
+  if (!state.saniSectorTouched && $('saniSector').options.length) { $('saniSector').value = state.domainSectors?.[state.domain] || $('saniSector').value; loadSanitisationRules(); }
+}
+function setDomain(id) {
+  if (id === state.domain) return;
+  state.domain = id;
   try { localStorage.setItem('kevidence.domain', state.domain); } catch (e) {}
   // A result was grounded in the previous domain's guidance; do not leave it on screen under the new one.
   state.characterisation = null;
   $('charOutput').innerHTML = '<div class="muted">Domain changed. Add documents and run the characterisation again.</div>';
-  loadCharacterisationGuidance();
-  if (!state.saniSectorTouched) { $('saniSector').value = state.domainSectors?.[state.domain] || $('saniSector').value; loadSanitisationRules(); }
-});
+  applyDomain();
+  if (state.domainInfo?.[id]?.grounded) loadCharacterisationGuidance();
+  captureProblem();
+}
 async function loadCharacterisationGuidance() {
   try {
     const res = await fetch(`${API_BASE}/characterisation/guidance?domain=${encodeURIComponent(state.domain)}`);
@@ -1227,7 +1327,6 @@ function useCharacterisedIdentity() {
   const name = comp.component?.name || id.generic_name?.value || '';
   const cas = comp.component?.cas || id.cas?.value || '';
   $('chemicalInput').value = [name, cas ? `CAS ${cas}` : ''].filter(Boolean).join('; ');
-  if (!$('productDomainInput').value) $('productDomainInput').value = 'Feed additive';
   if (!$('aopSearchInput').value.trim()) $('aopSearchInput').value = name;
   captureProblem();
   showTab('problem');
@@ -1468,7 +1567,94 @@ $('saniAddBtn').addEventListener('click', addSaniText);
 $('saniApplyBtn').addEventListener('click', applySanitisation);
 $('saniPdfBtn').addEventListener('click', () => state.saniOutput && downloadBlob(b64ToBlob(state.saniOutput.pdf_base64, 'application/pdf'), state.saniOutput.filename));
 $('saniLogBtn').addEventListener('click', () => state.saniOutput && downloadBlob(new Blob([state.saniOutput.log_markdown], { type: 'text/markdown;charset=utf-8' }), state.saniOutput.filename.replace(/\.pdf$/, '_record.md')));
-loadDomains().then(() => { loadCharacterisationGuidance(); loadSanitisationRules(); });
+// ---------------------------------------------------------------------------
+// Account, AI configuration, activity log
+// ---------------------------------------------------------------------------
+$('logoutForm').action = `${APP_BASE}/auth/logout`;
+async function jsonFetch(url, opts = {}) {
+  const res = await fetch(url, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+  return data;
+}
+async function loadMe() {
+  try {
+    const me = await jsonFetch(`${API_BASE}/me`);
+    state.me = me;
+    $('accountEmail').textContent = me.email;
+    $('actScope').hidden = !me.admin;
+    renderAiStatus(me.ai);
+  } catch (e) { /* 401 redirects */ }
+}
+function renderAiStatus(cfg) {
+  state.aiConfig = cfg;
+  $('aiDot').className = 'dot' + (cfg ? (cfg.last_check_ok === false ? ' bad' : ' ok') : '');
+  $('navAiSub').textContent = cfg ? `${cfg.provider_label} · ${cfg.model}` : 'Not configured — AI features off';
+  if (!$('aiCurrent')) return;
+  $('aiCurrent').innerHTML = cfg ? `<div class="card-title">${escapeHtml(cfg.provider_label)} — <span style="font-family:ui-monospace,monospace">${escapeHtml(cfg.model)}</span></div>
+      <div class="muted">${cfg.endpoint ? `Endpoint: ${escapeHtml(cfg.endpoint)}<br>` : ''}Key: ${escapeHtml(cfg.api_key_hint || 'none')} · saved ${escapeHtml(cfg.updated_at)}<br>
+      ${cfg.last_checked_at ? `Last test ${escapeHtml(cfg.last_checked_at)}: <strong class="${cfg.last_check_ok ? 'sani-check-ok' : 'sani-check-ko'}">${cfg.last_check_ok ? 'reachable' : 'failed'}</strong> — ${escapeHtml(cfg.last_check_message || '')}` : 'Not tested yet.'}</div>`
+    : '<div class="card-title">Not configured</div><div class="muted">AI features are off for your account. Add a provider below to enable the Evidence Assistant, characterisation narratives and the sanitisation AI review.</div>';
+}
+async function loadAiConfig() {
+  try {
+    if (!state.aiProviders) {
+      state.aiProviders = (await jsonFetch(`${API_BASE}/ai/providers`)).providers;
+      $('aiProvider').innerHTML = Object.entries(state.aiProviders).map(([k, v]) => `<option value="${escapeHtml(k)}">${escapeHtml(v.label)}</option>`).join('');
+    }
+    const cfg = (await jsonFetch(`${API_BASE}/ai/config`)).config;
+    renderAiStatus(cfg);
+    if (cfg) { $('aiProvider').value = cfg.provider; $('aiModel').value = cfg.model; $('aiEndpoint').value = cfg.endpoint || ''; }
+    updateAiProviderUi();
+  } catch (e) { $('aiStatus').textContent = e.message; }
+}
+function updateAiProviderUi() {
+  const spec = state.aiProviders?.[$('aiProvider').value] || {};
+  $('aiProviderHint').textContent = spec.hint || '';
+  $('aiEndpointWrap').hidden = !spec.requires_endpoint && !$('aiEndpoint').value;
+  $('aiKey').placeholder = state.aiConfig?.api_key_hint && state.aiConfig.provider === $('aiProvider').value ? `Stored: ${state.aiConfig.api_key_hint} — leave blank to keep` : (spec.requires_key ? 'Required' : 'Optional for on-premises endpoints');
+}
+async function aiAction(label, fn) {
+  $('aiStatus').textContent = `${label}…`;
+  try { await fn(); } catch (e) { $('aiStatus').textContent = e.message; }
+}
+$('aiProvider').addEventListener('change', updateAiProviderUi);
+$('aiLoadModels').addEventListener('click', () => aiAction('Loading models', async () => {
+  const d = await jsonFetch(`${API_BASE}/ai/models`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider: $('aiProvider').value, api_key: $('aiKey').value, endpoint: $('aiEndpoint').value }) });
+  $('aiModelOptions').innerHTML = d.models.map(m => `<option value="${escapeHtml(m)}">`).join('');
+  $('aiStatus').textContent = `${d.models.length} model(s) available — pick one in Model identifier.`;
+}));
+$('aiSave').addEventListener('click', () => aiAction('Saving', async () => {
+  const body = { provider: $('aiProvider').value, model: $('aiModel').value, endpoint: $('aiEndpoint').value };
+  if ($('aiKey').value.trim()) body.api_key = $('aiKey').value.trim();
+  const d = await jsonFetch(`${API_BASE}/ai/config`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  $('aiKey').value = '';
+  renderAiStatus(d.config); updateAiProviderUi();
+  $('aiStatus').textContent = 'Saved. Test the connection to be sure it works.';
+}));
+$('aiTest').addEventListener('click', () => aiAction('Testing', async () => {
+  const d = await jsonFetch(`${API_BASE}/ai/config/test`, { method: 'POST' });
+  renderAiStatus(d.config);
+  $('aiStatus').textContent = d.config.last_check_ok ? 'Connection works.' : 'Connection failed — see above.';
+}));
+$('aiRemove').addEventListener('click', () => aiAction('Removing', async () => {
+  if (!confirm('Remove your AI configuration and stored key?')) { $('aiStatus').textContent = ''; return; }
+  await jsonFetch(`${API_BASE}/ai/config`, { method: 'DELETE' });
+  renderAiStatus(null); $('aiModel').value = ''; $('aiEndpoint').value = ''; updateAiProviderUi();
+  $('aiStatus').textContent = 'Removed.';
+}));
+async function loadActivity() {
+  try {
+    const d = await jsonFetch(`${API_BASE}/activity?scope=${encodeURIComponent($('actScope').value)}`);
+    const fmt = detail => { try { const o = JSON.parse(detail); return Object.entries(o).map(([k, v]) => `${escapeHtml(k)}: ${escapeHtml(v)}`).join(' · '); } catch (e) { return escapeHtml(detail || ''); } };
+    $('actTable').innerHTML = d.events.length ? `<table class="sample-table"><thead><tr><th>When (UTC)</th>${d.scope === 'all' ? '<th>User</th>' : ''}<th>Event</th><th>Detail</th></tr></thead><tbody>
+      ${d.events.map(e => `<tr><td style="white-space:nowrap">${escapeHtml(e.at.replace('T', ' ').replace('+00:00', ''))}</td>${d.scope === 'all' ? `<td>${escapeHtml(e.email || '—')}</td>` : ''}<td>${escapeHtml(e.event)}</td><td class="muted">${fmt(e.detail)}</td></tr>`).join('')}</tbody></table>` : '<div class="muted">No activity yet.</div>';
+  } catch (e) { $('actTable').innerHTML = `<div class="muted">${escapeHtml(e.message)}</div>`; }
+}
+$('actRefresh').addEventListener('click', loadActivity);
+$('actScope').addEventListener('change', loadActivity);
+loadMe();
+loadDomains().then(() => { if (state.domainInfo?.[state.domain]?.grounded) loadCharacterisationGuidance(); loadSanitisationRules(); });
 updateContext();
 </script>
 </body>

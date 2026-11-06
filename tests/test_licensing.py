@@ -12,7 +12,6 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 sys.path.insert(0, str(ROOT))
 os.environ.setdefault("KEVIDENCE_HOME", str(ROOT))
-os.environ.setdefault("OPENAI_API_KEY", "sk-test-not-used")
 
 
 def test_license_is_agpl_and_ui_links_source():

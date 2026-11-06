@@ -1,4 +1,4 @@
-"""Tests for step 0 (feed additive characterisation).
+"""Tests for identity & characterisation (feed additives).
 
 The first group guards grounding: every requirement in the catalogue must quote
 the FEEDAP (2017) guidance verbatim, on the page it cites, and every anchor
@@ -421,9 +421,12 @@ def _wgs(bundle):
 def test_registry_lists_feed_as_default_and_rejects_unknown_domains():
     registry = c.load_domains()
     assert registry["default_domain"] == "feed"
-    assert [d["id"] for d in registry["domains"]] == ["feed"]
+    assert [d["id"] for d in registry["domains"] if c.is_grounded(d)] == ["feed"]
+    assert len(registry["domains"]) >= 10
     with pytest.raises(c.UnknownDomain):
         c.load_domain_bundle("food")
+    with pytest.raises(c.DomainNotGrounded):
+        c.load_domain_bundle("food-enzymes")
 
 
 def test_domain_files_live_under_the_domain_directory(feed_bundle):
