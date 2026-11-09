@@ -1,14 +1,17 @@
-# Demo materials
+# Demo Synthetic Dossier
 
-- [EFSA demo script](EFSA_demo_script.md)
-- [Download the Acme Enzymatic srl synthetic dossier ZIP](FEN-2025-34460_SYNTHETIC_Acme_Enzymatic_srl.zip?raw=true)
-- [Dossier provenance and limitations](FEN-2025-34460_SYNTHETIC_README.txt)
-- [Transformation validation report](FEN-2025-34460_SYNTHETIC_validation.json)
+**Prototype testing material. No EFSA endorsement or regulatory approval is claimed.**
 
-## Acme Enzymatic srl dossier
+- [Download Demo Synthetic Dossier ZIP](Demo_Synthetic_Dossier.zip?raw=true) - all 14 PDFs, 49 pages and documentation, using short Windows-safe paths.
+- [Open Demo Synthetic Dossier as one PDF](Demo_Synthetic_Dossier.pdf) - the same 49 pages for direct browser viewing.
+- [Read provenance and limitations](Demo_Synthetic_Dossier_README.txt).
+- [Read the validation report](Demo_Synthetic_Dossier_validation.json).
+- [Demo walkthrough](EFSA_demo_script.md).
 
-The ZIP contains 14 PDFs (49 pages) in the original folder structure of the supplied public FEN-2025-34460 use-extension package. Applicant/contact details are fictional, and the company name and logos have been replaced with Acme Enzymatic srl. Visible source scientific data and references are retained; the package is labelled for prototype testing.
+The company name is Acme Enzymatic srl. Applicant/contact details are fictional. Visible source scientific values and citations are retained. This use-extension package refers to earlier evidence that is not included; it is not a complete initial application or a new scientific safety assessment.
 
-The archive also includes a file manifest, a replacement log, searchable text and structured scientific data. It is a use-extension package and refers to an earlier dossier and underlying studies that are not included. It is not a new scientific safety assessment or a regulatory submission.
+The ZIP uses ordinary unencrypted ZIP entries with DOS attributes and short ASCII file names. The earlier archive preserved source paths with a trailing-period folder name and a 294-character path; this edition replaces those names. A path-mapping CSV is included. The PDFs remain PDFs, and scientific body text is unchanged.
 
-ZIP SHA-256: `17baf07145a2beec015c67199493c324d00a6c8284ec85e76e8349ed6ecff45b`
+ZIP size: 7,620,182 bytes.
+
+ZIP SHA-256: `2ee9dece4a0106dff21780cb8937ec5aed8db50ad6be88d402ef81047405611c`

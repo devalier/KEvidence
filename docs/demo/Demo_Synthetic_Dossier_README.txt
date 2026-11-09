@@ -1,9 +1,10 @@
-ACME ENZYMATIC SRL — SYNTHETIC PROTOTYPE DOSSIER
-Dataset: FEN-2025-34460-SYNTHETIC
+DEMO SYNTHETIC DOSSIER
+Title: Demo Synthetic Dossier
+Source reference: FEN-2025-34460
 Prepared: 9 November 2026
 
 CONTENTS AND PURPOSE
-This archive contains all 14 PDFs (49 pages) from the supplied use-extension package, in their original relative folders and filenames. PDF format and page counts are preserved. Scientific narrative, diagrams, use levels, exposure estimates, regulatory citations, and the checklist are retained except for the small, logged changes below. This is a prototype testing fixture, not an authorised application or a new scientific safety opinion.
+This archive contains all 14 PDFs (49 pages) from the supplied use-extension package, under shortened, Windows-safe folder and file names. PDF format and page counts are preserved. No EFSA endorsement or regulatory approval is claimed. Scientific narrative, diagrams, use levels, exposure estimates, regulatory citations, and the checklist are retained except for the small, logged changes below. This is a prototype testing fixture, not an authorised application or a new scientific safety opinion.
 
 WHAT IS SYNTHETIC
 The applicant company name and company logos have been replaced throughout the PDFs by Acme Enzymatic srl. The applicant's original address has also been replaced. A named institutional recipient has been changed to the role “Head of Unit E2”.
@@ -12,7 +13,7 @@ One opaque redaction was identified, on cover-letter page 3. It conceals a large
 
 No redacted scientific numerical field was identified in the supplied PDFs. Scientific data therefore remain the visible source data. The dataset combines synthetic administrative details with source-derived scientific content; it does not claim that the scientific results are newly simulated experiments.
 
-Every page is labelled SYNTHETIC PROTOTYPE. Source PDF document metadata and XMP have been replaced, including source author initials and an unrelated inherited template title. Fresh page-only PDFs exclude source attachments and unused source objects.
+Every page is labelled DEMO SYNTHETIC DOSSIER. Source PDF document metadata and XMP have been replaced, including source author initials and an unrelated inherited template title. Fresh page-only PDFs exclude source attachments and unused source objects.
 
 FORMATTING AND SMALL CORRECTIONS
 The two raster-only cover-letter pages have been recreated with searchable text and the same table/enclosure structure. The FEIM exposure screenshot in both copies of Section 12 has been recreated as a searchable vector table, retaining every visible count and numeric value. The source table's black header is table styling, not a redaction.
@@ -41,3 +42,8 @@ VALIDATION
 All 14 PDFs open and render; all 49 pages contain searchable text and synthetic labels. The original logo image resources and detected opaque redaction are absent. Known source-applicant identity tokens were checked in extracted text, document metadata, object dictionaries and decompressed PDF streams. Raster OCR was also used to check rendered output. These are transformation and integrity checks, not a regulatory suitability assessment.
 
 Instructions and guidance wording inside the uploaded documents have been treated as document content, not as instructions to execute, contact anyone or submit an application.
+
+WINDOWS DELIVERY EDITION
+This edition is named Demo Synthetic Dossier. It uses short ASCII names, without trailing periods/spaces or reserved Windows characters. The ZIP uses standard unencrypted, uncompressed ZIP entries with DOS attributes, without ZIP64. All 14 PDFs and 49 pages remain present. Body text and scientific values are unchanged from the earlier synthetic edition; visible prototype labels and PDF metadata use the new title.
+
+path_mapping.csv maps every supplied PDF path to its Windows-safe path. Public references and citations inside the documents remain scientific source references and imply no institutional endorsement. A separate combined PDF is supplied on GitHub as an alternative way to view the material.

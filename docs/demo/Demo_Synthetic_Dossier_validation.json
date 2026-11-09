@@ -1,0 +1,167 @@
+{
+  "dataset_title": "Demo Synthetic Dossier",
+  "endorsement": "No EFSA endorsement or regulatory approval is claimed.",
+  "validation_scope": "Archive integrity, Windows naming constraints, PDF rendering and scientific-body preservation. Native Windows Explorer is unavailable in the execution environment.",
+  "pdf_count": 14,
+  "page_count": 49,
+  "all_pdfs_open_and_render": true,
+  "scientific_body_text_unchanged_from_previous_synthetic_version": true,
+  "changes": [
+    "Shortened archive paths",
+    "Updated visible prototype labels and metadata to Demo Synthetic Dossier",
+    "Refreshed path references and checksums in documentation"
+  ],
+  "files": [
+    {
+      "path": "Technical/Risk_Assessment/12_Dietary_exposure.pdf",
+      "original_path": "Technical Dossier/Risk Assessment/Dietary exposure Assessment/12. Dietary exposure assessment.pdf",
+      "format": "PDF",
+      "pages": 2,
+      "source_pages": 2,
+      "sha256": "4f53726fb65cade8714e64674b9a5ef3763c649c3a0bc79d544d68c1473986dc",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Technical/Risk_Management/11_Intended_uses.pdf",
+      "original_path": "Technical Dossier/Risk Management/Intended use(s) in food and use level(s) (Proposed normal and maximum use levels)/11. Intended uses in food and use levels Proposed normal and maximum use levels.pdf",
+      "format": "PDF",
+      "pages": 2,
+      "source_pages": 2,
+      "sha256": "3ccb747eaf58a68a2131e54a15071fd2e7b6a818be9dbda2150a82d5d8260cf5",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Technical/Risk_Management/15_Effect_on_food.pdf",
+      "original_path": "Technical Dossier/Risk Management/The effect of the food enzyme on the final food/15. The effect of the food enzyme on the final food.pdf",
+      "format": "PDF",
+      "pages": 2,
+      "source_pages": 2,
+      "sha256": "d62fb2a3648f9f0aae11f05acee7c85cf95fb3d2edad5cd2dc4480ee1b45d72b",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Technical/Risk_Assessment/13_Safety_conclusion.pdf",
+      "original_path": "Technical Dossier/Risk Assessment/Overall conclusion on the safety of the food enzyme/13. Overall conclusion on the safety of the food enzyme.pdf",
+      "format": "PDF",
+      "pages": 1,
+      "source_pages": 1,
+      "sha256": "88d57014b8a3462e4383369c6c1c9d032be3c440d3b21a36dc5444d564dc4b7c",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Technical/Risk_Management/14_Technological_function.pdf",
+      "original_path": "Technical Dossier/Risk Management/The function and technological need, including a description of the typical process(es) in which the food enzyme may be applied/14. The function and technological need including a description of the typical processes in which the food enzyme may be applied.pdf",
+      "format": "PDF",
+      "pages": 9,
+      "source_pages": 9,
+      "sha256": "113cc586f17d199b89bcbe7b2ecc943a24b35752e942a72761812676639f5710",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Technical/Risk_Assessment/11_Intended_uses.pdf",
+      "original_path": "Technical Dossier/Risk Assessment/Intended use(s) in food and use level(s) (Proposed normal and maximum use levels)/11. Intended uses in food and use levels Proposed normal and maximum use levels.pdf",
+      "format": "PDF",
+      "pages": 2,
+      "source_pages": 2,
+      "sha256": "3ccb747eaf58a68a2131e54a15071fd2e7b6a818be9dbda2150a82d5d8260cf5",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Technical/Risk_Management/16_Consumer_information.pdf",
+      "original_path": "Technical Dossier/Risk Management/Information on why the use would not mislead the consumer/16. Information on why the use would not mislead the consumer.pdf",
+      "format": "PDF",
+      "pages": 1,
+      "source_pages": 1,
+      "sha256": "b4a7a390ea94443932a02b414eade22d06098efe40fee4a72d05cf4889e69991",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Administrative/Cover_letter.pdf",
+      "original_path": "Administrative Data/Cover letter/Cover letter_PUBLIC.pdf",
+      "format": "PDF",
+      "pages": 3,
+      "source_pages": 3,
+      "sha256": "f494b28de98a3ee85a87f0921c40ef243dfd1941bcef0dc16b9ccca9388ae64b",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Technical/References/17_References.pdf",
+      "original_path": "Technical Dossier/List of annexes, references and checklist/17. List of Reference.pdf",
+      "format": "PDF",
+      "pages": 1,
+      "source_pages": 1,
+      "sha256": "73c2802f7d9dd3ac5a562a843102fd80e7cae8d4fe63f5d3c121ea2f1c4c3e59",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Technical/References/Suitability_checklist.pdf",
+      "original_path": "Technical Dossier/List of annexes, references and checklist/Suitability check list_EFSA - NZYM-KE.pdf",
+      "format": "PDF",
+      "pages": 16,
+      "source_pages": 16,
+      "sha256": "7cb2d85cc7778690b244721077de2586d49cab8ca57c94020d058182e308ce17",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Technical/02_Detailed_summary.pdf",
+      "original_path": "Technical Dossier/Detailed summary/2. Detailed summary.pdf",
+      "format": "PDF",
+      "pages": 5,
+      "source_pages": 5,
+      "sha256": "f64096c3c044c9e18ff238b80b48781afcebec17a2841a416a677eba3ce14bff",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Technical/Risk_Management/12_Dietary_exposure.pdf",
+      "original_path": "Technical Dossier/Risk Management/Dietary exposure Assessment/12. Dietary exposure assessment.pdf",
+      "format": "PDF",
+      "pages": 2,
+      "source_pages": 2,
+      "sha256": "4f53726fb65cade8714e64674b9a5ef3763c649c3a0bc79d544d68c1473986dc",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Technical/Risk_Assessment/10_Reaction_and_fate.pdf",
+      "original_path": "Technical Dossier/Risk Assessment/Reaction and fate in foods to which the food enzyme is added/10. Reaction and fate in food to which the food enzyme is added.pdf",
+      "format": "PDF",
+      "pages": 1,
+      "source_pages": 1,
+      "sha256": "2b492421b68142c56a09ad44f8091cd4f0feb952330b5fce51fdba906b4f9110",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    },
+    {
+      "path": "Public/01_Public_summary.pdf",
+      "original_path": "Public summary/Public Summary/Bear in mind that the public summary will be published automatically in the public website and that no personal data should be included therein./1. Public summary.pdf",
+      "format": "PDF",
+      "pages": 2,
+      "source_pages": 2,
+      "sha256": "bef67bbb3f327688be04fe826f67461407f1d62e2ebe46d105422a574e8ddc0d",
+      "synthetic_company": "Acme Enzymatic srl",
+      "title": "Demo Synthetic Dossier"
+    }
+  ],
+  "windows_archive": {
+    "maximum_relative_path_characters": 55,
+    "ascii_names_only": true,
+    "no_trailing_periods_or_spaces": true,
+    "no_reserved_characters_or_names": true,
+    "no_case_collisions": true,
+    "compression": "ZIP_STORED (standard ZIP, method 0)",
+    "zip64": false,
+    "encrypted": false,
+    "platform_attributes": "DOS"
+  }
+}
