@@ -294,6 +294,14 @@
   .ai-list .nowrap { white-space: nowrap; }
   .ai-list .acts { white-space: nowrap; text-align: right; }
   .ai-list button { padding: 5px 10px; font-size: 12px; border-radius: 8px; margin-left: 4px; }
+  .comp-verdict { border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; font-weight: 700; }
+  .comp-verdict.incomplete { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.5); color: #fecaca; }
+  .comp-verdict.complete_with_warnings { background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.45); color: #fde68a; }
+  .comp-verdict.complete { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.45); color: #bbf7d0; }
+  .chip { display: inline-block; min-width: 74px; text-align: center; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 800; }
+  .chip.fail-blocking { background: #7f1d1d; color: #fecaca; } .chip.fail-warning { background: #78350f; color: #fde68a; }
+  .chip.ok { background: rgba(74,222,128,.15); color: var(--success); } .chip.review, .chip.justified { background: rgba(129,140,248,.18); color: #c7d2fe; }
+  .comp-table td { font-size: 12.5px; vertical-align: top; } .comp-table td.ev { color: var(--text2); font-size: 11.5px; word-break: break-word; }
   .pill-use { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; background: var(--accent); color: var(--bg); }
 </style>
 </head>
@@ -315,6 +323,8 @@
   <nav aria-label="Assessment workflow">
     <div class="nav-group">Assessment</div>
     <button class="step active" data-tab="problem"><span class="num blank">◆</span><span class="lbl">Mandate &amp; question<small>Domain, question, scope</small></span></button>
+    <div class="nav-group">Intake</div>
+    <button class="step" data-tab="completeness"><span class="num blank">◆</span><span class="lbl">Completeness &amp; sanitisation<small>Check the dossier, find personal data</small></span></button>
     <div class="nav-group">Dossier evaluation</div>
     <button class="step" data-tab="characterisation"><span class="num blank">◆</span><span class="lbl">Identity &amp; characterisation<small id="navCharSub">What exactly is assessed</small></span></button>
     <div class="nav-group">Risk assessment</div>
@@ -360,6 +370,33 @@
         <div class="actions"><button class="primary" id="startAssessmentBtn">Start hazard identification</button><button class="secondary" data-jump="characterisation">Characterise the substance/product first</button><button class="secondary" data-jump="hazard-id">Go to hazard identification</button></div>
         <div class="warning-box">Select an output purpose before starting. This workbench organizes evidence for expert review across the four Codex risk-assessment steps; it does not produce risk-management decisions, EFSA conclusions, health-based guidance values, ADIs, ARfDs, or acceptability decisions. AOP structure comes from local AOP-Wiki-derived data; NAM PODs, exposure estimates, IVIVE factors, and thresholds are user-supplied or heuristic unless explicitly connected to curated sources.</div>
       </div>
+    </section>
+
+    <section id="completeness" class="tab-content">
+      <div class="panel">
+        <h2>Completeness check &amp; sanitisation</h2>
+        <p class="help">The first thing that happens to an application at EFSA: the front desk (FDP unit) checks that the dossier is complete and correctly structured, verifies the study-notification obligations of the Transparency Regulation (Art. 32b GFL), checks the confidentiality request, and screens the non-confidential version for personal data — then either asks the applicant for missing information or declares the application valid. EFSA aims to communicate the outcome within <strong>30 working days</strong>. KEvidence runs these checks in minutes, citing the rule behind each one, and leaves the decision with the officer.</p>
+        <details class="muted"><summary>About the rules grounding</summary><div id="compRulesStatus" style="margin-top:6px">Loading…</div></details>
+      </div>
+      <div class="panel">
+        <h3>Step 1 — The dossier (confidential)</h3>
+        <div class="grid">
+          <div><label for="compFiles">Files, or a ZIP of the dossier</label><input id="compFiles" type="file" multiple accept=".zip,.pdf,.docx,.xlsx,.xlsm,.csv,.tsv,.txt,.md,.json,.html,.htm"></div>
+          <div><label for="compFolder">…or the dossier folder (keeps its structure)</label><input id="compFolder" type="file" webkitdirectory directory multiple></div>
+        </div>
+        <div id="compFileInfo" class="muted" style="margin-top:6px"></div>
+        <div class="grid" style="margin-top:10px">
+          <div><label for="compRef">Dossier reference</label><input id="compRef" placeholder="e.g. FAD-2026-0001" maxlength="80"></div>
+          <div><label for="compType">Type of application</label><select id="compType"><option value="new">New additive / new use (Art. 4)</option><option value="modification">Modification of an authorisation (Art. 13)</option><option value="renewal">Renewal of an authorisation (Art. 14)</option></select></div>
+          <div><label for="compApplicant">Applicant (stays public)</label><input id="compApplicant" placeholder="Legal entity named in the application form" maxlength="300"></div>
+          <div><label for="compPreapp">Pre-application ID(s)</label><input id="compPreapp" placeholder="From the notification database, if any" maxlength="400"></div>
+        </div>
+        <label for="compStudies" style="margin-top:10px">Study IDs notified in EFSA's database for this application (one per line or comma-separated)</label>
+        <textarea id="compStudies" style="min-height:60px" placeholder="Lets KEvidence verify that every notified study is in the dossier (Art. 22(3) of the pre-submission arrangements)"></textarea>
+        <div class="actions"><button class="primary" id="compRunBtn" disabled>Check completeness</button><span class="muted" id="compHint" style="align-self:center">Add the dossier first.</span></div>
+        <div class="warning-box">The dossier is processed in memory for one request and is not stored; the checks run locally (no AI). The feed-additive checklist is grounded in the 2018 public-consultation draft of EFSA's administrative guidance — confirm file naming and structure against the current guidance. Other domains get the format, study-notification, confidentiality and personal-data checks.</div>
+      </div>
+      <div class="panel" id="compOutput" hidden></div>
     </section>
 
     <section id="characterisation" class="tab-content">
@@ -612,6 +649,7 @@
         <div class="manual-grid">
           <div class="manual-steps">
             <div class="manual-step"><strong>Mandate &amp; question — domain and problem formulation.</strong><span class="muted">Choose the domain (every domain gets the workflow and publication; grounded domains also get guidance-checked characterisation), then enter the substance/stressor, use scenario, endpoint of concern and decision context. This frames the four Codex steps.</span></div>
+            <div class="manual-step"><strong>Intake — completeness &amp; sanitisation.</strong><span class="muted">Upload the dossier (files, its folder or a ZIP), choose the application type and enter any notified study IDs. KEvidence checks structure and format, the administrative documents, Sections I–V, study notifications (Art. 32b GFL), the confidentiality request and personal data, then drafts the request for missing information. <em>Sanitise</em> opens a file in Publication.</span></div>
             <div class="manual-step"><strong>Identity &amp; characterisation — what exactly is being assessed?</strong><span class="muted">In a grounded domain (today: feed additives), upload or link the applicant's documents and click <em>Characterise from documents</em>. KEvidence identifies the additive and its components from the documents (optional details only to correct it), maps the evidence to each requirement of the FEEDAP identity/characterisation guidance (EFSA Journal 2017;15(10):5023), cites document and page for every value, lists data gaps, and exports the characterisation as Markdown.</span></div>
             <div class="manual-step"><strong>Hazard identification — can it cause harm?</strong><span class="muted">Search AOPs by chemical, key event, adverse outcome, or AOP ID, and select the pathway representing a plausible route from MIE to adverse outcome.</span></div>
             <div class="manual-step"><strong>Hazard characterisation — nature, severity, dose.</strong><span class="muted">Review KER evidence, pull reference points/HBGVs from OpenFoodTox, and set a dose-response point of departure (POD) mapped to a key event.</span></div>
@@ -639,6 +677,7 @@
           <thead><tr><th>Need</th><th>Use this</th><th>What to do in KEvidence</th></tr></thead>
           <tbody>
             <tr><td>Feed additive characterisation</td><td><a href="samples/characterisation_demo_dossier.md" download>Download fictional demo dossier</a><br><a href="api/characterisation/guidance.pdf?domain=feed" target="_blank" rel="noopener">FEEDAP identity/characterisation guidance (PDF)</a><br><a href="api/characterisation/guidance.pdf?domain=feed&source=efsa-2024-8912-wgs" target="_blank" rel="noopener">EFSA 2024 WGS statement (PDF)</a></td><td>Upload the demo dossier in Identity &amp; characterisation and click <em>Characterise from documents</em>; KEvidence identifies vanillin from it. For exemptions, open <em>Optional details</em> and set additive type "flavouring compound" and routes. It is deliberately incomplete (3 batches instead of 5, no residual solvents, no SDS) so the gap analysis has findings.</td></tr>
+            <tr><td>Completeness check</td><td><a href="samples/completeness_demo_dossier.zip" download>Download fictional demo dossier (ZIP)</a></td><td>Upload the ZIP in <em>Completeness &amp; sanitisation</em>, applicant “Demo Feed Additives S.A.”, notified study IDs <code>STUDY-DEMO-0042, STUDY-DEMO-0099</code>. Expect blocking findings (no completeness checklist, no Section IV, confidential text in the public summary, a 2023 study without a study ID, a notified study missing) and warnings (scanned annex, “#” in a file name, no page references in the confidentiality list, a missing 2.4 heading, personal data).</td></tr>
             <tr><td>Sanitisation for publication</td><td><a href="samples/sanitisation_demo_study_report.pdf" download>Download fictional demo study report (PDF)</a><br><a href="api/sanitisation/rules.pdf" target="_blank" rel="noopener">EFSA practical arrangements on transparency and confidentiality (PDF)</a></td><td>Upload it in <em>Publication</em> with sector (c) and applicant “Demo Feed Additives S.A.”. Study personnel, e-mail, phone and the signature are proposed and selected; the applicant and the reference-list authors are not; manufacturing process, composition and sourcing sentences are proposed as Annex candidates. Paste <code>recrystallisation from ethanol at 45 °C for 6 hours | Art. 39(2)(a) GFL</code> as a request item to see it located.</td></tr>
             <tr><td>NAM POD / AC50 example</td><td><a href="samples/nam_pod_examples.csv" download>Download local CSV template</a><br><a href="https://www.epa.gov/comptox-tools/exploring-toxcast-data" target="_blank" rel="noopener">EPA ToxCast/Tox21 data portal</a><br><a href="https://epa.figshare.com/articles/dataset/ToxCast_Database_invitroDB_/6062623" target="_blank" rel="noopener">EPA invitroDB on Figshare</a></td><td>Copy assay, POD type, POD value/unit, and mapped event ID into the hazard characterisation step (POD). Use the EPA bioactivity import script for larger local searches.</td></tr>
             <tr><td>OpenFoodTox reference points</td><td><a href="https://zenodo.org/records/19388272" target="_blank" rel="noopener">OpenFoodTox 3.0 on Zenodo</a><br><a href="https://zenodo.org/records/8120114" target="_blank" rel="noopener">Earlier OpenFoodTox Zenodo record</a></td><td>Download the Excel export, build the local SQLite index, then query the hazard characterisation step by substance name, CAS, EC number, or synonym.</td></tr>
@@ -749,7 +788,7 @@ function parseValueUnit(text) {
 }
 function showTab(tabId) {
   state.activeTab = tabId;
-  document.body.classList.toggle('char-mode', tabId === 'characterisation');
+  document.body.classList.toggle('char-mode', tabId === 'characterisation' || tabId === 'completeness');
   steps.forEach(s => s.classList.toggle('active', s.dataset.tab === tabId));
   tabs.forEach(t => t.classList.toggle('active', t.id === tabId));
   if (tabId === 'activity') loadActivity();
@@ -1067,7 +1106,8 @@ async function sendAssistant(prompt) {
   addMessage('Thinking…', 'bot', 'typing');
   const charGaps = state.characterisation ? characterisationGapSummary() : [];
   const assistantContext = {
-    workflow_step: ['characterisation', 'hazard-char', 'exposure', 'risk-char', 'sanitisation'].includes(state.activeTab) ? state.activeTab : '',
+    workflow_step: ['completeness', 'characterisation', 'hazard-char', 'exposure', 'risk-char', 'sanitisation'].includes(state.activeTab) ? state.activeTab : '',
+    completeness_summary: state.completeness ? { verdict: state.completeness.verdict, counts: state.completeness.counts, failing: state.completeness.results.filter(r => r.status === 'fail').map(r => `${r.severity}: ${r.title}`).slice(0, 25) } : null,
     sanitisation_sector: state.sanitisation?.sector?.id || $('saniSector')?.value || '',
     sanitisation_summary: state.sanitisation ? { proposals: state.sanitisation.summary, selected: saniSelected().length, unlocated_requests: (state.sanitisation.unlocated_requests || []).length, warnings: state.sanitisation.warnings } : null,
     domain: state.domain,
@@ -1711,6 +1751,98 @@ async function loadActivity() {
 $('actRefresh').addEventListener('click', loadActivity);
 $('actScope').addEventListener('change', loadActivity);
 loadMe();
+// ---------------------------------------------------------------------------
+// Intake — completeness check & sanitisation
+// ---------------------------------------------------------------------------
+function compUploads() {
+  const files = [...$('compFiles').files].map(f => ({ file: f, name: f.name }));
+  [...$('compFolder').files].forEach(f => files.push({ file: f, name: f.webkitRelativePath || f.name }));
+  return files;
+}
+function updateCompRunState() {
+  const u = compUploads();
+  const size = u.reduce((a, x) => a + x.file.size, 0);
+  $('compRunBtn').disabled = !u.length;
+  $('compFileInfo').textContent = u.length ? `${u.length} file(s), ${(size / 1048576).toFixed(1)} MB` : '';
+  $('compHint').textContent = u.length ? 'Ready.' : 'Add the dossier first.';
+}
+async function loadCompletenessRules() {
+  try {
+    const d = await jsonFetch(`${API_BASE}/completeness/rules`);
+    $('compRulesStatus').innerHTML = d.sources.map(s => `<div style="margin-top:6px"><span class="badge">${s.guidance_text_loaded ? 'Text loaded' : 'Text NOT loaded'}</span>${escapeHtml(s.guidance.citation)}<br>${(s.verification_counts?.anchored_in_guidance_text || 0)}/${s.entries} rules quoted verbatim and anchored${s.broken.length ? ` — <strong class="status-gap">review: ${s.broken.map(escapeHtml).join(', ')}</strong>` : ''}. <a href="${escapeHtml(s.guidance.url)}" target="_blank" rel="noopener" style="color:var(--accent)">Source</a></div>`).join('');
+  } catch (e) { $('compRulesStatus').textContent = e.message; }
+}
+function compFormData(extra = {}) {
+  const fd = new FormData();
+  compUploads().forEach(u => fd.append('files', u.file, u.name));
+  Object.entries(extra).forEach(([k, v]) => fd.append(k, v));
+  return fd;
+}
+async function runCompleteness() {
+  if (!compUploads().length) return;
+  $('compRunBtn').disabled = true; $('compHint').textContent = 'Checking the dossier…';
+  try {
+    const res = await fetch(`${API_BASE}/completeness/check`, { method: 'POST', body: compFormData({
+      domain: state.domain, application_type: $('compType').value, applicant: fieldValue('compApplicant'), dossier_ref: fieldValue('compRef'),
+      pre_application_ids: fieldValue('compPreapp'), notified_study_ids: $('compStudies').value }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    state.completeness = data;
+    renderCompleteness();
+    $('compHint').textContent = 'Done.';
+  } catch (e) { $('compHint').textContent = `Failed: ${e.message}`; }
+  finally { $('compRunBtn').disabled = !compUploads().length; }
+}
+function renderCompleteness() {
+  const d = state.completeness, c = d.counts;
+  const label = { incomplete: 'Incomplete — blocking items must be resolved before the application can be validated', complete_with_warnings: 'Complete, with warnings and items to review', complete: 'Complete' }[d.verdict];
+  const chip = r => r.status === 'fail' ? `<span class="chip fail-${r.severity === 'blocking' ? 'blocking' : 'warning'}">${r.severity === 'blocking' ? 'BLOCKING' : 'WARNING'}</span>`
+    : r.status === 'ok' ? '<span class="chip ok">OK</span>' : r.status === 'justified' ? '<span class="chip justified">JUSTIFIED</span>' : '<span class="chip review">REVIEW</span>';
+  const ev = r => r.evidence.slice(0, 6).map(e => `${escapeHtml(e.file.split('/').pop())}${e.page ? ` p.${e.page}` : ''}${e.note ? ` — ${escapeHtml(e.note)}` : ''}`).join('<br>');
+  const groups = {};
+  d.results.filter(r => !['info', 'not_applicable'].includes(r.status)).forEach(r => (groups[r.category] = groups[r.category] || []).push(r));
+  const order = { fail: 0, review: 1, justified: 2, ok: 3 };
+  const na = d.results.filter(r => r.status === 'not_applicable');
+  $('compOutput').hidden = false;
+  $('compOutput').innerHTML = `<h3 style="margin-top:0">Step 2 — Result</h3>
+    <div class="comp-verdict ${d.verdict}">${escapeHtml(label)}<div style="font-weight:400;font-size:13px;margin-top:4px">Blocking ${c.blocking} · Warnings ${c.warnings} · To review ${c.review} · Passed ${c.ok}</div></div>
+    <div class="actions" style="margin-top:0"><button class="primary" id="compLetterBtn">Download request for missing information (.md)</button><button class="secondary" id="compReportBtn">Download check report (.md)</button><button class="secondary" id="compCopyLetterBtn">Copy letter</button></div>
+    ${(d.notes || []).length ? `<div class="muted" style="margin-top:8px">${d.notes.map(escapeHtml).join('<br>')}</div>` : ''}
+    ${Object.entries(groups).map(([cat, rows]) => `<h3>${escapeHtml(cat)}</h3><table class="sample-table comp-table"><tbody>
+      ${rows.sort((a, b) => order[a.status] - order[b.status]).map(r => `<tr><td style="width:96px">${chip(r)}</td><td><strong>${escapeHtml(r.title)}</strong><br><span class="muted">${escapeHtml(r.detail)}</span></td>
+        <td class="ev">${ev(r)}</td><td class="ev" style="width:190px" title="${escapeHtml(r.citation.quote)}">${escapeHtml(r.citation.source)}<br>${escapeHtml(r.citation.section)}, p.${r.citation.page}</td></tr>`).join('')}
+    </tbody></table>`).join('')}
+    ${na.length ? `<details class="muted" style="margin-top:10px"><summary>${na.length} check(s) not applicable</summary>${na.map(r => `<div>${escapeHtml(r.title)} — ${escapeHtml(r.detail)}</div>`).join('')}</details>` : ''}
+    <h3>Files</h3><table class="sample-table comp-table"><thead><tr><th>File</th><th>Part</th><th>Recognised as</th><th>Pages</th><th>Personal data</th><th></th></tr></thead><tbody>
+      ${d.files.map(f => `<tr><td class="ev" style="color:var(--text)">${escapeHtml(f.path)}${f.error ? `<br><span class="sani-check-ko">${escapeHtml(f.error)}</span>` : ''}${f.unsearchable_pages ? `<br><span class="muted">${f.unsearchable_pages} page(s) without text</span>` : ''}</td>
+        <td>${escapeHtml(f.part)}</td><td>${escapeHtml(f.label)}</td><td>${f.pages}</td><td>${f.personal_data ? `<strong class="sani-check-ko">${f.personal_data}</strong>` : '—'}</td>
+        <td>${f.pdf && f.part !== 'confidential' && !f.error ? `<button class="${f.personal_data ? 'primary' : 'ghost'}" data-sanitise="${escapeHtml(f.path)}">Sanitise</button>` : ''}</td></tr>`).join('')}
+    </tbody></table>
+    <p class="muted" style="margin-top:8px">Sanitise opens the file in Publication with the applicant pre-filled, ready to review and redact. Personal-data counts use the local rules only; names without a title or role are not counted.</p>`;
+  $('compLetterBtn').addEventListener('click', () => downloadBlob(new Blob([d.letter_markdown], { type: 'text/markdown;charset=utf-8' }), `${(fieldValue('compRef') || 'dossier').replace(/[^A-Za-z0-9._-]+/g, '_')}_missing_information.md`));
+  $('compReportBtn').addEventListener('click', () => downloadBlob(new Blob([d.report_markdown], { type: 'text/markdown;charset=utf-8' }), `${(fieldValue('compRef') || 'dossier').replace(/[^A-Za-z0-9._-]+/g, '_')}_completeness_check.md`));
+  $('compCopyLetterBtn').addEventListener('click', async () => { try { await navigator.clipboard.writeText(d.letter_markdown); $('compCopyLetterBtn').textContent = 'Copied'; } catch (e) { alert('Clipboard not available — use the download.'); } });
+  document.querySelectorAll('[data-sanitise]').forEach(b => b.addEventListener('click', () => sanitiseFromDossier(b.dataset.sanitise, b)));
+}
+async function sanitiseFromDossier(path, btn) {
+  const label = btn.textContent; btn.textContent = 'Opening…'; btn.disabled = true;
+  try {
+    const res = await fetch(`${API_BASE}/completeness/file`, { method: 'POST', body: compFormData({ path }) });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || `HTTP ${res.status}`);
+    const file = new File([await res.blob()], path.split('/').pop(), { type: 'application/pdf' });
+    const dt = new DataTransfer(); dt.items.add(file);
+    $('saniFile').files = dt.files;
+    if (fieldValue('compApplicant')) $('saniApplicant').value = fieldValue('compApplicant');
+    updateSaniRunState();
+    showTab('sanitisation');
+    runSanitisationAnalysis();
+  } catch (e) { alert(`Could not open the file: ${e.message}`); }
+  finally { btn.textContent = label; btn.disabled = false; }
+}
+$('compFiles').addEventListener('change', updateCompRunState);
+$('compFolder').addEventListener('change', updateCompRunState);
+$('compRunBtn').addEventListener('click', runCompleteness);
+loadCompletenessRules();
 loadDomains().then(() => { if (state.domainInfo?.[state.domain]?.grounded) loadCharacterisationGuidance(); loadSanitisationRules(); });
 updateContext();
 </script>
