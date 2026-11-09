@@ -16,7 +16,7 @@ All are in the repository. Download them to the demo laptop's desktop before the
 | `static/samples/completeness_demo_dossier.zip` | Act 3 | Fictional, deliberately incomplete feed-additive application (15 files in the three-part folder structure). |
 | `static/samples/characterisation_demo_dossier.md` | Act 4 | Fictional, deliberately incomplete feed-additive dossier (vanillin, "DemoVan 99"). |
 | `static/samples/sanitisation_demo_study_report.pdf` | Act 5 | Fictional 3-page GLP tolerance study in chickens, with names, e-mail, phone, signature and confidential business info. |
-| `docs/demo/FEN-2025-34460_SYNTHETIC_Acme_Enzymatic_srl.zip` | optional | Real-world-shaped food-enzyme use-extension package (14 PDFs, original folders), fictional applicant "Acme Enzymatic srl". For the enzyme variant of Act 3. |
+| `docs/demo/Demo_Synthetic_Dossier.zip` | optional | Demo Synthetic Dossier: real-world-shaped food-enzyme use-extension package (14 PDFs in dossier folders), fictional applicant "Acme Enzymatic srl". For the enzyme variant of Act 3. |
 | `data/guidance/feed/efsa_2017_5023.pdf` | backup | FEEDAP 2017 characterisation guidance (also served by the app). Open on p.5–6 if someone challenges a quote. |
 
 Never use a real dossier in the demo. The samples are fictional or synthetic and say so (on page 1, or on every page for the Acme package).
@@ -28,7 +28,7 @@ Never use a real dossier in the demo. The samples are fictional or synthetic and
 1. Sign in on the demo URL with your email. Do it on the demo laptop, so the 14-day session is live tomorrow. No sign-in on stage.
 2. **AI configuration**: add a provider and key (Mistral AI = EU-hosted, best story for this room). Click *Test connection*. You will not need it for the main demo; it is a backup.
 3. Dry-run Acts 3 to 5 twice, full screen, with a timer.
-4. Enzyme variant (optional): unzip the Acme package and **delete its `_Prototype documentation` folder** — those are helper files, not part of the dossier, and they contain the synthetic contact details, so the check would flag them too. Keep the remaining folders as they are.
+4. Enzyme variant (optional): unzip `Demo_Synthetic_Dossier.zip` and **delete its `Documentation` folder** — those are helper files, not part of the dossier, and they contain the synthetic contact details, so the check would flag them too. Keep the remaining folders as they are.
 5. Browser: zoom 125 %, close other tabs, notifications off, bookmarks bar hidden.
 6. Second tab: the GitHub repository page (commit history, pull requests).
 7. Offline fallback: run it locally (`KEVIDENCE_HOME=$PWD python server.py`, http://127.0.0.1:3457). Everything except the AI assistant works without internet.
@@ -152,9 +152,9 @@ Optional, only if time and the AI is configured: in Publication, ask the Evidenc
 
 ### Optional — the enzyme variant of Act 3 (if the room is enzyme-heavy, or in Q&A)
 
-**Mandate & question → domain *Food enzymes*. Intake → type of application *Modification / extension of use (Part B)* → upload the Acme folder with the "dossier folder" button (`_Prototype documentation` removed beforehand), applicant `Acme Enzymatic srl` → *Check completeness*.**
+**Mandate & question → domain *Food enzymes*. Intake → type of application *Modification / extension of use (Part B)* → upload the unzipped dossier folder with the "dossier folder" button (`Documentation` removed beforehand), applicant `Acme Enzymatic srl` → *Check completeness*.**
 
-> "A real-world-shaped enzyme package — an alpha-amylase use extension, fourteen PDFs in their original folders, the applicant replaced by a fictional company. It's checked against our suitability checklist for food enzymes, Part B: reference to the existing authorisation, source unchanged, intended uses, exposure with FEIM — all located."
+> "A real-world-shaped enzyme package — an alpha-amylase use extension, fourteen PDFs in dossier folders, the applicant replaced by a fictional company. It's checked against our suitability checklist for food enzymes, Part B: reference to the existing authorisation, source unchanged, intended uses, exposure with FEIM — all located."
 
 **Open *Applicant's checklist* (28 provided, 128 not relevant), then point at the warning *Copies of bibliographic references — declared vs found*.**
 

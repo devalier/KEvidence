@@ -731,8 +731,12 @@ def run_checks(files: list[DossierFile], rules: dict, *, domain: str = "feed", a
         # Declared versus found: copies of the bibliographic references, one file each.
         ref_row = next((r for r in rows if re.search(r"cop(y|ies) of (the )?bibliographic references", r["item"], re.I)), None)
         if ref_row and ref_row["answer"] == "provided":
+            # A reference *list* is named just "References" (or "17_References", "List of references"...); copies of
+            # references carry their own titles.
+            is_list = lambda x: re.fullmatch(r"[\d\W_]*(list\W*of\W*)?(references?|bibliography|literature)(\W*list)?",
+                                             PurePosixPath(x.name).stem.lower()) is not None or x.role == "listdoc"
             ref_copies = [x for x in readable if x.role == "other" and re.search(r"referen|literature|bibliograph", x.path, re.I)
-                          and not re.search(r"list\W*of\W*referen|reference\W*list|list_?doc", x.name, re.I)]
+                          and not is_list(x)]
             R.add("CC-STRUCT-ONE-FILE-PER-SECTION", "ok" if ref_copies else "fail",
                   (f"{len(ref_copies)} reference cop(ies) located." if ref_copies else
                    "The checklist declares the copies of the bibliographic references provided (\u201c" + ref_row["item"][-110:] +

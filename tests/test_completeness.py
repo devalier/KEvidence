@@ -191,7 +191,7 @@ def test_assistant_refuses_unrelated_questions(client):
 
 # --- Food enzymes: suitability checklist (Appendix A to EN-6509), Part A / Part B ---------------------------
 
-ACME = ROOT / "docs" / "demo" / "FEN-2025-34460_SYNTHETIC_Acme_Enzymatic_srl.zip"
+ACME = ROOT / "docs" / "demo" / "Demo_Synthetic_Dossier.zip"
 
 
 @pytest.fixture(scope="module")
@@ -199,7 +199,7 @@ def acme_uploads():
     if not ACME.exists():
         pytest.skip("Acme demo dossier not present")
     z = zipfile.ZipFile(ACME)
-    return [("FEN/" + i.filename, z.read(i)) for i in z.infolist() if not i.is_dir() and not i.filename.startswith("_Prototype")]
+    return [("FEN/" + i.filename, z.read(i)) for i in z.infolist() if not i.is_dir() and not i.filename.startswith("Documentation/")]
 
 
 def _by_rule(result):
@@ -219,7 +219,7 @@ def test_enzyme_extension_of_use_is_checked_against_part_b(rules, acme_uploads):
     assert r["counts"]["blocking"] == 0 and r["verdict"] == "complete_with_warnings"
     refs = next(i for i in r["results"] if i["title"].startswith("Copies of bibliographic references"))
     assert refs["status"] == "fail" and "declares" in refs["detail"]  # ticked as provided, only a list is in the package
-    assert [p["file"].rsplit("/", 1)[-1] for p in r["personal_data"]] == ["Cover letter_PUBLIC.pdf"]
+    assert [p["file"].rsplit("/", 1)[-1] for p in r["personal_data"]] == ["Cover_letter.pdf"]
 
 
 def test_enzyme_part_a_lists_the_missing_underlying_data(rules, acme_uploads):
@@ -233,7 +233,7 @@ def test_enzyme_part_a_lists_the_missing_underlying_data(rules, acme_uploads):
 def test_applicant_checklist_ticks_are_read(rules, acme_uploads):
     r = cm.check_dossier(acme_uploads, rules, domain="food-enzymes", application_type="modification")
     ac = r["applicant_checklist"]
-    assert ac["file"].endswith("Suitability check list_EFSA - NZYM-KE.pdf")
+    assert ac["file"].endswith("Suitability_checklist.pdf")
     assert ac["counts"] == {"provided": 28, "not provided": 0, "not relevant": 128, "none": 0, "several": 0}
     assert any(row["item"].endswith("Accepted name as recognised by IUBMB") and row["answer"] == "provided" for row in ac["rows"])
 
