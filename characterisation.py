@@ -2372,7 +2372,7 @@ def source_status(src: dict[str, Any]) -> dict[str, Any]:
         "guidance": cat["guidance"], "scope": cat["scope"],
         "guidance_text_loaded": bool(pages), "guidance_pages": len(pages) if pages else 0,
         "verification_counts": counts, "entries": len(cat["requirements"]),
-        "steps": sorted({st for e in cat["requirements"] for st in entry_steps(e)}, key=WORKFLOW_STEPS.index),
+        "steps": sorted({st for e in cat["requirements"] for st in entry_steps(e)}, key=lambda st: (WORKFLOW_STEPS.index(st) if st in WORKFLOW_STEPS else len(WORKFLOW_STEPS), st)),
         "broken": [rid for rid, a in anchors.items() if a["status"] == "not_found_in_guidance_text"],
     }
 

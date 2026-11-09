@@ -4,6 +4,7 @@
 
 KEvidence follows a regulatory scientific assessment from dossier to publication. A scientific officer uploads the applicant's documents and KEvidence:
 
+0. **checks the dossier on receipt** — completeness, structure, study notifications under the Transparency Regulation, the confidentiality request and personal data — and drafts the request for missing information;
 1. **characterises the substance or product** against the applicable guidance, citing document and page for every value and listing data gaps;
 2. **structures hazard and exposure evidence** along the four Codex risk-assessment steps (Adverse Outcome Pathways, OpenFoodTox reference points, NAM points of departure, exposure estimates, screening margins);
 3. **drafts the uncertainty analysis and the scientific opinion** for expert refinement;
@@ -39,6 +40,7 @@ Open the page and sign in with any email address: without a mail transport confi
 
 - **Characterisation:** choose *Feed additives* in *Mandate & question*, then upload `static/samples/characterisation_demo_dossier.md` in *Identity & characterisation* and click *Characterise from documents*.
 - **Sanitisation:** upload `static/samples/sanitisation_demo_study_report.pdf` in *Publication*, applicant `Demo Feed Additives S.A.`, and click *Propose redactions*.
+- **Completeness check:** upload `static/samples/completeness_demo_dossier.zip` in *Completeness & sanitisation*, applicant `Demo Feed Additives S.A.`, notified study IDs `STUDY-DEMO-0042, STUDY-DEMO-0099`, and click *Check completeness*.
 
 ---
 
@@ -46,6 +48,7 @@ Open the page and sign in with any email address: without a mail transport confi
 
 **Risk analysis** is the whole governance cycle — risk assessment, risk management, and risk communication (EU General Food Law, Regulation (EC) No 178/2002). KEvidence supports the scientific **risk assessment** part, which Codex defines as four steps. The workbench follows that structure, with problem formulation as the practical framing step:
 
+- **Intake — completeness check & sanitisation** — what EFSA's front desk (FDP unit) does on receipt, before any assessment: completeness, structure, study notifications, confidentiality request, personal data; outcome within 30 working days.
 - **Problem formulation** — define the substance/stressor, product domain, use scenario, endpoint of concern, and decision context. Not one of the four formal Codex steps, but it frames all of them.
 - **Identity & characterisation** (dossier evaluation; guidance-grounded for feed additives) — establish exactly what is being assessed: identity and composition of the additive and of *each component* of a product, mixture or formulation, impurities, physical properties, manufacturing, stability, homogeneity, conditions of use and methods of analysis, grounded in the EFSA FEEDAP *Guidance on the identity, characterisation and conditions of use of feed additives* (EFSA Journal 2017;15(10):5023). The MVP covers chemical characterisation.
 1. **Hazard identification** — *can this agent cause harm?* Search and select candidate AOPs by chemical, stressor, key event, adverse outcome, or AOP ID.
@@ -62,6 +65,26 @@ At the end, **publication — sanitisation** prepares documents for publication 
 ---
 
 ## Key features
+
+### Intake — completeness check & sanitisation
+
+Mirrors EFSA's front desk (FDP unit), which checks every application on receipt and either asks the applicant for missing information or declares it valid. EFSA aims to communicate the outcome within 30 working days.
+
+- **Input:** the dossier as files, as its folder (the browser keeps the folder structure) or as a ZIP (expanded in memory; size, count and path limits). Also the application type (new, modification, renewal), the applicant (stays public), and optionally the pre-application ID(s) and the study IDs notified in EFSA's database.
+- **Rules** (`data/guidance/intake/`, quoted verbatim and anchored like every other catalogue):
+  - EFSA's administrative guidance for feed additive applications with its **Appendix B completeness checklist**. The current version (EFSA Supporting Publication 2021:EN-6508, updated 2025) could not be downloaded for bundling, so this is the 2018 public-consultation draft from efsa.europa.eu. It is labelled as such: confirm file naming and structure against the current version.
+  - EFSA's **practical arrangements on pre-submission and study notification**: Art. 19 (studies from 27 March 2021), Art. 21 (pre-application and study IDs, justifications), Art. 22(3) (all notified studies, and only those), Art. 23 (consequences).
+  - The **transparency arrangements** (Art. 4(5) personal data, Art. 10(a) precise confidentiality list).
+- **Checks.** Each has a severity, as in IUCLID's Validation Assistant: **blocking** (prevents validity; goes into the request for missing information), **warning** (quality; worth raising) or **info**.
+  - **Structure and format:** three parts; one file per section; searchable PDF; 30 MB; no security settings; file names; English.
+  - **Administrative documents:** cover letter, application form, completeness checklist, contact details.
+  - **Section I:** public, scientific and document-list summaries. The public summary is checked against the confidential copies (shared 10-word passages). Renewals: previous authorisation.
+  - **Sections II–V:** the section and each checklist heading (2.1–2.6, 3.1–3.4, 4.1, post-market monitoring). Justified omissions are flagged for review.
+  - **Study notifications:** study reports are recognised, their start date read, and any report from 27 March 2021 needs a study ID or a justification. Notified IDs missing from the dossier are flagged, and the pre-application ID is checked.
+  - **Confidentiality:** list of confidential parts with page references, and `_Conf` copies.
+  - **Personal data:** the sanitisation detectors run on every non-confidential PDF (contact details excluded).
+- **Output:** a verdict (incomplete / complete with warnings / complete), checks grouped by category with evidence (file and page) and the rule behind each, and a file inventory with what each file was recognised as. Downloads: a check report and a draft **request for missing information** (Markdown). *Sanitise* opens a file in Publication with the applicant filled in.
+- **Scope:** the feed checklist applies to the *Feed additives* domain. Other domains get the format, study-notification, confidentiality and personal-data checks, with the sector checks marked not applicable. Files are recognised by the guidance's file names (e.g. `PubSum`, `Sect_III_Safety`, `Annex_III_1_…`, `_Conf`), then by folder, then by content.
 
 ### Identity & characterisation — feed additives (chemical MVP)
 
@@ -100,7 +123,7 @@ Regulation (EU) 2019/1381 amended the General Food Law (Regulation (EC) No 178/2
 - **Review:** page previews with the boxes overlaid and a list; click to toggle; bulk actions; "mask more text" finds every occurrence of a string.
 - **Output:** true redaction with PyMuPDF (the text, image pixels and links under each box are removed from the file, not covered), optional legal-basis label in each box; all comments, form fields, mailto links, attachments, JavaScript, document metadata and XMP removed; the file is rewritten (no incremental update). The output is re-read to **verify** that the masked text is gone from the pages where it was masked, and copies left elsewhere are reported. A sanitisation record (Markdown) lists every masked item with its legal basis — it contains the masked text and is confidential.
 - **Limits:** pages without a text layer (scans) cannot be analysed — OCR first; text in images other than signatures is not detected; the decision on confidentiality stays with EFSA (Art. 11 of the arrangements). PyMuPDF is AGPL-3.0, like KEvidence.
-- A fictional demo study report is at `static/samples/sanitisation_demo_study_report.pdf` (generated by `scripts/make_sanitisation_demo.py scripts/filter_aopwiki_licences.py`).
+- A fictional demo study report is at `static/samples/sanitisation_demo_study_report.pdf` (generated by `scripts/make_sanitisation_demo.py`).
 
 ### AOP-Wiki knowledge base
 
@@ -119,6 +142,7 @@ The frontend is a single page (no frameworks, no CDN). The left pane groups the 
 
 ```text
 ASSESSMENT          Mandate & question (domain, problem formulation)
+INTAKE              Completeness & sanitisation
 DOSSIER EVALUATION  Identity & characterisation
 RISK ASSESSMENT     1 Hazard identification · 2 Hazard characterisation · 3 Exposure assessment
                     4 Risk characterisation · Uncertainty analysis
@@ -182,6 +206,7 @@ The Evidence Assistant uses the signed-in user's own AI configuration (see *Acco
 ├── server.py                          # FastAPI backend: AOP knowledge base, assessment logic, all API routes
 ├── accounts.py                        # Email sign-in, sessions, rate limits, activity log (SQLite in data/state/)
 ├── ai.py                              # Per-user AI configuration (encrypted keys), provider calls, llm_chat()
+├── completeness.py                    # Intake: completeness check, study notifications, personal-data screening, missing-information letter
 ├── characterisation.py                # Identity & characterisation: document ingestion, guidance-grounded characterisation and gap analysis
 ├── docx_export.py                     # Markdown → Word (.docx) for the characterisation output
 ├── sanitisation.py                    # Publication: redaction proposals, true redaction and verification
@@ -192,13 +217,15 @@ The Evidence Assistant uses the signed-in user's own AI configuration (see *Acco
 │   ├── import_openfoodtox.py          # EFSA OpenFoodTox Excel/CSV/XLSX importer
 │   ├── import_epa_bioactivity.py      # EPA ToxCast/Tox21/ToxRefDB-style importer
 │   ├── filter_aopwiki_licences.py     # Keeps only CC BY-SA AOP-Wiki content in data/
-│   └── make_sanitisation_demo.py      # Builds the fictional sanitisation demo PDF
+│   ├── make_sanitisation_demo.py      # Builds the fictional sanitisation demo PDF
+│   └── make_completeness_demo.py      # Builds the fictional, deliberately incomplete demo dossier (ZIP)
 ├── data/
 │   ├── guidance/
 │   │   ├── domains.json               # Domain registry (id, label, directory, sources, datasets, sanitisation sector)
 │   │   ├── feed/                      # Feed-additive domain: guidance PDFs (unmodified) + verbatim-quoted catalogues,
 │   │   │                              #   structured datasets (QPS cycle, MIC cut-offs, VICH solvents), output template,
 │   │   │                              #   local/ (git-ignored) for an institution's own template
+│   │   ├── intake/                    # Completeness rules: feed administrative guidance + checklist (2018 draft), pre-submission arrangements
 │   │   └── transparency/              # EFSA practical arrangements on transparency & confidentiality (PDF + rules catalogue)
 │   ├── aop-wiki-xml.gz                # AOP-Wiki export (CC BY-SA AOPs only)
 │   ├── aop_ke_mie_ao.tsv, aop_ke_ker.tsv, aop_ke_ec.tsv   # AOP events, KERs, event components
@@ -378,6 +405,9 @@ export BIOACTIVITY_SQLITE_PATH="/path/to/bioactivity.db"
 | `/api/characterisation/guidance.pdf?domain=&source=` | GET | A bundled guidance PDF of the domain (`source` = catalogue id; default the primary). |
 | `/api/characterisation/guidance.pdf` | GET | The bundled FEEDAP guidance PDF (unmodified). |
 | `/api/characterisation/analyse` | POST | Multipart: `files` (repeatable), `urls` (newline-separated), `meta` (JSON: `product_name`, `applicant`, `dossier_ref`, `authorisation`, `product_form`, `routes`, `production_types`, `additive_type`, `formulations`, `components`), `allow_external_llm`, `domain`. Returns requirement evaluations, gap summary and `markdown`. |
+| `/api/completeness/rules` | GET | Sources of the completeness check and their anchoring status; application types. |
+| `/api/completeness/check` | POST | Multipart: `files` (repeatable; files or a ZIP), `domain`, `application_type` (`new`/`modification`/`renewal`), `applicant`, `dossier_ref`, `pre_application_ids`, `notified_study_ids`. Returns verdict, checks with citations, studies, personal-data hits, file inventory, `report_markdown`, `letter_markdown`. |
+| `/api/completeness/file` | POST | Multipart: the same `files` and a `path`. Returns that file of the dossier (used to open it in Publication). |
 | `/api/sanitisation/rules?sector=&domain=` | GET | Rules of EFSA's practical arrangements, their grounding status, and which apply to the sector (Annex a-h). |
 | `/api/sanitisation/rules.pdf` | GET | The bundled EFSA decision (unmodified). |
 | `/api/sanitisation/analyse` | POST | Multipart: `file` (PDF), `sector`, `domain`, `applicant`, `applicant_address`, `requests` (lines `text \| basis`), `allow_external_llm`. Returns proposals with rule, legal basis and boxes, page previews, warnings. |
@@ -454,7 +484,7 @@ Important limitations:
 Recommended checks before opening a pull request:
 
 ```bash
-python -m py_compile server.py accounts.py ai.py characterisation.py sanitisation.py scripts/import_openfoodtox.py scripts/import_epa_bioactivity.py scripts/make_sanitisation_demo.py scripts/filter_aopwiki_licences.py
+python -m py_compile server.py accounts.py ai.py completeness.py characterisation.py sanitisation.py scripts/import_openfoodtox.py scripts/import_epa_bioactivity.py scripts/make_sanitisation_demo.py scripts/make_completeness_demo.py scripts/filter_aopwiki_licences.py
 python -m pip install -r requirements-dev.txt
 python -m pytest -q tests
 ```

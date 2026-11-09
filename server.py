@@ -16,12 +16,14 @@ from typing import Any, Optional
 
 import httpx
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 
 import accounts
 import ai
 import characterisation as charmod
+import completeness as compmod
 import docx_export
 import sanitisation as sanmod
 
@@ -2480,6 +2482,8 @@ def chat(body: dict):
         return characterisation_chat(query, workbench_context)
     if step == "sanitisation":
         return sanitisation_chat(query, workbench_context)
+    if step == "completeness":
+        return completeness_chat(query, workbench_context)
     if step in STEP_GUIDANCE_STEPS:
         guided = step_guidance_chat(query, workbench_context, step)
         if guided:
@@ -3176,6 +3180,107 @@ def sanitisation_chat(query: str, workbench_context: dict) -> dict:
     try:
         answer = ai.llm_chat([{"role": "system", "content": system}, {"role": "user", "content": user}],
                              feature="assistant.sanitisation", temperature=0.1, max_tokens=1200)
+    except ai.AIError as e:
+        return {"answer": str(e), "sources": [], "guidance_requirements": ids, "no_ai": isinstance(e, ai.AINotConfigured)}
+    return {"answer": answer, "sources": [], "guidance_requirements": ids}
+
+
+# ---------------------------------------------------------------------------
+# Intake — completeness check and personal-data screening (EFSA front desk)
+# ---------------------------------------------------------------------------
+COMPLETENESS_RULES = compmod.load_rules(SANI_RULES)
+
+COMPLETENESS_SYSTEM_PROMPT = """You are the KEvidence intake assistant for EFSA front-desk staff checking the completeness of application dossiers.
+You answer ONLY from the rule entries supplied below, each quoted verbatim from a bundled EFSA document:
+{sources}
+
+Rules:
+1. Ground every statement in the supplied entries; cite the document, article or section and page, and the entry ID.
+2. The feed-additive checklist entries come from the 2018 public-consultation draft of EFSA's administrative guidance; say so when
+   you rely on them, and that file naming and structure must be checked against the current guidance (EFSA Supporting Publication
+   2021:EN-6508).
+3. Keep the roles apart: KEvidence flags, the officer verifies, EFSA or the Commission decides on validity.
+4. If the entries do not answer the question, say so. Never invent requirements, deadlines or articles.
+5. When a check summary is supplied, relate the answer to it, but do not assume dossier content beyond it."""
+
+
+async def _read_uploads(files: list[UploadFile]) -> list[tuple[str, bytes]]:
+    out, total = [], 0
+    for f in files:
+        data = await f.read(compmod.MAX_TOTAL_BYTES + 1)
+        total += len(data)
+        if total > compmod.MAX_TOTAL_BYTES:
+            raise HTTPException(413, f"The dossier exceeds {compmod.MAX_TOTAL_BYTES // (1024 * 1024)} MB.")
+        out.append(((f.filename or "upload")[:300], data))
+    return out
+
+
+def _id_list(raw: str) -> list[str]:
+    return [x.strip()[:80] for x in re.split(r"[\s,;]+", raw or "") if x.strip()][:200]
+
+
+@app.get("/api/completeness/rules")
+async def completeness_rules():
+    """The sources the completeness check is grounded in, and their anchoring status."""
+    return {"sources": compmod.rules_status(COMPLETENESS_RULES), "application_types": compmod.APPLICATION_TYPES}
+
+
+@app.post("/api/completeness/check")
+async def completeness_check(
+    files: list[UploadFile] = File(...),
+    domain: str = Form(""),
+    application_type: str = Form("new"),
+    applicant: str = Form(""),
+    dossier_ref: str = Form(""),
+    pre_application_ids: str = Form(""),
+    notified_study_ids: str = Form(""),
+):
+    """Check a dossier (files and/or a ZIP of the dossier folders). Processed in memory; nothing is stored."""
+    domain = domain or CHAR_REGISTRY["default_domain"]
+    if domain not in DOMAIN_INFO:
+        raise HTTPException(400, f"Unknown domain '{domain}'.")
+    if application_type not in compmod.APPLICATION_TYPES:
+        raise HTTPException(400, "Unknown application type.")
+    uploads = await _read_uploads(files)
+    try:
+        result = await run_in_threadpool(
+            compmod.check_dossier, uploads, COMPLETENESS_RULES, domain=domain, application_type=application_type,
+            applicant=applicant[:300], dossier_ref=dossier_ref[:80], pre_application_ids=_id_list(pre_application_ids),
+            notified_study_ids=_id_list(notified_study_ids), sector=_sani_sector("", domain))
+    except compmod.CompletenessError as exc:
+        raise HTTPException(400, str(exc))
+    accounts.log("completeness.checked", {"domain": domain, "type": application_type, "files": len(result["files"]),
+                                          "verdict": result["verdict"], **result["counts"]})
+    return result
+
+
+@app.post("/api/completeness/file")
+async def completeness_file(files: list[UploadFile] = File(...), path: str = Form(...)):
+    """One file of the uploaded dossier (e.g. to open it in Publication for sanitisation)."""
+    uploads = await _read_uploads(files)
+    try:
+        name, data = compmod.extract_file(uploads, path[:500])
+    except compmod.CompletenessError as exc:
+        raise HTTPException(404, str(exc))
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", name)[:120] or "file"
+    return Response(content=data, media_type="application/pdf" if data[:5] == b"%PDF-" else "application/octet-stream",
+                    headers={"Content-Disposition": f'attachment; filename="{safe}"'})
+
+
+def completeness_chat(query: str, workbench_context: dict) -> dict:
+    ctx, ids = charmod.domain_context_for_question(query, COMPLETENESS_RULES)
+    if not ctx:
+        return {"answer": "I could not match this question to the completeness rules loaded (EFSA feed administrative guidance and "
+                          "checklist, study-notification arrangements, transparency arrangements). Try naming the topic: public "
+                          "summary, confidential parts, study notification, pre-application ID, file size, searchable PDF, personal data.",
+                "sources": [], "guidance_requirements": [], "no_data": True}
+    summary = workbench_context.get("completeness_summary")
+    summary_txt = json.dumps(summary)[:3000] if isinstance(summary, (dict, list)) else "No dossier checked yet."
+    user = f"Rule entries:\n\n{ctx}\n\n---\n\nCheck summary: {summary_txt}\n\n---\n\nQuestion: {query}"
+    system = COMPLETENESS_SYSTEM_PROMPT.format(sources="\n".join(f"- {s['catalogue']['guidance']['citation']}" for s in COMPLETENESS_RULES["sources"]))
+    try:
+        answer = ai.llm_chat([{"role": "system", "content": system}, {"role": "user", "content": user}],
+                             feature="assistant.completeness", temperature=0.1, max_tokens=1200)
     except ai.AIError as e:
         return {"answer": str(e), "sources": [], "guidance_requirements": ids, "no_ai": isinstance(e, ai.AINotConfigured)}
     return {"answer": answer, "sources": [], "guidance_requirements": ids}
