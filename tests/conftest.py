@@ -20,6 +20,7 @@ os.environ.pop("SMTP_HOST", None)
 def sign_in(client, email="tester@example.org"):
     """Give a TestClient a real session for `email` (bypasses only the email delivery)."""
     import accounts
+    accounts.init_db()
     user = accounts.find_or_create_user(email)
     client.cookies.set(accounts.session_cookie_name(), accounts.start_session(user["id"]))
     return user

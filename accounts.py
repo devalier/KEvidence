@@ -163,6 +163,23 @@ CREATE TABLE IF NOT EXISTS ai_configs (
     last_check_ok INTEGER,
     last_check_message TEXT
 );
+CREATE TABLE IF NOT EXISTS ai_models (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    endpoint TEXT NOT NULL DEFAULT '',
+    api_key_ciphertext TEXT,
+    api_key_hint TEXT NOT NULL DEFAULT '',
+    active INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    last_checked_at TEXT,
+    last_check_ok INTEGER,
+    last_check_message TEXT,
+    UNIQUE (user_id, provider, model, endpoint)
+);
+CREATE INDEX IF NOT EXISTS ai_models_user ON ai_models (user_id, id);
 """
 
 _lock = threading.Lock()
@@ -192,6 +209,13 @@ def connect():
 def init_db() -> None:
     with _lock, connect() as conn:
         conn.executescript(_SCHEMA)
+        # One-time migration: the single per-user configuration (ai_configs) becomes the user's first saved
+        # model, in use. The ciphertext stays valid: both are bound to "user:<id>".
+        conn.execute("""INSERT OR IGNORE INTO ai_models (user_id, provider, model, endpoint, api_key_ciphertext, api_key_hint, active,
+                        created_at, updated_at, last_checked_at, last_check_ok, last_check_message)
+                        SELECT user_id, provider, model, endpoint, api_key_ciphertext, api_key_hint, 1, updated_at, updated_at,
+                        last_checked_at, last_check_ok, last_check_message FROM ai_configs""")
+        conn.execute("DELETE FROM ai_configs")
     try:
         os.chmod(state_dir() / "accounts.db", 0o600)
     except OSError:

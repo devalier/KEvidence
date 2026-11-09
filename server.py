@@ -210,40 +210,61 @@ def ai_providers():
     return {"providers": {k: {kk: v[kk] for kk in ("label", "requires_key", "requires_endpoint", "hint")} for k, v in ai.PROVIDERS.items()}}
 
 
-@app.get("/api/ai/config")
-def ai_get_config(request: Request):
-    return {"config": ai.public_config(request.state.user["id"])}
+def _ai_state(user_id: int) -> dict:
+    return {"configs": ai.list_configs(user_id), "active": ai.public_config(user_id)}
 
 
-@app.post("/api/ai/config")
-def ai_save_config(request: Request, body: dict):
+@app.get("/api/ai/configs")
+def ai_get_configs(request: Request):
+    """The user's saved models (never their keys) and the one in use."""
+    return _ai_state(request.state.user["id"])
+
+
+@app.post("/api/ai/configs")
+def ai_add_config(request: Request, body: dict):
+    """Save a model and put it in use. A blank key reuses the key saved for the same provider and endpoint."""
     user = request.state.user
-    key = body.get("api_key")
     try:
-        cfg = ai.save_config(user["id"], str(body.get("provider") or ""), str(body.get("model") or ""),
-                             str(body.get("endpoint") or ""), None if key is None else str(key)[:500])
+        cfg = ai.add_config(user["id"], str(body.get("provider") or ""), str(body.get("model") or ""),
+                            str(body.get("endpoint") or ""), str(body.get("api_key") or "")[:500])
     except ai.AIError as exc:
         raise HTTPException(400, str(exc))
-    accounts.log("ai.config_saved", {"provider": cfg["provider"], "model": cfg["model"], "endpoint": bool(cfg["endpoint"]),
-                                     "key": "set" if cfg["api_key_hint"] else "none"}, user)
-    return {"config": cfg}
+    accounts.log("ai.model_saved", {"provider": cfg["provider"], "model": cfg["model"], "endpoint": bool(cfg["endpoint"]),
+                                    "key": "set" if cfg["api_key_hint"] else "none"}, user)
+    return _ai_state(user["id"])
 
 
-@app.delete("/api/ai/config")
-def ai_delete_config(request: Request):
-    ai.delete_config(request.state.user["id"])
-    accounts.log("ai.config_removed", "", request.state.user)
-    return {"config": None}
-
-
-@app.post("/api/ai/config/test")
-def ai_test_config(request: Request):
+@app.post("/api/ai/configs/{config_id}/select")
+def ai_select_config(request: Request, config_id: int):
+    user = request.state.user
     try:
-        cfg = ai.check_config(request.state.user["id"])
+        cfg = ai.select_config(user["id"], config_id)
     except ai.AIError as exc:
-        raise HTTPException(400, str(exc))
-    accounts.log("ai.config_tested", {"ok": cfg["last_check_ok"]}, request.state.user)
-    return {"config": cfg}
+        raise HTTPException(404, str(exc))
+    accounts.log("ai.model_selected", {"provider": cfg["provider"], "model": cfg["model"]}, user)
+    return _ai_state(user["id"])
+
+
+@app.post("/api/ai/configs/{config_id}/test")
+def ai_test_config(request: Request, config_id: int):
+    user = request.state.user
+    try:
+        cfg = ai.check_config(user["id"], config_id)
+    except ai.AIError as exc:
+        raise HTTPException(404 if "does not exist" in str(exc) else 400, str(exc))
+    accounts.log("ai.model_tested", {"provider": cfg["provider"], "model": cfg["model"], "ok": cfg["last_check_ok"]}, user)
+    return _ai_state(user["id"])
+
+
+@app.delete("/api/ai/configs/{config_id}")
+def ai_delete_config(request: Request, config_id: int):
+    user = request.state.user
+    try:
+        gone = ai.delete_config(user["id"], config_id)
+    except ai.AIError as exc:
+        raise HTTPException(404, str(exc))
+    accounts.log("ai.model_deleted", gone, user)
+    return _ai_state(user["id"])
 
 
 @app.post("/api/ai/models")

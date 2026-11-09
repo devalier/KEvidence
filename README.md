@@ -9,7 +9,7 @@ KEvidence follows a regulatory scientific assessment from dossier to publication
 3. **drafts the uncertainty analysis and the scientific opinion** for expert refinement;
 4. **prepares documents for publication** under the Transparency Regulation, masking confidential information and personal data according to EFSA's rules.
 
-**Grounded, not generative.** Every requirement KEvidence checks is quoted verbatim from official guidance bundled with the code, and the tests fail if a quote or page reference drifts from the source PDF. The assistant answers only from that guidance and says so when it cannot. Extraction runs locally. AI features use each user's own provider and key (OpenAI, Anthropic, Mistral AI in the EU, DeepSeek or an on-premises model), are off until the user configures one, and send dossier content only when ticked for that run.
+**Grounded, not generative.** Every requirement KEvidence checks is quoted verbatim from official guidance bundled with the code, and the tests fail if a quote or page reference drifts from the source PDF. The assistant answers only from that guidance and says so when it cannot. Extraction runs locally. AI features use each user's own provider and key (OpenAI, Anthropic, Mistral AI in the EU, DeepSeek, Fireworks AI, OpenRouter or an on-premises model), are off until the user configures one, and send dossier content only when ticked for that run.
 
 **It assists experts; it does not decide.** Adequacy, safety conclusions and confidentiality decisions stay with the risk assessor and the competent authority.
 
@@ -244,7 +244,7 @@ It listens on `http://127.0.0.1:3457`. In development the sign-in link is printe
 
 ### 5. AI (optional, per user)
 
-There is no server-wide AI key. Each user opens *AI configuration* and adds their own provider (OpenAI, Anthropic, Mistral AI, DeepSeek, or an on-premises OpenAI-compatible endpoint), model and key. Keys are encrypted with `KEVIDENCE_SECRET_KEY`.
+There is no server-wide AI key. Each user opens *AI configuration* and adds their own models (OpenAI, Anthropic, Mistral AI, DeepSeek, Fireworks AI, OpenRouter, or an on-premises OpenAI-compatible endpoint) and selects the one in use. Keys are encrypted with `KEVIDENCE_SECRET_KEY`.
 
 ---
 
@@ -279,7 +279,7 @@ Set `APP_URL` to exactly the address in the browser (e.g. `https://kevidence.exa
 
 **Activity log:** each user sees their own sign-ins, analyses, exports, AI calls and configuration changes. Administrators listed in `KEVIDENCE_ADMIN_EMAILS` can see everyone's. Document content, questions and keys are never logged.
 
-**AI configuration** works like ICDT_AISH's model targets: one configuration per user (provider, model, optional endpoint, key). The key is encrypted with AES-256-GCM, bound to the user, and shown only as `****abcd`. *Load models* lists what the key can use, and *Test connection* makes one minimal call. User-supplied endpoints are checked against SSRF: loopback, link-local, metadata and (unless allowed) private addresses are refused.
+**AI configuration** works like ICDT_AISH's model targets. Each user saves one or more models: provider (OpenAI, Anthropic, Mistral AI, DeepSeek, Fireworks AI, OpenRouter, or an on-premises OpenAI-compatible endpoint), model identifier, optional endpoint and key. The saved models are listed with their URL and key hint, plus *Use*, *Test* and *Delete* buttons. The model marked *In use* serves every AI feature, so switching lets you compare answers, and the activity log records which model answered each call. A key is entered once per provider: leave it blank when adding another model of the same provider and the saved key is reused. Keys are encrypted with AES-256-GCM, bound to the user, and shown only as `****abcd`. *Load models* lists what the key can use (Fireworks' model list may not be available; type the id). User-supplied endpoints are checked against SSRF: loopback, link-local, metadata and (unless allowed) private addresses are refused. OpenRouter forwards your text to the provider of the chosen model.
 
 | Variable | Needed | Purpose |
 |---|---|---|
@@ -360,7 +360,7 @@ export BIOACTIVITY_SQLITE_PATH="/path/to/bioactivity.db"
 | `/api/health` | GET | Health check and AOP count (no sign-in needed). |
 | `/api/me` | GET | Signed-in user, administrator flag, their AI configuration (without key). |
 | `/api/activity?scope=mine\|all` | GET | Activity log (own; `all` for administrators). |
-| `/api/ai/providers`, `/api/ai/config` (GET/POST/DELETE), `/api/ai/config/test`, `/api/ai/models` | GET/POST/DELETE | Per-user AI configuration, connection test and model list. |
+| `/api/ai/providers`; `/api/ai/configs` (GET list, POST add and use); `/api/ai/configs/{id}/select`, `/test` (POST); `/api/ai/configs/{id}` (DELETE); `/api/ai/models` (POST) | GET/POST/DELETE | Per-user saved models, the one in use, connection test, provider model list. |
 | `/api/aops` | GET | List or search AOPs by text, chemical, stressor, event, or adverse outcome. |
 | `/api/aops/{aop_id}` | GET | Retrieve full AOP details, events, KERs, components, and evidence summary. |
 | `/api/chat` | POST | Contextual Evidence Assistant grounded in AOP data and workbench state. |

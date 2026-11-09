@@ -72,9 +72,9 @@ def test_logout_kills_the_session_server_side(client):
 
 
 def test_cross_site_writes_are_refused(client):
-    r = client.post("/api/ai/config", json={"provider": "openai"}, headers={"Origin": "https://evil.example"})
+    r = client.post("/api/ai/configs", json={"provider": "openai"}, headers={"Origin": "https://evil.example"})
     assert r.status_code == 403
-    assert client.post("/api/ai/config", json={"provider": "x"}, headers={"Origin": "http://testserver"}).status_code == 400
+    assert client.post("/api/ai/configs", json={"provider": "x"}, headers={"Origin": "http://testserver"}).status_code == 400
 
 
 def test_activity_is_private_unless_admin(client, monkeypatch):
