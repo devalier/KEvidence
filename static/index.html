@@ -272,7 +272,7 @@
   nav .step .lbl small { display: block; color: var(--text2); font-weight: 400; font-size: 11.5px; margin-top: 2px; }
   nav .step.active .num { background: var(--accent); color: var(--bg); }
   .nav-sep { border-top: 1px solid var(--surface2); margin: 14px 0 10px; }
-  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: var(--surface3); vertical-align: middle; }
+  .dot { float: left; width: 8px; height: 8px; border-radius: 50%; margin: 4px 6px 0 0; background: var(--surface3); vertical-align: middle; }
   .dot.ok { background: var(--success); } .dot.bad { background: var(--danger); }
   .account { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); }
   .account form { margin: 0; }
@@ -285,6 +285,16 @@
   .domain-card strong { display: block; font-size: 14px; }
   .domain-card .muted { font-size: 12px; margin-top: 4px; }
   .badge.grounded { color: var(--success); } .badge.workflow { color: var(--text2); }
+  .ai-list { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ai-list th { text-align: left; color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; padding: 6px 8px; border-bottom: 1px solid var(--surface2); }
+  .ai-list td { padding: 6px 8px; border-bottom: 1px solid var(--surface2); vertical-align: middle; }
+  .ai-list tr.in-use td { background: rgba(56,189,248,.07); }
+  .ai-list .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; }
+  .ai-list .url { color: var(--text2); max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; word-break: normal; }
+  .ai-list .nowrap { white-space: nowrap; }
+  .ai-list .acts { white-space: nowrap; text-align: right; }
+  .ai-list button { padding: 5px 10px; font-size: 12px; border-radius: 8px; margin-left: 4px; }
+  .pill-use { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; background: var(--accent); color: var(--bg); }
 </style>
 </head>
 <body>
@@ -560,18 +570,20 @@
     <section id="ai-config" class="tab-content">
       <div class="panel">
         <h2>AI configuration</h2>
-        <p class="help">KEvidence's AI features use <strong>your own</strong> provider, model and key. Nobody else's key is used for you, and yours is used only for you: it is encrypted (AES-256-GCM, bound to your account) and never shown again — only its last four characters. Without a configuration the AI features are off for you; everything that runs locally (characterisation, gap analysis, sanitisation rules, redaction, AOP search, screening calculations) keeps working.</p>
+        <p class="help">KEvidence's AI features use <strong>your own</strong> provider, model and key. Nobody else's key is used for you, and yours is used only for you: it is encrypted (AES-256-GCM, bound to your account) and never shown again — only its last four characters. You can save several models and switch between them to compare answers; the one marked <em>In use</em> serves every AI feature. Without one, the AI features are off for you; everything that runs locally (characterisation, gap analysis, sanitisation rules, redaction, AOP search, screening calculations) keeps working.</p>
         <div id="aiCurrent" class="card"><div class="muted">Loading…</div></div>
       </div>
       <div class="panel">
-        <h3>Set or change your model</h3>
+        <h3>Add a model</h3>
         <div class="grid">
           <div><label for="aiProvider">Provider</label><select id="aiProvider"></select><div class="muted" id="aiProviderHint" style="margin-top:6px"></div></div>
           <div id="aiEndpointWrap"><label for="aiEndpoint">Endpoint URL</label><input id="aiEndpoint" type="url" maxlength="400" placeholder="https://llm.your-institution.example/v1"></div>
-          <div><label for="aiKey">API key</label><input id="aiKey" type="password" autocomplete="new-password" maxlength="500" placeholder="Leave blank to keep the stored key"></div>
-          <div><label for="aiModel">Model identifier</label><input id="aiModel" list="aiModelOptions" maxlength="160" placeholder="e.g. mistral-large-latest"><datalist id="aiModelOptions"></datalist></div>
+          <div><label for="aiKey">API key</label><input id="aiKey" type="password" autocomplete="new-password" maxlength="500"></div>
+          <div><label for="aiModel">Model identifier (variant)</label><input id="aiModel" list="aiModelOptions" maxlength="160" placeholder="e.g. mistral-large-latest"><datalist id="aiModelOptions"></datalist></div>
         </div>
-        <div class="actions"><button class="secondary" id="aiLoadModels">Load models for this key</button><button class="primary" id="aiSave">Save</button><button class="secondary" id="aiTest">Test connection</button><button class="ghost" id="aiRemove">Remove configuration</button><span class="muted" id="aiStatus" style="align-self:center"></span></div>
+        <div class="actions"><button class="secondary" id="aiLoadModels">Load models for this key</button><button class="primary" id="aiSave">Add and use</button><span class="muted" id="aiStatus" style="align-self:center"></span></div>
+        <h3 style="margin-top:18px">Your models <span class="muted" style="font-weight:400;font-size:12px">— select one to use it; switch at any time to compare</span></h3>
+        <div id="aiList"><div class="muted">Loading…</div></div>
       </div>
       <div class="panel">
         <h3>What is sent to your provider, and when</h3>
@@ -1619,59 +1631,74 @@ async function loadMe() {
 function renderAiStatus(cfg) {
   state.aiConfig = cfg;
   $('aiDot').className = 'dot' + (cfg ? (cfg.last_check_ok === false ? ' bad' : ' ok') : '');
-  $('navAiSub').textContent = cfg ? `${cfg.provider_label} · ${cfg.model}` : 'Not configured — AI features off';
-  if (!$('aiCurrent')) return;
-  $('aiCurrent').innerHTML = cfg ? `<div class="card-title">${escapeHtml(cfg.provider_label)} — <span style="font-family:ui-monospace,monospace">${escapeHtml(cfg.model)}</span></div>
-      <div class="muted">${cfg.endpoint ? `Endpoint: ${escapeHtml(cfg.endpoint)}<br>` : ''}Key: ${escapeHtml(cfg.api_key_hint || 'none')} · saved ${escapeHtml(cfg.updated_at)}<br>
-      ${cfg.last_checked_at ? `Last test ${escapeHtml(cfg.last_checked_at)}: <strong class="${cfg.last_check_ok ? 'sani-check-ok' : 'sani-check-ko'}">${cfg.last_check_ok ? 'reachable' : 'failed'}</strong> — ${escapeHtml(cfg.last_check_message || '')}` : 'Not tested yet.'}</div>`
-    : '<div class="card-title">Not configured</div><div class="muted">AI features are off for your account. Add a provider below to enable the Evidence Assistant, characterisation narratives and the sanitisation AI review.</div>';
+  $('navAiSub').textContent = cfg ? `${cfg.provider_label} · ${cfg.model}` : 'No model in use — AI features off';
+  $('aiCurrent').innerHTML = cfg ? `<div class="card-title">In use: ${escapeHtml(cfg.provider_label)} — <span style="font-family:ui-monospace,monospace">${escapeHtml(cfg.model)}</span></div>
+      <div class="muted">Every AI feature uses this model until you select another below. Your activity log records which model answered each call.</div>`
+    : '<div class="card-title">No model in use</div><div class="muted">AI features are off for your account. Add a model below, or select one of your saved models.</div>';
 }
+function renderAiList(configs) {
+  state.aiConfigs = configs;
+  if (!configs.length) { $('aiList').innerHTML = '<div class="muted">No saved models yet.</div>'; return; }
+  const status = c => c.last_checked_at ? `<span class="${c.last_check_ok ? 'sani-check-ok' : 'sani-check-ko'}" title="${escapeHtml(c.last_check_message || '')} (${escapeHtml(c.last_checked_at)})">${c.last_check_ok ? '✓ reachable' : '✕ failed'}</span>` : '<span class="muted">not tested</span>';
+  $('aiList').innerHTML = `<table class="ai-list"><thead><tr><th>Model</th><th>Variant</th><th>URL</th><th>Key</th><th>Status</th><th></th></tr></thead><tbody>
+    ${configs.map(c => `<tr class="${c.active ? 'in-use' : ''}">
+      <td>${escapeHtml(c.provider_label)}</td>
+      <td class="mono">${escapeHtml(c.model)}</td>
+      <td class="mono url" title="${escapeHtml(c.url)}">${escapeHtml(c.url)}</td>
+      <td class="mono nowrap">${escapeHtml(c.api_key_hint || '—')}</td>
+      <td class="nowrap">${status(c)}</td>
+      <td class="acts">${c.active ? '<span class="pill-use">In use</span>' : `<button class="primary" data-ai-act="select" data-id="${c.id}">Use</button>`}<button class="secondary" data-ai-act="test" data-id="${c.id}">Test</button><button class="ghost" data-ai-act="delete" data-id="${c.id}" title="Delete this model and its key">Delete</button></td>
+    </tr>`).join('')}</tbody></table>`;
+  document.querySelectorAll('[data-ai-act]').forEach(b => b.addEventListener('click', () => aiRowAction(b.dataset.aiAct, Number(b.dataset.id))));
+}
+function applyAiState(d) { renderAiList(d.configs || []); renderAiStatus(d.active || null); updateAiProviderUi(); }
 async function loadAiConfig() {
   try {
     if (!state.aiProviders) {
       state.aiProviders = (await jsonFetch(`${API_BASE}/ai/providers`)).providers;
       $('aiProvider').innerHTML = Object.entries(state.aiProviders).map(([k, v]) => `<option value="${escapeHtml(k)}">${escapeHtml(v.label)}</option>`).join('');
     }
-    const cfg = (await jsonFetch(`${API_BASE}/ai/config`)).config;
-    renderAiStatus(cfg);
-    if (cfg) { $('aiProvider').value = cfg.provider; $('aiModel').value = cfg.model; $('aiEndpoint').value = cfg.endpoint || ''; }
-    updateAiProviderUi();
+    applyAiState(await jsonFetch(`${API_BASE}/ai/configs`));
   } catch (e) { $('aiStatus').textContent = e.message; }
 }
 function updateAiProviderUi() {
-  const spec = state.aiProviders?.[$('aiProvider').value] || {};
+  const provider = $('aiProvider').value;
+  const spec = state.aiProviders?.[provider] || {};
   $('aiProviderHint').textContent = spec.hint || '';
   $('aiEndpointWrap').hidden = !spec.requires_endpoint && !$('aiEndpoint').value;
-  $('aiKey').placeholder = state.aiConfig?.api_key_hint && state.aiConfig.provider === $('aiProvider').value ? `Stored: ${state.aiConfig.api_key_hint} — leave blank to keep` : (spec.requires_key ? 'Required' : 'Optional for on-premises endpoints');
+  const saved = (state.aiConfigs || []).find(c => c.provider === provider && c.api_key_hint && (c.endpoint || '') === ($('aiEndpoint').value || '').trim());
+  $('aiKey').placeholder = saved ? `Blank reuses your saved ${saved.provider_label} key (${saved.api_key_hint})` : (spec.requires_key ? 'Required' : 'Optional for on-premises endpoints');
 }
 async function aiAction(label, fn) {
   $('aiStatus').textContent = `${label}…`;
   try { await fn(); } catch (e) { $('aiStatus').textContent = e.message; }
 }
+async function aiRowAction(act, id) {
+  const c = (state.aiConfigs || []).find(x => x.id === id);
+  if (!c) return;
+  if (act === 'delete' && !confirm(`Delete ${c.provider_label} — ${c.model} and its stored key?`)) return;
+  await aiAction(act === 'select' ? 'Switching' : act === 'test' ? 'Testing' : 'Deleting', async () => {
+    const d = await jsonFetch(act === 'delete' ? `${API_BASE}/ai/configs/${id}` : `${API_BASE}/ai/configs/${id}/${act}`, { method: act === 'delete' ? 'DELETE' : 'POST' });
+    applyAiState(d);
+    const tested = (d.configs || []).find(x => x.id === id);
+    $('aiStatus').textContent = act === 'select' ? `Now using ${c.provider_label} — ${c.model}.`
+      : act === 'test' ? (tested?.last_check_ok ? `${c.model}: ${tested.last_check_message}` : `${c.model}: ${tested?.last_check_message || 'failed'}`)
+      : (c.active ? 'Deleted. No model is in use now — select another to keep AI on.' : 'Deleted.');
+  });
+}
 $('aiProvider').addEventListener('change', updateAiProviderUi);
+$('aiEndpoint').addEventListener('input', updateAiProviderUi);
 $('aiLoadModels').addEventListener('click', () => aiAction('Loading models', async () => {
   const d = await jsonFetch(`${API_BASE}/ai/models`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider: $('aiProvider').value, api_key: $('aiKey').value, endpoint: $('aiEndpoint').value }) });
   $('aiModelOptions').innerHTML = d.models.map(m => `<option value="${escapeHtml(m)}">`).join('');
   $('aiStatus').textContent = `${d.models.length} model(s) available — pick one in Model identifier.`;
 }));
 $('aiSave').addEventListener('click', () => aiAction('Saving', async () => {
-  const body = { provider: $('aiProvider').value, model: $('aiModel').value, endpoint: $('aiEndpoint').value };
-  if ($('aiKey').value.trim()) body.api_key = $('aiKey').value.trim();
-  const d = await jsonFetch(`${API_BASE}/ai/config`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  $('aiKey').value = '';
-  renderAiStatus(d.config); updateAiProviderUi();
-  $('aiStatus').textContent = 'Saved. Test the connection to be sure it works.';
-}));
-$('aiTest').addEventListener('click', () => aiAction('Testing', async () => {
-  const d = await jsonFetch(`${API_BASE}/ai/config/test`, { method: 'POST' });
-  renderAiStatus(d.config);
-  $('aiStatus').textContent = d.config.last_check_ok ? 'Connection works.' : 'Connection failed — see above.';
-}));
-$('aiRemove').addEventListener('click', () => aiAction('Removing', async () => {
-  if (!confirm('Remove your AI configuration and stored key?')) { $('aiStatus').textContent = ''; return; }
-  await jsonFetch(`${API_BASE}/ai/config`, { method: 'DELETE' });
-  renderAiStatus(null); $('aiModel').value = ''; $('aiEndpoint').value = ''; updateAiProviderUi();
-  $('aiStatus').textContent = 'Removed.';
+  const body = { provider: $('aiProvider').value, model: $('aiModel').value, endpoint: $('aiEndpoint').value, api_key: $('aiKey').value.trim() };
+  const d = await jsonFetch(`${API_BASE}/ai/configs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  $('aiKey').value = ''; $('aiModel').value = '';
+  applyAiState(d);
+  $('aiStatus').textContent = `Added and in use: ${d.active?.provider_label} — ${d.active?.model}. Use Test to check it.`;
 }));
 async function loadActivity() {
   try {

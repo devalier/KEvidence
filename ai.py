@@ -6,8 +6,9 @@ The key is encrypted with AES-256-GCM under a key derived from KEVIDENCE_SECRET_
 sees a hint ("****abcd"). Nobody's key is used for anyone else, and without a configuration the AI
 features are simply off for that user; everything that runs locally keeps working.
 
-Providers are called over plain HTTPS with httpx (no vendor SDKs): OpenAI, Anthropic, Mistral AI (EU),
-DeepSeek, or any OpenAI-compatible endpoint (on-premises vLLM, Ollama, TGI, an institution's gateway).
+Each user can save several models (to compare them) and picks the one in use. Providers are called over plain
+HTTPS with httpx (no vendor SDKs): OpenAI, Anthropic, Mistral AI (EU), DeepSeek, Fireworks AI, OpenRouter, or any
+OpenAI-compatible endpoint (on-premises vLLM, Ollama, TGI, an institution's gateway).
 """
 
 from __future__ import annotations
@@ -41,6 +42,11 @@ PROVIDERS: dict[str, dict[str, Any]] = {
                 "hint": "Cloud, EU-based provider. Model id such as mistral-large-latest."},
     "deepseek": {"label": "DeepSeek", "base": "https://api.deepseek.com", "requires_key": True, "requires_endpoint": False,
                  "hint": "Cloud. Model id such as deepseek-chat."},
+    "fireworks": {"label": "Fireworks AI", "base": "https://api.fireworks.ai/inference/v1", "requires_key": True, "requires_endpoint": False,
+                  "hint": "Cloud (US), open-weight models. Model id such as accounts/fireworks/models/llama-v3p3-70b-instruct."},
+    "openrouter": {"label": "OpenRouter", "base": "https://openrouter.ai/api/v1", "requires_key": True, "requires_endpoint": False,
+                   "hint": "Routes to many providers with one key; the provider that receives your text depends on the model. "
+                           "Model id such as mistralai/mistral-large."},
     "openai_compatible": {"label": "On-premises / OpenAI-compatible endpoint", "base": "", "requires_key": False, "requires_endpoint": True,
                           "hint": "vLLM, Ollama, TGI, llama.cpp or an institutional gateway serving /v1/chat/completions."},
 }
@@ -195,6 +201,8 @@ def complete(config: dict, messages: list[dict], *, temperature: float = 0.1, ma
         usage = data.get("usage") or {}
         return text, {"in": usage.get("input_tokens", 0), "out": usage.get("output_tokens", 0)}
     headers = {"Authorization": f"Bearer {key}"} if key else {}
+    if provider == "openrouter":
+        headers["X-Title"] = "KEvidence"
     payload: dict[str, Any] = {"model": model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
     if json_mode:
         payload["response_format"] = {"type": "json_object"}
@@ -240,39 +248,66 @@ def list_models(provider: str, api_key: str, endpoint: str, client: Optional[htt
 
 
 # ---------------------------------------------------------------------------
-# Stored configuration (one per user)
+# Saved models (several per user, one in use)
 # ---------------------------------------------------------------------------
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def public_config(user_id: int) -> Optional[dict]:
-    """The user's configuration as the UI may see it (no key)."""
-    with accounts.connect() as conn:
-        row = conn.execute("SELECT provider, model, endpoint, api_key_hint, updated_at, last_checked_at, last_check_ok, "
-                           "last_check_message FROM ai_configs WHERE user_id = ?", (user_id,)).fetchone()
-    if not row:
-        return None
+_PUBLIC_COLS = ("id, provider, model, endpoint, api_key_hint, active, created_at, updated_at, last_checked_at, "
+                "last_check_ok, last_check_message")
+
+
+def _public(row) -> dict:
+    """A saved model as the UI may see it: never the key, only its hint."""
     out = dict(row)
-    out["provider_label"] = PROVIDERS.get(out["provider"], {}).get("label", out["provider"])
+    spec = PROVIDERS.get(out["provider"], {})
+    out["provider_label"] = spec.get("label", out["provider"])
+    out["url"] = (out["endpoint"] or spec.get("base", "")).rstrip("/")
+    out["active"] = bool(out["active"])
     out["last_check_ok"] = None if out["last_check_ok"] is None else bool(out["last_check_ok"])
     return out
 
 
-def load_config(user_id: int) -> Optional[dict]:
-    """The user's configuration with the decrypted key, for a call. Never returned to the browser."""
+def list_configs(user_id: int) -> list[dict]:
     with accounts.connect() as conn:
-        row = conn.execute("SELECT provider, model, endpoint, api_key_ciphertext FROM ai_configs WHERE user_id = ?", (user_id,)).fetchone()
+        rows = conn.execute(f"SELECT {_PUBLIC_COLS} FROM ai_models WHERE user_id = ? ORDER BY id", (user_id,)).fetchall()
+    return [_public(r) for r in rows]
+
+
+def public_config(user_id: int) -> Optional[dict]:
+    """The model in use, as the UI may see it, or None."""
+    with accounts.connect() as conn:
+        row = conn.execute(f"SELECT {_PUBLIC_COLS} FROM ai_models WHERE user_id = ? AND active = 1", (user_id,)).fetchone()
+    return _public(row) if row else None
+
+
+def _owned(conn, user_id: int, config_id: int):
+    row = conn.execute("SELECT * FROM ai_models WHERE id = ? AND user_id = ?", (config_id, user_id)).fetchone()
     if not row:
-        return None
+        raise AIError("That model does not exist.")  # also for another user's id: no existence leak
+    return row
+
+
+def load_config(user_id: int, config_id: Optional[int] = None) -> Optional[dict]:
+    """The model in use (or the given one) with the decrypted key, for a call. Never returned to the browser."""
+    with accounts.connect() as conn:
+        if config_id is None:
+            row = conn.execute("SELECT * FROM ai_models WHERE user_id = ? AND active = 1", (user_id,)).fetchone()
+            if not row:
+                return None
+        else:
+            row = _owned(conn, user_id, config_id)
     key = decrypt_secret(row["api_key_ciphertext"], f"user:{user_id}") if row["api_key_ciphertext"] else ""
-    return {"provider": row["provider"], "model": row["model"], "endpoint": row["endpoint"], "api_key": key}
+    return {"id": row["id"], "provider": row["provider"], "model": row["model"], "endpoint": row["endpoint"], "api_key": key}
 
 
-def save_config(user_id: int, provider: str, model: str, endpoint: str = "", api_key: Optional[str] = None) -> dict:
-    """Create or update. api_key None keeps the stored key; "" removes it."""
-    provider, model, endpoint = provider.strip(), model.strip()[:160], endpoint.strip()[:400]
+def add_config(user_id: int, provider: str, model: str, endpoint: str = "", api_key: str = "", activate: bool = True) -> dict:
+    """Save a model (or update the key of an identical one) and, by default, put it in use.
+    Without a key, the key already saved for the same provider and endpoint is reused, so comparing several
+    models of one provider needs the key only once."""
+    provider, model, endpoint, api_key = provider.strip(), model.strip()[:160], endpoint.strip()[:400], (api_key or "").strip()
     if provider not in PROVIDERS:
         raise AIError("Choose a provider from the list.")
     spec = PROVIDERS[provider]
@@ -284,31 +319,56 @@ def save_config(user_id: int, provider: str, model: str, endpoint: str = "", api
         ok, reason = validate_endpoint(endpoint)
         if not ok:
             raise AIError(f"Endpoint rejected: {reason}.")
+    now = _now()
     with accounts.connect() as conn:
-        existing = conn.execute("SELECT api_key_ciphertext, api_key_hint FROM ai_configs WHERE user_id = ?", (user_id,)).fetchone()
-        if api_key is None:
-            ct, hint = (existing["api_key_ciphertext"], existing["api_key_hint"]) if existing else (None, "")
-        elif api_key.strip():
-            ct, hint = encrypt_secret(api_key.strip(), f"user:{user_id}"), secret_hint(api_key.strip())
+        same = conn.execute("SELECT id, api_key_ciphertext, api_key_hint FROM ai_models WHERE user_id = ? AND provider = ? AND model = ? "
+                            "AND endpoint = ?", (user_id, provider, model, endpoint)).fetchone()
+        if api_key:
+            ct, hint = encrypt_secret(api_key, f"user:{user_id}"), secret_hint(api_key)
         else:
-            ct, hint = None, ""
+            donor = same if same and same["api_key_ciphertext"] else conn.execute(
+                "SELECT api_key_ciphertext, api_key_hint FROM ai_models WHERE user_id = ? AND provider = ? AND endpoint = ? "
+                "AND api_key_ciphertext IS NOT NULL ORDER BY updated_at DESC LIMIT 1", (user_id, provider, endpoint)).fetchone()
+            ct, hint = (donor["api_key_ciphertext"], donor["api_key_hint"]) if donor else (None, "")
         if spec["requires_key"] and not ct:
             raise AIError("This provider requires an API key.")
-        conn.execute("INSERT OR REPLACE INTO ai_configs (user_id, provider, model, endpoint, api_key_ciphertext, api_key_hint, updated_at) "
-                     "VALUES (?, ?, ?, ?, ?, ?, ?)", (user_id, provider, model, endpoint, ct, hint, _now()))
-    return public_config(user_id)
+        if same:
+            conn.execute("UPDATE ai_models SET api_key_ciphertext = ?, api_key_hint = ?, updated_at = ? WHERE id = ?",
+                         (ct, hint, now, same["id"]))
+            config_id = same["id"]
+        else:
+            config_id = conn.execute("INSERT INTO ai_models (user_id, provider, model, endpoint, api_key_ciphertext, api_key_hint, "
+                                     "created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                     (user_id, provider, model, endpoint, ct, hint, now, now)).lastrowid
+        if activate:
+            conn.execute("UPDATE ai_models SET active = (id = ?) WHERE user_id = ?", (config_id, user_id))
+        row = conn.execute(f"SELECT {_PUBLIC_COLS} FROM ai_models WHERE id = ?", (config_id,)).fetchone()
+    return _public(row)
 
 
-def delete_config(user_id: int) -> None:
+def select_config(user_id: int, config_id: int) -> dict:
+    """Put one saved model in use; every AI feature uses it from the next call."""
     with accounts.connect() as conn:
-        conn.execute("DELETE FROM ai_configs WHERE user_id = ?", (user_id,))
+        _owned(conn, user_id, config_id)
+        conn.execute("UPDATE ai_models SET active = (id = ?) WHERE user_id = ?", (config_id, user_id))
+        row = conn.execute(f"SELECT {_PUBLIC_COLS} FROM ai_models WHERE id = ?", (config_id,)).fetchone()
+    return _public(row)
 
 
-def check_config(user_id: int, client: Optional[httpx.Client] = None) -> dict:
+def delete_config(user_id: int, config_id: int) -> dict:
+    """Remove a saved model and its key. Deleting the model in use leaves AI off until another is selected.
+    Returns what was deleted (provider, model, whether it was in use) for the activity log."""
+    with accounts.connect() as conn:
+        row = _owned(conn, user_id, config_id)
+        conn.execute("DELETE FROM ai_models WHERE id = ?", (config_id,))
+    return {"provider": row["provider"], "model": row["model"], "was_active": bool(row["active"])}
+
+
+def check_config(user_id: int, config_id: Optional[int] = None, client: Optional[httpx.Client] = None) -> dict:
     """One minimal live call, so the user finds out here rather than mid-assessment."""
-    cfg = load_config(user_id)
+    cfg = load_config(user_id, config_id)
     if not cfg:
-        raise AINotConfigured("No AI configuration saved.")
+        raise AINotConfigured("No model is in use.")
     started = time.monotonic()
     try:
         complete(cfg, [{"role": "user", "content": "Reply with the single word: ready"}], max_tokens=16, client=client)
@@ -316,17 +376,18 @@ def check_config(user_id: int, client: Optional[httpx.Client] = None) -> dict:
     except AIError as exc:
         ok, msg = False, redact(str(exc), cfg.get("api_key"))
     with accounts.connect() as conn:
-        conn.execute("UPDATE ai_configs SET last_checked_at = ?, last_check_ok = ?, last_check_message = ? WHERE user_id = ?",
-                     (_now(), int(ok), msg[:400], user_id))
-    return public_config(user_id)
+        conn.execute("UPDATE ai_models SET last_checked_at = ?, last_check_ok = ?, last_check_message = ? WHERE id = ?",
+                     (_now(), int(ok), msg[:400], cfg["id"]))
+        row = conn.execute(f"SELECT {_PUBLIC_COLS} FROM ai_models WHERE id = ?", (cfg["id"],)).fetchone()
+    return _public(row)
 
 
 # ---------------------------------------------------------------------------
 # The entry point used by every feature
 # ---------------------------------------------------------------------------
 
-NOT_CONFIGURED = ("AI is not configured for your account. Open AI configuration (left menu) and add your own provider, "
-                  "model and key. Everything that runs locally keeps working without it.")
+NOT_CONFIGURED = ("No AI model is in use for your account. Open AI configuration (left menu) and add your own provider, "
+                  "model and key, or select one of your saved models. Everything that runs locally keeps working without it.")
 
 
 def user_has_ai() -> bool:
