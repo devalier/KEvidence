@@ -3196,9 +3196,9 @@ You answer ONLY from the rule entries supplied below, each quoted verbatim from 
 
 Rules:
 1. Ground every statement in the supplied entries; cite the document, article or section and page, and the entry ID.
-2. The feed-additive checklist entries come from the 2018 public-consultation draft of EFSA's administrative guidance; say so when
-   you rely on them, and that file naming and structure must be checked against the current guidance (EFSA Supporting Publication
-   2021:EN-6508).
+2. The feed-additive checklist entries come from the 2018 public-consultation draft of EFSA's administrative guidance, and the
+   food-enzyme entries quote the 2021 public-consultation draft of the CEP scientific guidance (adopted: EFSA Journal 2021;19(10):6851;
+   checklist: Appendix A to EN-6509). Say so when you rely on them and that wording must be checked against the current versions.
 3. Keep the roles apart: KEvidence flags, the officer verifies, EFSA or the Commission decides on validity.
 4. If the entries do not answer the question, say so. Never invent requirements, deadlines or articles.
 5. When a check summary is supplied, relate the answer to it, but do not assume dossier content beyond it."""
@@ -3234,6 +3234,7 @@ async def completeness_check(
     dossier_ref: str = Form(""),
     pre_application_ids: str = Form(""),
     notified_study_ids: str = Form(""),
+    enzyme_source: str = Form("auto"),
 ):
     """Check a dossier (files and/or a ZIP of the dossier folders). Processed in memory; nothing is stored."""
     domain = domain or CHAR_REGISTRY["default_domain"]
@@ -3246,7 +3247,8 @@ async def completeness_check(
         result = await run_in_threadpool(
             compmod.check_dossier, uploads, COMPLETENESS_RULES, domain=domain, application_type=application_type,
             applicant=applicant[:300], dossier_ref=dossier_ref[:80], pre_application_ids=_id_list(pre_application_ids),
-            notified_study_ids=_id_list(notified_study_ids), sector=_sani_sector("", domain))
+            notified_study_ids=_id_list(notified_study_ids), sector=_sani_sector("", domain),
+            enzyme_source=enzyme_source if enzyme_source in ("auto", "microbial", "plant", "animal") else "auto")
     except compmod.CompletenessError as exc:
         raise HTTPException(400, str(exc))
     accounts.log("completeness.checked", {"domain": domain, "type": application_type, "files": len(result["files"]),

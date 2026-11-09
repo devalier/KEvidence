@@ -140,7 +140,7 @@ Optional, only if time and the AI is configured: in Publication, ask the Evidenc
 > - It locates evidence; it does not judge adequacy. 'Not located' can be an extraction limit, not a gap.
 > - Scanned PDFs need OCR. Text inside images isn't read.
 > - Only feed additives are grounded today, chemical characterisation only — production strains are out of scope.
-> - The feed completeness checklist comes from the 2018 public-consultation draft of our administrative guidance; the current version must be checked against it. Other areas get the generic intake checks only.
+> - The intake checklists — feed additives and food enzymes — are grounded in public-consultation drafts (2018 administrative guidance; 2021 CEP scientific guidance); the current versions must be checked against them. Other areas get the generic intake checks only.
 > - The hazard, exposure and risk-characterisation steps are structured scaffolding — AOP-Wiki, OpenFoodTox, NAM screening margins — not validated thresholds.
 > - It runs locally. AI is off by default, uses *your* provider, and sends nothing unless you tick it per run.
 >
@@ -152,15 +152,21 @@ Optional, only if time and the AI is configured: in Publication, ask the Evidenc
 
 ### Optional — the enzyme variant of Act 3 (if the room is enzyme-heavy, or in Q&A)
 
-**Mandate & question → domain *Food enzymes*. Intake → upload the Acme folder with the "dossier folder" button (`_Prototype documentation` removed beforehand), applicant `Acme Enzymatic srl` → *Check completeness*.**
+**Mandate & question → domain *Food enzymes*. Intake → type of application *Modification / extension of use (Part B)* → upload the Acme folder with the "dossier folder" button (`_Prototype documentation` removed beforehand), applicant `Acme Enzymatic srl` → *Check completeness*.**
 
-> "A real-world-shaped enzyme package — an alpha-amylase use extension, fourteen PDFs in their original folders, the applicant replaced by a fictional company. Enzymes aren't grounded yet, so you get the generic intake checks: format, searchability, study notifications, confidentiality, personal data. And it finds what the front desk would: a name, e-mail and phone on page 3 of the cover letter."
+> "A real-world-shaped enzyme package — an alpha-amylase use extension, fourteen PDFs in their original folders, the applicant replaced by a fictional company. It's checked against our suitability checklist for food enzymes, Part B: reference to the existing authorisation, source unchanged, intended uses, exposure with FEIM — all located."
 
-**Click *Sanitise* on the cover letter: name, e-mail and phone pre-selected; the address is proposed but not selected.**
+**Open *Applicant's checklist* (28 provided, 128 not relevant), then point at the warning *Copies of bibliographic references — declared vs found*.**
 
-> "The enzyme suitability checklist — there is one, it's even in this dossier — is the next thing to ground. That's a data task for your experts, not a code task."
+> "It reads the applicant's own ticks. They declared the copies of the references provided — each as a separate PDF. The package has a list of references, no copies. That's exactly what a suitability check catches."
 
-Expect *Complete, with warnings*: personal data in the cover letter only, and the study-notification match marked *review* (no study IDs entered). The package is a use extension: the underlying dossier and studies are not in it, and the generic checks do not detect that — say so if asked.
+**Point at the personal-data warning; click *Sanitise* on the cover letter: name, e-mail and phone pre-selected; the address is proposed but not selected.**
+
+**Optional, 15 seconds: switch the type to *New food enzyme (Part A)* and rerun.**
+
+> "Treated as a new enzyme, it lists what a full dossier would need and this one doesn't contain: whole genome sequence, strain deposit, flow chart, amino acid sequence, batch composition, toxicology. Correct — it's a use extension that relies on an earlier dossier."
+
+Expect, as Part B: *Complete, with warnings* — the references declared-vs-found warning, personal data in the cover letter only, and the study-notification match marked *review* (no study IDs entered). As Part A: *Incomplete*, 6 blocking. The checklist rows quote the 2021 public-consultation draft of the CEP scientific guidance; say so if asked.
 
 ---
 
@@ -171,7 +177,7 @@ Expect *Complete, with warnings*: personal data in the cover letter only, and th
 | "Does our dossier go to OpenAI / the US?" | No. Extraction, gap analysis and sanitisation run on the server, no AI. AI is per user, off by default, ticked per run; Mistral (EU) or an on-premises model are options. |
 | "It hallucinates." | The parts shown use no generation. Requirements are verbatim quotes checked by tests. When AI drafts, every number is checked against the dossier and untraced numbers are flagged. |
 | "Who validated it?" | Nobody yet. It's a prototype. That's the ask: your experts reviewing the catalogues and rules. |
-| "Can it do microbial / GMO / pesticide dossiers?" | Workflow and sanitisation yes (all Annex sectors a–h). Guidance grounding not yet; it's a data task, not a code task. |
+| "Can it do microbial / GMO / pesticide dossiers?" | Workflow and sanitisation yes (all Annex sectors a–h). Intake checklists exist for feed additives and food enzymes; characterisation grounding only for feed additives. The rest is a data task, not a code task. |
 | "Is it IUCLID-compatible?" | OpenFoodTox can be read from a local IUCLID 6 instance; dossier import from IUCLID is not built. |
 | "Can it replace the front desk's completeness check?" | No. It does the mechanical part in seconds so staff spend their time on judgement: is a justification valid, is a study really in scope. It flags; EFSA or the Commission decides validity. |
 | "How does it know a study had to be notified?" | It reads the study start date in the report: from 27 March 2021 it expects a study ID or a justification (pre-submission arrangements, Art. 19 and 21). Enter the IDs from the notification database and it also checks that every notified study is in the dossier (Art. 22(3)). |
