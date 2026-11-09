@@ -257,6 +257,22 @@ There is no server-wide AI key. Each user opens *AI configuration* and adds thei
 - **Headers:** `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin` on every response (URLs, including sign-in links, never leave the site); `Cache-Control: no-store` on API and sign-in responses. The interactive API docs (`/docs`, `/openapi.json`) are disabled.
 - **Paths:** `KEVIDENCE_HOME` (default `/var/www/kevidence`) sets where `data/` and `static/` are read from; `KEVIDENCE_STATE_DIR` (default `$KEVIDENCE_HOME/data/state`) holds `accounts.db` (users, sessions, activity, encrypted AI keys). Back it up; never commit it.
 
+### Reverse proxy
+
+Pass **every** path to KEvidence: the page, `/auth/`, `/api/` and the static files. Do not let the web server serve `static/index.html` or `static/` itself. That would bypass sign-in, and the page would loop between itself and the sign-in page. Example for nginx at the root of a host:
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:3457;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    client_max_body_size 30m;
+}
+```
+
+Set `APP_URL` to exactly the address in the browser (e.g. `https://kevidence.example.org`, or `https://example.org/kevidence` with `location /kevidence/ { proxy_pass http://127.0.0.1:3457/; ... }`) and `TRUST_PROXY=1`. If `APP_URL` names another host, or says `https://` while the site is served over http, the session cookie never comes back and sign-in cannot complete.
+
 ### Accounts and AI configuration
 
 **Sign-in** works like YachtPlan's email sign-in. A user enters any email address and receives a one-time link (valid 15 minutes, usable once, at most 5 per address per hour, 20 attempts per IP per 15 minutes). Opening the link shows a *Sign in* button, so mail scanners that prefetch links cannot use it up. The session lasts 14 days. Only SHA-256 digests of tokens are stored, and *Sign out* deletes the session on the server.

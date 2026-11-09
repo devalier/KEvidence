@@ -29,6 +29,14 @@ def test_everything_but_sign_in_requires_a_session(anon_client):
     assert "Disallow: /" in anon_client.get("/robots.txt").text
 
 
+def test_sign_in_page_introduces_the_project(anon_client):
+    page = anon_client.get("/auth/signin").text
+    assert 'action="http://127.0.0.1:3457/auth/email"' in page and 'name="email"' in page
+    for text in ("Sign in to try it", "Contribute", "Grounded, not generative", "GNU AGPL v3", "github.com/devalier/KEvidence"):
+        assert text in page
+    assert "&lt;x&gt;" in accounts.sign_in_page("<x>")  # error text is escaped
+
+
 def test_email_link_signs_in_once(anon_client):
     r, token = _request_link(anon_client, "Officer@Agency.EU")
     assert r.status_code == 200 and "Check your email" in r.text and token
