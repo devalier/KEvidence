@@ -387,7 +387,7 @@
         <p class="muted">Enter each active substance and other component (carriers, formulants) of the product. Leave empty and KEvidence identifies them from the documents (product name, CAS numbers, constituent/marker specifications).</p>
         <table class="sample-table comp-table"><thead><tr><th>Name</th><th>CAS No</th><th>Role</th><th></th></tr></thead><tbody id="charComponents"></tbody></table>
         <div class="actions"><button class="ghost" id="charAddComponentBtn">+ Add component</button></div>
-        <div class="check-row"><label><input type="checkbox" id="charAllowLlm"> Also draft section narratives with the external LLM (sends extracted dossier excerpts to the OpenAI API — leave unticked for confidential dossiers unless approved)</label></div>
+        <div class="check-row"><label><input type="checkbox" id="charAllowLlm"> Also draft section narratives with the external LLM (sends extracted dossier excerpts to the AI provider you configured — leave unticked for confidential dossiers unless approved)</label></div>
       </details>
 
       <div class="panel" id="charQuestions" hidden>
@@ -521,7 +521,7 @@
         </div>
         <label for="saniRequests" style="margin-top:12px">Confidentiality request or decision — text to mask, one item per line (optional: <code>text | legal basis</code>)</label>
         <textarea id="saniRequests" style="min-height:80px" placeholder="recrystallisation from ethanol at 45 °C for 6 hours | Art. 39(2)(a) GFL&#10;Fictional Chemicals Ltd | Art. 39(2)(c) GFL"></textarea>
-        <div class="check-row"><label><input type="checkbox" id="saniAllowLlm"> AI review: also send the page text to the external LLM (OpenAI API) to find personal data and Annex items the rules miss, and to locate request items described in words. Leave unticked unless approved for confidential documents.</label></div>
+        <div class="check-row"><label><input type="checkbox" id="saniAllowLlm"> AI review: also send the page text to the AI provider you configured to find personal data and Annex items the rules miss, and to locate request items described in words. Leave unticked unless approved for confidential documents.</label></div>
         <div class="actions"><button class="primary" id="saniAnalyseBtn" disabled>Propose redactions</button><span class="muted" id="saniRunHint" style="align-self:center">Choose a PDF first.</span></div>
         <div class="warning-box">The document is processed in memory for one request and is not stored. Local rules run without any LLM. Scanned pages without a text layer cannot be read: run OCR first. KEvidence proposes; the decision on confidentiality is EFSA's (Art. 11 of the practical arrangements).</div>
       </div>
