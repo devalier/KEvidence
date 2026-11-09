@@ -277,6 +277,7 @@ class _Collector:
         item = {
             "id": f"S{len(self.items) + 1}", "page": page.number + 1, "text": _norm(text)[:600], "category": category,
             "rule_id": rule_id, "kind": kind,
+            "redaction_type": "personal_data" if kind == "personal_data" else "confidential_information",
             # What the reviewer sees: items from the request/decision or added by hand are grouped as such.
             "group": "request" if source in ("request", "manual") or kind == "request" else kind,
             "label": rule.get("label") or (basis_text or "Confidentiality request/decision"),
@@ -414,6 +415,8 @@ def detect_local(doc: pymupdf.Document, rules: dict[str, Any], sector: str, appl
 # ---------------------------------------------------------------------------
 # Confidentiality request / decision items supplied by the user
 # ---------------------------------------------------------------------------
+# Confidentiality request / decision items supplied by the user
+# ---------------------------------------------------------------------------
 
 def parse_request_items(raw: str) -> list[dict[str, str]]:
     """One item per line: `text to mask | legal basis or rule id` (the basis is optional)."""
@@ -476,51 +479,95 @@ def locate_text(content: bytes, rules: dict[str, Any], sector: str, text: str, b
 
 
 # ---------------------------------------------------------------------------
-# AI pass (optional, external LLM)
+# AI-led review (the user's own AI provider; the local rules are the fallback and a cross-check)
 # ---------------------------------------------------------------------------
 
-AI_SYSTEM_PROMPT = """You assist EFSA staff in sanitising a document before publication under the Transparency Regulation
-(Regulation (EU) 2019/1381; Articles 39 to 39e of Regulation (EC) No 178/2002) and EFSA's practical arrangements on transparency
-and confidentiality. You propose text to mask; EFSA decides.
+# Shown with every result: rule-based detection is a fallback, not a sanitisation method.
+AI_RECOMMENDATION = (
+    "KEvidence recommends that sanitisation be performed by AI: a sovereign, domain-specific language model fine-tuned for "
+    "sanitisation, or a frontier model where your organisation permits its use for this type of work. Pattern-based rules miss "
+    "personal data and confidential information that is not written in a predictable form; use them only as a fallback and "
+    "check every page.")
 
-Rules you may apply (use ONLY these rule_id values):
-{rules}
+# Procedural rules of the practical arrangements the AI must apply when deciding (quoted verbatim from the catalogue).
+AI_DECISION_RULES = ["PA-ART3-SANITISATION", "PA-ART9-4-CLOSED-LIST", "PA-ART10-A-PRECISE-SCOPE",
+                     "PA-ART14-1-REVIEW-FORESEEABLE-EFFECTS", "PA-ART16-3-PENDING-NOT-DISCLOSED"]
 
-Instructions:
-1. Personal data of natural persons must be masked: names, initials identifying a person, signatures, e-mail addresses, phone
-   numbers, personal addresses, staff IDs. Use {testing} for people involved in testing on vertebrate animals or in obtaining
-   toxicological information (study directors, investigators, pathologists, veterinarians, technicians, QA staff); otherwise {personal}.
-2. NEVER mask: the applicant's name and address ({applicant}); names of authors of published or publicly available studies
-   (citations, reference lists); names of participants and observers of EFSA Scientific Committee/Panel/working group meetings;
-   names of companies, laboratories or test facilities (legal persons are not personal data).
-3. Annex items (confidential_item) qualify only if the text clearly falls within the quoted item. Propose them, but they are
-   masked only when the applicant has claimed them. Set safety_relevant=true when the information is relevant to the assessment of
-   safety (e.g. impurities with possible adverse effects, composition needed for the exposure or safety assessment), because the
-   Annex excludes such information. Never propose study results, conclusions, methods needed to understand the safety assessment,
-   or general scientific content.
-4. Request items: if the user lists confidentiality request/decision items, find the matching passages and use rule_id "REQUEST".
-5. Copy "text" EXACTLY, character for character, from the page text, and keep it minimal: the name, number or clause to mask, not the
-   whole sentence or page (Art. 10(a): exclude any information not subject to masking). At most 300 characters.
-6. Return JSON only: {{"findings": [{{"page": <int>, "text": "<exact>", "rule_id": "<id>", "reason": "<short, cite the rule>",
-   "safety_relevant": <bool>, "confidence": "high|medium|low"}}]}}. Return {{"findings": []}} when nothing qualifies."""
+AI_SYSTEM_PROMPT = """You sanitise a document for EFSA before publication under the Transparency Regulation (Regulation (EU)
+2019/1381; Articles 38 to 39e of Regulation (EC) No 178/2002), applying EFSA's practical arrangements concerning transparency and
+confidentiality (Decision of the Executive Director, 2021). You lead the review; EFSA staff check every finding, and EFSA decides
+on confidentiality.
+
+There are TWO types of redaction. Classify every finding as one of them and apply its rules:
+
+A. PERSONAL DATA ("type": "personal_data") — always masked, no request needed.
+   Rules (use only these rule_id values for type A):
+{personal_rules}
+   - Mask: names, initials or signatures identifying a natural person, personal e-mail addresses, phone and fax numbers,
+     personal or home addresses, staff/badge IDs, any other data identifying a natural person.
+   - Use {testing} for people involved in testing on vertebrate animals or in obtaining toxicological information (study
+     directors, investigators, pathologists, veterinarians, technicians, QA staff, their addresses); otherwise {personal}.
+   - NEVER mask (exceptions in the rules): the applicant's name and address ({applicant}); names of authors of published or
+     publicly available studies (citations and reference lists); names of participants and observers in public meetings of
+     EFSA's Scientific Committee, Panels and working groups; names of companies, laboratories or test facilities (legal
+     persons are not personal data).
+
+B. CONFIDENTIAL INFORMATION ("type": "confidential_information") — masked ONLY when claimed by the applicant (request
+   pending a decision) or granted in a confidentiality decision. Only items on the closed list of the Annex for this sector
+   qualify. Rules (use only these rule_id values for type B, or "REQUEST"):
+{confidential_rules}
+   - For every passage that falls within an Annex item, say which confidentiality request/decision item covers it in "claim"
+     (e.g. "R2"), or null when none does. A passage with no claim is still reported (so staff can see it) but stays public.
+   - If a request/decision item does not name an Annex item that fits, use rule_id "REQUEST" with its claim number.
+   - Set "safety_relevant": true when the information is relevant to the assessment of safety or concerns foreseeable
+     health effects (the Annex excludes it from confidentiality: e.g. impurities that may have adverse effects, composition
+     needed for the exposure or safety assessment). Such information is never masked, even if claimed.
+   - Never propose study results, conclusions, methods needed to understand the safety assessment, or general scientific
+     content.
+
+How EFSA's rules say to decide (verbatim):
+{decision_rules}
+
+Output rules:
+1. Copy "text" EXACTLY, character for character, from the page text, and keep it minimal: the name, number or clause to mask,
+   not the whole sentence or page (Art. 10(a)). At most 300 characters. Report every occurrence you see, page by page.
+2. "reason": one short sentence that cites the rule (article and point).
+3. Return JSON only: {{"findings": [{{"page": <int>, "text": "<exact>", "type": "personal_data|confidential_information",
+   "rule_id": "<id>", "claim": "<R number or null>", "safety_relevant": <bool>, "reason": "<...>",
+   "confidence": "high|medium|low"}}]}}. Return {{"findings": []}} when nothing qualifies."""
 
 
 def _ai_rules_block(rules: list[dict[str, Any]]) -> str:
     return "\n".join(
-        f"- {r['id']} [{r['kind']}] {r['label']}: \"{r['quote']}\"" + (f" (exception: {r['safety_exception']})" if r.get("safety_exception") else "")
+        f"   - {r['id']} {r.get('label', '')} — {r['title']}: \"{r['quote']}\""
+        + (f" (exception: {r['safety_exception']})" if r.get("safety_exception") else "")
         for r in rules)
+
+
+def _ai_decision_block(rules: dict[str, Any]) -> str:
+    by_id = rule_by_id(rules)
+    return "\n".join(f"   - {by_id[i]['title']} ({by_id[i].get('guidance_section', i)}): \"{by_id[i]['quote']}\""
+                     for i in AI_DECISION_RULES if i in by_id)
 
 
 def ai_propose(doc: pymupdf.Document, rules: dict[str, Any], sector: str, complete: Callable[[str, str], str],
                col: _Collector, applicant: str = "", applicant_address: str = "",
                request_items: Optional[list[dict[str, str]]] = None) -> dict[str, Any]:
+    """AI-led review of both redaction types. The AI proposes; this function applies EFSA's rules to what it returns:
+    personal data is masked; confidential information is masked only when tied to a supplied request/decision item and not
+    relevant to safety; anything not on the cited page, under a rule that does not apply, or public by exception is rejected."""
     applicable = rules_for_sector(rules, sector)
+    personal_rules = [r for r in applicable if r["kind"] == "personal_data"]
+    confidential_rules = [r for r in applicable if r["kind"] == "confidential_item"]
     allowed = {r["id"] for r in applicable} | {REQUEST_RULE}
     exceptions = [_compact(x) for x in [applicant, *re.split(r"[\n;]+", applicant_address or "")] if _compact(x)]
-    system = AI_SYSTEM_PROMPT.format(rules=_ai_rules_block(applicable), testing=TESTING_RULE, personal=PERSONAL_RULE,
-                                     applicant=f"{applicant or 'not given'}; {applicant_address or 'address not given'}")
+    system = AI_SYSTEM_PROMPT.format(
+        personal_rules=_ai_rules_block(personal_rules), confidential_rules=_ai_rules_block(confidential_rules) or "   - none in this sector",
+        decision_rules=_ai_decision_block(rules), testing=TESTING_RULE, personal=PERSONAL_RULE,
+        applicant=f"{applicant or 'not given'}; {applicant_address or 'address not given'}")
     sector_label = rules["catalogue"]["sectors"][sector]["label"]
-    req_block = "\n".join(f"- {it['text']}" + (f" (basis: {it['basis']})" if it["basis"] else "") for it in (request_items or []))
+    claims = {f"R{i + 1}": it for i, it in enumerate(request_items or [])}
+    req_block = "\n".join(f"- {k}: {it['text']}" + (f" (basis: {it['basis']})" if it["basis"] else "") for k, it in claims.items())
     pages = [(p.number + 1, p.get_text("text")) for p in doc if p.number < MAX_AI_PAGES]
     batches, cur, size = [], [], 0
     for pno, text in pages:
@@ -534,12 +581,13 @@ def ai_propose(doc: pymupdf.Document, rules: dict[str, Any], sector: str, comple
     if cur:
         batches.append(cur)
     stats = {"batches": len(batches), "pages_sent": sum(len(b) for b in batches), "accepted": 0,
+             "by_type": {"personal_data": 0, "confidential_information": 0}, "claims_located": [],
              "rejected": {"unknown_rule": 0, "not_on_page": 0, "exception": 0, "malformed": 0}, "errors": []}
     if doc.page_count > MAX_AI_PAGES:
         stats["errors"].append(f"Only the first {MAX_AI_PAGES} pages were reviewed by the AI.")
     for batch in batches:
         user = (f"Sector: Annex ({sector}) {sector_label}\nApplicant: {applicant or 'not given'}\n"
-                f"Confidentiality request/decision items to locate:\n{req_block or '- none supplied'}\n\n"
+                f"Confidentiality request/decision items (claims):\n{req_block or '- none supplied: no confidential information can be masked'}\n\n"
                 + "\n\n".join(f"=== Page {pno} ===\n{text}" for pno, text in batch))
         try:
             raw = complete(system, user)
@@ -571,20 +619,42 @@ def ai_propose(doc: pymupdf.Document, rules: dict[str, Any], sector: str, comple
             if pno not in batch_pages:
                 stats["rejected"]["not_on_page"] += 1
                 continue
-            safety = bool(f.get("safety_relevant"))
+            claim_id = str(f.get("claim") or "").strip().upper()
+            claim = claims.get(claim_id)
+            if kind == "request" and not claim:
+                stats["rejected"]["unknown_rule"] += 1  # "REQUEST" without a supplied claim has no basis
+                continue
+            safety = bool(f.get("safety_relevant")) and kind != "personal_data"
             confidence = f.get("confidence") if f.get("confidence") in ("high", "medium", "low") else "medium"
-            selected = (kind == "personal_data" and confidence != "low") or (kind == "request" and not safety)
-            flags = ["safety_relevant"] if safety else []
             reason = str(f.get("reason") or "")[:400] or "Proposed by the AI review."
+            flags = ["safety_relevant"] if safety else []
+            if kind == "personal_data":
+                selected = confidence != "low"
+            else:
+                # Art. 9(4) and Art. 16(3) PA: confidential information is masked only when claimed (pending) or granted;
+                # Annex exception / Art. 14: never when relevant to the safety assessment.
+                selected = bool(claim) and not safety
+                reason += (f" Claimed in {claim_id}: “{claim['text'][:120]}”." if claim
+                           else " No confidentiality request/decision item covers it: stays public unless claimed.")
             item = col.add(doc[pno - 1], text, rule_id, category="ai" if kind != "request" else "request", source="ai",
-                           reason=reason, selected=selected and not safety, confidence=confidence, flags=flags)
+                           reason=reason, selected=selected, confidence=confidence, flags=flags,
+                           basis_text=(claim or {}).get("basis", ""))
             if item is None:
                 stats["rejected"]["not_on_page"] += 1
                 continue
-            if safety and "safety_relevant" not in item["flags"]:
-                item["flags"].append("safety_relevant")
+            if claim:
+                if item["group"] == "confidential_item":
+                    item["group"] = "request"
+                if claim_id not in stats["claims_located"]:
+                    stats["claims_located"].append(claim_id)
+            if safety:
+                if "safety_relevant" not in item["flags"]:
+                    item["flags"].append("safety_relevant")
                 item["selected"] = False
+            elif selected:
+                item["selected"] = True
             stats["accepted"] += 1
+            stats["by_type"]["personal_data" if kind == "personal_data" else "confidential_information"] += 1
     return stats
 
 
@@ -619,11 +689,24 @@ def propose(content: bytes, rules: dict[str, Any], sector: str, *, filename: str
         col, notes = detect_local(doc, rules, sector, applicant, applicant_address, col)
         ai = {"requested": complete is not None, "used": False}
         if complete is not None:
-            ai.update(ai_propose(doc, rules, sector, complete, col, applicant, applicant_address, unlocated))
+            ai.update(ai_propose(doc, rules, sector, complete, col, applicant, applicant_address, request_items))
             ai["used"] = ai["batches"] > 0 and len(ai["errors"]) < ai["batches"] + (1 if doc.page_count > MAX_AI_PAGES else 0)
             located_now = {_compact(i["text"]) for i in col.items if "request" in i["sources"] or i["rule_id"] == REQUEST_RULE}
+            located_now |= {_compact(request_items[int(c[1:]) - 1]["text"]) for c in ai.get("claims_located", [])}
             unlocated = [u for u in unlocated if _compact(u["text"]) not in located_now]
+        ai["mode"] = "ai-led" if ai["used"] else "rules-only"
+        ai["recommendation"] = AI_RECOMMENDATION
         warnings = []
+        if ai["used"]:
+            # The AI's minimal span supersedes a rule-based whole-sentence candidate around it (Art. 10(a) PA: precise scope).
+            ai_spans = [(i["page"], _compact(i["text"])) for i in col.items if "ai" in i["sources"]]
+            col.items = [i for i in col.items if not (i["category"] == "cue" and i["sources"] == ["rule"] and any(
+                pg == i["page"] and t and t in _compact(i["text"]) for pg, t in ai_spans))]
+            for it in col.items:
+                if "ai" not in it["sources"] and it["sources"] != ["manual"] and it["category"] != "signature":
+                    it["flags"].append("not_confirmed_by_ai")  # the AI reads text only, not signature images
+        else:
+            warnings.append("Rule-based fallback only — the AI review did not run. " + AI_RECOMMENDATION)
         if notes["no_text_pages"]:
             warnings.append(f"No text layer on page(s) {', '.join(map(str, notes['no_text_pages'][:30]))}: nothing there can be detected. "
                             "Run OCR first, or inspect those pages and mask manually.")

@@ -507,7 +507,7 @@
     <section id="sanitisation" class="tab-content">
       <div class="panel">
         <h2>Publication — sanitisation under the Transparency Regulation</h2>
-        <p class="help">Before EFSA publishes a document (Art. 38 of the General Food Law as amended by Regulation (EU) 2019/1381), confidential information and personal data are masked. KEvidence proposes what to mask in a PDF according to <strong>EFSA's practical arrangements concerning transparency and confidentiality</strong> (Decision of the Executive Director, 2021): personal data (Art. 39e GFL; Art. 4(5)), the items listed in the confidentiality request or decision you supply (Art. 3(1)(c), Art. 13), and, as candidates only, passages matching the Annex closed list for the sector. You review every proposal; KEvidence then removes the selected content from the PDF (true redaction, not a black box over the text), scrubs metadata, comments, links and attachments, and verifies the output.</p>
+        <p class="help">Before EFSA publishes a document (Art. 38 of the General Food Law as amended by Regulation (EU) 2019/1381), confidential information and personal data are masked. KEvidence's AI applies <strong>EFSA's practical arrangements concerning transparency and confidentiality</strong> (Decision of the Executive Director, 2021) to the two types of redaction: <strong>personal data</strong> (Art. 39e GFL; Art. 4(5)) is masked; <strong>confidential information</strong> on the Annex closed list for the sector is masked only when it is claimed in the confidentiality request or granted in the decision you supply (Art. 9(4), 16(3)), and never when relevant to the safety assessment. Every AI finding must cite an applicable rule and be found on its page, or it is rejected. Pattern-based rules run alongside as a cross-check and as the fallback when AI is off. You review every proposal; KEvidence then removes the selected content from the PDF (true redaction, not a black box over the text), scrubs metadata, comments, links and attachments, and verifies the output.</p>
         <details class="muted"><summary>About the rules grounding</summary><div id="saniRulesStatus" style="margin-top:6px">Loading rules…</div></details>
       </div>
 
@@ -521,21 +521,22 @@
         </div>
         <label for="saniRequests" style="margin-top:12px">Confidentiality request or decision — text to mask, one item per line (optional: <code>text | legal basis</code>)</label>
         <textarea id="saniRequests" style="min-height:80px" placeholder="recrystallisation from ethanol at 45 °C for 6 hours | Art. 39(2)(a) GFL&#10;Fictional Chemicals Ltd | Art. 39(2)(c) GFL"></textarea>
-        <div class="check-row"><label><input type="checkbox" id="saniAllowLlm"> AI review: also send the page text to the AI provider you configured to find personal data and Annex items the rules miss, and to locate request items described in words. Leave unticked unless approved for confidential documents.</label></div>
+        <div class="check-row"><label><input type="checkbox" id="saniAllowLlm"> <span><strong>AI-led sanitisation (recommended)</strong> — sends the page text to the AI provider you configured (<span id="saniAiProvider">none configured</span>). Untick to use the rule-based fallback only.</span></label></div>
+        <div class="warning-box" id="saniAiAdvice"><strong>Recommendation.</strong> KEvidence recommends that sanitisation be performed by AI: a sovereign, domain-specific language model fine-tuned for sanitisation, or a frontier model where your organisation permits its use for this type of work. Pattern-based rules miss personal data and confidential information that is not written in a predictable form; use them only as a fallback and check every page.</div>
         <div class="actions"><button class="primary" id="saniAnalyseBtn" disabled>Propose redactions</button><span class="muted" id="saniRunHint" style="align-self:center">Choose a PDF first.</span></div>
-        <div class="warning-box">The document is processed in memory for one request and is not stored. Local rules run without any LLM. Scanned pages without a text layer cannot be read: run OCR first. KEvidence proposes; the decision on confidentiality is EFSA's (Art. 11 of the practical arrangements).</div>
+        <div class="warning-box">The document is processed in memory for one request and is not stored. With AI-led sanitisation unticked, only local rules run (no AI). Scanned pages without a text layer cannot be read: run OCR first. KEvidence proposes; the decision on confidentiality is EFSA's (Art. 11 of the practical arrangements).</div>
       </div>
 
       <div class="panel" id="saniReview" hidden>
         <h3>Step 2 — Review the proposals</h3>
         <div id="saniSummary"></div>
-        <div class="sani-legend muted" style="margin:6px 0"><span style="color:#fca5a5">■ personal data</span><span style="color:var(--warning)">■ Annex item (claimable)</span><span style="color:#c4b5fd">■ confidentiality request/decision</span><span>dashed = proposed, filled = will be masked; click a box or a row to toggle</span></div>
+        <div class="sani-legend muted" style="margin:6px 0"><span style="color:#fca5a5">■ personal data</span><span style="color:var(--warning)">■ confidential information, not claimed (stays public)</span><span style="color:#c4b5fd">■ confidential information, claimed or granted</span><span>dashed = proposed, filled = will be masked; click a box or a row to toggle</span></div>
         <div class="actions">
           <button class="secondary" id="saniSelPersonal">Select all personal data</button>
-          <button class="secondary" id="saniSelRequests">Select all request items</button>
-          <button class="ghost" id="saniClearAnnex">Deselect Annex candidates</button>
+          <button class="secondary" id="saniSelRequests">Select all claimed items</button>
+          <button class="ghost" id="saniClearAnnex">Deselect unclaimed items</button>
           <button class="ghost" id="saniSelNone">Deselect all</button>
-          <select id="saniFilter" style="width:auto"><option value="all">Show all</option><option value="selected">Selected only</option><option value="personal_data">Personal data</option><option value="confidential_item">Annex items</option><option value="request">Request/decision items</option><option value="ai">From the AI review</option><option value="flag">Flagged for review</option></select>
+          <select id="saniFilter" style="width:auto"><option value="all">Show all</option><option value="selected">Selected only</option><option value="personal_data">Personal data</option><option value="confidential_item">Annex items</option><option value="request">Request/decision items</option><option value="ai">From the AI</option><option value="flag">Flagged for review</option></select>
         </div>
         <div class="grid" style="margin-top:8px">
           <div><label for="saniAddText">Mask more text (every occurrence)</label><input id="saniAddText" placeholder="exact text as it appears in the PDF"></div>
@@ -606,7 +607,7 @@
             <div class="manual-step"><strong>Exposure assessment — who, how much, how often, route.</strong><span class="muted">Record concentration in food × consumption × population × use conditions, and the resulting exposure estimate.</span></div>
             <div class="manual-step"><strong>Risk characterisation — integrate hazard × exposure.</strong><span class="muted">Compare the POD with the exposure estimate to obtain a screening margin (BER/MOE). Interpret as prioritisation support, not a final regulatory conclusion.</span></div>
             <div class="manual-step"><strong>Uncertainty & scientific opinion.</strong><span class="muted">Run the uncertainty & data-gap analysis, then build a draft scientific opinion that separates curated evidence, user-entered data, assumptions, and gaps for handoff to risk managers.</span></div>
-            <div class="manual-step"><strong>Publication — sanitisation.</strong><span class="muted">Before a document is published under the Transparency Regulation, upload the PDF in <em>Publication</em>, choose the sector, enter the applicant (stays public) and paste the items of the confidentiality request or decision. KEvidence proposes personal data and request items (selected) and Annex candidates (not selected), each with its article of EFSA's practical arrangements; you review, then it redacts, scrubs metadata and verifies the output.</span></div>
+            <div class="manual-step"><strong>Publication — sanitisation.</strong><span class="muted">Before a document is published under the Transparency Regulation, upload the PDF in <em>Publication</em>, choose the sector, enter the applicant (stays public) and paste the items of the confidentiality request or decision. With an AI provider configured, the AI leads: it applies EFSA's practical arrangements to both redaction types — personal data (masked) and confidential information (masked only when claimed or granted, never when relevant to safety) — and every finding must cite an applicable rule and be found on its page. Without AI, pattern-based rules run as a fallback. You review, then it redacts, scrubs metadata and verifies the output.</span></div>
             <div class="manual-step"><strong>AI configuration and activity log.</strong><span class="muted">AI features (assistant, narratives, sanitisation AI review) use the provider, model and key you set in <em>AI configuration</em>; without one they are off and everything local still works. <em>Activity log</em> shows what was done under your account.</span></div>
             <div class="manual-step"><strong>Your domain is not grounded yet?</strong><span class="muted">Every domain gets the workflow. To ground one (e.g. food enzymes, novel foods, pesticides), contribute its guidance PDFs and a catalogue quoting them verbatim, registered in <code>data/guidance/domains.json</code> — no code change. Open an issue on GitHub or email kevidence@devalier.com.</span></div>
           </div>
@@ -627,7 +628,7 @@
           <thead><tr><th>Need</th><th>Use this</th><th>What to do in KEvidence</th></tr></thead>
           <tbody>
             <tr><td>Feed additive characterisation</td><td><a href="samples/characterisation_demo_dossier.md" download>Download fictional demo dossier</a><br><a href="api/characterisation/guidance.pdf?domain=feed" target="_blank" rel="noopener">FEEDAP identity/characterisation guidance (PDF)</a><br><a href="api/characterisation/guidance.pdf?domain=feed&source=efsa-2024-8912-wgs" target="_blank" rel="noopener">EFSA 2024 WGS statement (PDF)</a></td><td>Upload the demo dossier in Identity &amp; characterisation and click <em>Characterise from documents</em>; KEvidence identifies vanillin from it. For exemptions, open <em>Optional details</em> and set additive type "flavouring compound" and routes. It is deliberately incomplete (3 batches instead of 5, no residual solvents, no SDS) so the gap analysis has findings.</td></tr>
-            <tr><td>Sanitisation for publication</td><td><a href="samples/sanitisation_demo_study_report.pdf" download>Download fictional demo study report (PDF)</a><br><a href="api/sanitisation/rules.pdf" target="_blank" rel="noopener">EFSA practical arrangements on transparency and confidentiality (PDF)</a></td><td>Upload it in <em>Publication</em> with sector (c) and applicant “Demo Feed Additives S.A.”. Study personnel, e-mail, phone and the signature are proposed and selected; the applicant and the reference-list authors are not; manufacturing process, composition and sourcing sentences are proposed as Annex candidates. Paste <code>recrystallisation from ethanol at 45 °C for 6 hours | Art. 39(2)(a) GFL</code> as a request item to see it located.</td></tr>
+            <tr><td>Sanitisation for publication</td><td><a href="samples/sanitisation_demo_study_report.pdf" download>Download fictional demo study report (PDF)</a><br><a href="api/sanitisation/rules.pdf" target="_blank" rel="noopener">EFSA practical arrangements on transparency and confidentiality (PDF)</a></td><td>Upload it in <em>Publication</em> with sector (c) and applicant “Demo Feed Additives S.A.”. Study personnel, e-mail, phone and the signature are masked; the applicant and the reference-list authors are not. Paste the claims <code>manufacturing process conditions | Art. 39(2)(a) GFL</code> and <code>identity of the guaiacol supplier | Art. 39(2)(b) GFL</code>: with AI-led sanitisation the AI finds the passages they describe and masks them; the market share and the composition stay public (not claimed; composition relevant to safety). Without AI, the rules cannot locate claims described in words.</td></tr>
             <tr><td>NAM POD / AC50 example</td><td><a href="samples/nam_pod_examples.csv" download>Download local CSV template</a><br><a href="https://www.epa.gov/comptox-tools/exploring-toxcast-data" target="_blank" rel="noopener">EPA ToxCast/Tox21 data portal</a><br><a href="https://epa.figshare.com/articles/dataset/ToxCast_Database_invitroDB_/6062623" target="_blank" rel="noopener">EPA invitroDB on Figshare</a></td><td>Copy assay, POD type, POD value/unit, and mapped event ID into the hazard characterisation step (POD). Use the EPA bioactivity import script for larger local searches.</td></tr>
             <tr><td>OpenFoodTox reference points</td><td><a href="https://zenodo.org/records/19388272" target="_blank" rel="noopener">OpenFoodTox 3.0 on Zenodo</a><br><a href="https://zenodo.org/records/8120114" target="_blank" rel="noopener">Earlier OpenFoodTox Zenodo record</a></td><td>Download the Excel export, build the local SQLite index, then query the hazard characterisation step by substance name, CAS, EC number, or synonym.</td></tr>
             <tr><td>AOP structure and event IDs</td><td><a href="https://aopwiki.org/downloads" target="_blank" rel="noopener">AOP-Wiki quarterly downloads</a><br><a href="https://zenodo.org/records/17499488" target="_blank" rel="noopener">AOP-Wiki RDF on Zenodo</a></td><td>Use event IDs to map NAM assays to MIE/KE/AO records during hazard identification and characterisation.</td></tr>
@@ -1382,7 +1383,7 @@ addComponentRow();
 // ---------------------------------------------------------------------------
 // Publication — sanitisation (Transparency Regulation; EFSA practical arrangements)
 // ---------------------------------------------------------------------------
-const SANI_KIND = { personal_data: 'Personal data', confidential_item: 'Annex item', request: 'Request/decision' };
+const SANI_KIND = { personal_data: 'Personal data', confidential_item: 'Confidential info — not claimed', request: 'Confidential info — claimed' };
 function saniSelected() { return (state.sanitisation?.proposals || []).filter(p => p.selected); }
 async function loadSanitisationRules() {
   try {
@@ -1425,7 +1426,7 @@ async function runSanitisationAnalysis() {
   fd.append('requests', $('saniRequests').value);
   fd.append('allow_external_llm', $('saniAllowLlm').checked ? 'true' : 'false');
   $('saniAnalyseBtn').disabled = true;
-  $('saniRunHint').textContent = $('saniAllowLlm').checked ? 'Reading the PDF and running the AI review…' : 'Reading the PDF…';
+  $('saniRunHint').textContent = $('saniAllowLlm').checked ? 'Reading the PDF; the AI is reviewing every page against EFSA’s rules…' : 'Reading the PDF (rule-based fallback)…';
   try {
     const res = await fetch(`${API_BASE}/sanitisation/analyse`, { method: 'POST', body: fd });
     const data = await res.json();
@@ -1458,12 +1459,13 @@ function renderSanitisation() {
   $('saniOutputPanel').hidden = false;
   const s = d.summary || {};
   const ai = d.ai || {};
-  const aiLine = !ai.requested ? 'AI review not requested (local rules only).'
-    : ai.used ? `AI review: ${ai.accepted} finding(s) accepted; rejected — not found on the page ${ai.rejected?.not_on_page || 0}, rule not applicable ${ai.rejected?.unknown_rule || 0}, public by exception ${ai.rejected?.exception || 0}.`
-    : 'AI review requested but not run.';
+  const aiLine = !ai.requested ? 'Rule-based fallback only (AI-led sanitisation not ticked).'
+    : ai.used ? `AI-led: ${ai.accepted} finding(s) accepted — personal data ${ai.by_type?.personal_data || 0}, confidential information ${ai.by_type?.confidential_information || 0}; rejected — not found on the page ${ai.rejected?.not_on_page || 0}, no applicable rule or claim ${ai.rejected?.unknown_rule || 0}, public by exception ${ai.rejected?.exception || 0}.`
+    : 'AI-led sanitisation requested but did not run: rule-based fallback only.';
+  const modeBadge = ai.mode === 'ai-led' ? '<span class="badge grounded">AI-led sanitisation</span>' : '<span class="badge flag">Rule-based fallback</span>';
   $('saniSummary').innerHTML = `<div><span class="badge">${escapeHtml(d.document.name)}</span>${d.document.pages} page(s), ${d.document.text_pages} with text • <span class="badge">Sector (${escapeHtml(d.sector.id)})</span>${escapeHtml(d.sector.label)}</div>
     <div style="margin-top:6px">${Object.entries(SANI_KIND).map(([k, v]) => `<span class="badge k-${k}">${v}: ${s[k] || 0}</span>`).join('')} <strong id="saniSelCount"></strong></div>
-    <div class="muted" style="margin-top:6px">${escapeHtml(aiLine)}${(ai.errors || []).map(e => `<br>${escapeHtml(e)}`).join('')}</div>
+    <div style="margin-top:6px">${modeBadge} <span class="muted">${escapeHtml(aiLine)}</span>${(ai.errors || []).map(e => `<br><span class="muted">${escapeHtml(e)}</span>`).join('')}</div>
     <div class="muted">Also removed on output: ${d.document.metadata_fields.length ? `metadata (${escapeHtml(d.document.metadata_fields.join(', '))})` : 'no metadata'}, ${d.document.annotations} comment(s)/annotation(s), ${d.document.embedded_files} attachment(s), mailto links.</div>
     ${d.notes?.skipped_exceptions ? `<div class="muted">Kept public by exception: ${d.notes.skipped_exceptions.applicant} applicant mention(s); reference list(s) on page(s) ${escapeHtml((d.notes.reference_pages || []).join(', ') || 'none')} not scanned for names (authors of published studies, Art. 39e(1)(b)).</div>` : ''}
     ${(d.warnings || []).map(w => `<div class="warning-box">${escapeHtml(w)}</div>`).join('')}
@@ -1478,7 +1480,7 @@ function renderSanitisation() {
     <td><input type="checkbox" data-id="${escapeHtml(p.id)}"></td><td>${p.page}</td>
     <td class="txt">${escapeHtml(p.text.length > 220 ? p.text.slice(0, 220) + '…' : p.text)}</td>
     <td><span class="badge k-${escapeHtml(p.group)}" title="${escapeHtml(p.legal_basis)}">${escapeHtml(p.label)}</span></td>
-    <td class="muted">${p.sources.map(x => `<span class="badge">${escapeHtml(x)}</span>`).join('')}${p.flags.includes('safety_relevant') ? '<span class="badge flag">relevant to safety assessment — not claimable</span>' : ''}${p.confidence === 'low' ? '<span class="badge">candidate</span>' : ''}<br>${escapeHtml(p.reason)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Nothing proposed. Add text to mask above if needed.</td></tr>';
+    <td class="muted">${p.sources.map(x => `<span class="badge">${escapeHtml(x)}</span>`).join('')}${p.flags.includes('safety_relevant') ? '<span class="badge flag">relevant to safety assessment — not claimable</span>' : ''}${p.flags.includes('not_confirmed_by_ai') ? '<span class="badge flag">rules only — not confirmed by AI</span>' : ''}${p.confidence === 'low' ? '<span class="badge">candidate</span>' : ''}<br>${escapeHtml(p.reason)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Nothing proposed. Add text to mask above if needed.</td></tr>';
   document.querySelectorAll('#saniRows input[type=checkbox]').forEach(cb => cb.addEventListener('change', () => toggleSani(cb.dataset.id, cb.checked)));
   document.querySelectorAll('.sani-box').forEach(b => {
     b.addEventListener('click', () => toggleSani(b.dataset.id));
@@ -1586,6 +1588,7 @@ async function applySanitisation() {
   }
 }
 $('saniFile').addEventListener('change', updateSaniRunState);
+$('saniAllowLlm').addEventListener('change', () => { state.saniLlmTouched = true; });
 $('saniSector').addEventListener('change', () => { state.saniSectorTouched = true; loadSanitisationRules(); });
 $('saniAnalyseBtn').addEventListener('click', runSanitisationAnalysis);
 $('saniFilter').addEventListener('change', syncSani);
@@ -1620,6 +1623,8 @@ function renderAiStatus(cfg) {
   state.aiConfig = cfg;
   $('aiDot').className = 'dot' + (cfg ? (cfg.last_check_ok === false ? ' bad' : ' ok') : '');
   $('navAiSub').textContent = cfg ? `${cfg.provider_label} · ${cfg.model}` : 'Not configured — AI features off';
+  if ($('saniAiProvider')) $('saniAiProvider').textContent = cfg ? `${cfg.provider_label} · ${cfg.model}` : 'none configured — add one in AI configuration';
+  if ($('saniAllowLlm') && !state.saniLlmTouched) $('saniAllowLlm').checked = !!cfg;
   if (!$('aiCurrent')) return;
   $('aiCurrent').innerHTML = cfg ? `<div class="card-title">${escapeHtml(cfg.provider_label)} — <span style="font-family:ui-monospace,monospace">${escapeHtml(cfg.model)}</span></div>
       <div class="muted">${cfg.endpoint ? `Endpoint: ${escapeHtml(cfg.endpoint)}<br>` : ''}Key: ${escapeHtml(cfg.api_key_hint || 'none')} · saved ${escapeHtml(cfg.updated_at)}<br>

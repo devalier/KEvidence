@@ -150,6 +150,53 @@ def test_ai_findings_are_validated(rules, demo):
     assert set(jane["sources"]) == {"rule", "ai"} and jane["selected"]
 
 
+def test_ai_led_review_applies_both_redaction_types_by_the_rules(rules, demo):
+    """Personal data is masked; confidential information only when claimed and not relevant to safety (Art. 9(4), 16(3) PA)."""
+    seen = {}
+
+    def fake(system, user):
+        seen["system"], seen["user"] = system, user
+        return json.dumps({"findings": [
+            {"page": 1, "text": "Anna Testwoman", "type": "personal_data", "rule_id": "PA-ANX-39E-2-TESTING-PERSONNEL",
+             "reason": "QA manager, Art. 39e(2)", "confidence": "high"},
+            {"page": 2, "text": "recrystallisation from ethanol at 45 °C for 6 hours", "type": "confidential_information",
+             "rule_id": "PA-ANX-39-2-A-PROCESS", "claim": "R1", "reason": "process, Art. 39(2)(a)"},
+            {"page": 2, "text": "Fictional Chemicals Ltd", "type": "confidential_information", "rule_id": "PA-ANX-39-2-B-COMMERCIAL-LINKS",
+             "claim": None, "reason": "supplier, not claimed"},
+            {"page": 2, "text": "vanillin 99.6 % w/w, silicon dioxide 0.4 % w/w", "type": "confidential_information",
+             "rule_id": "PA-ANX-39-2-D-QUANT-COMPOSITION", "claim": "R2", "safety_relevant": True, "reason": "needed for exposure"},
+            {"page": 2, "text": "12 %", "type": "confidential_information", "rule_id": "REQUEST", "claim": None, "reason": "no claim"},
+        ]})
+    r = _propose(rules, demo, complete=fake,
+                 requests_raw="process conditions of the recrystallisation step | Art. 39(2)(a) GFL\nquantitative composition")
+    assert "PERSONAL DATA" in seen["system"] and "CONFIDENTIAL INFORMATION" in seen["system"]
+    assert "Claimed items are not disclosed pending the decision" in seen["system"]  # Art. 16(3), verbatim block
+    assert "R1: process conditions" in seen["user"] and "R2: quantitative composition" in seen["user"]
+    ai = r["ai"]
+    assert ai["mode"] == "ai-led" and ai["by_type"] == {"personal_data": 1, "confidential_information": 3}
+    assert ai["rejected"]["unknown_rule"] == 1  # REQUEST without a claim
+    by = {p["text"]: p for p in r["proposals"]}
+    assert by["Anna Testwoman"]["selected"] and by["Anna Testwoman"]["redaction_type"] == "personal_data"
+    process = by["recrystallisation from ethanol at 45 °C for 6 hours"]
+    assert process["selected"] and process["group"] == "request" and process["redaction_type"] == "confidential_information"
+    assert not by["Fictional Chemicals Ltd"]["selected"] and "stays public" in by["Fictional Chemicals Ltd"]["reason"]
+    comp = by["vanillin 99.6 % w/w, silicon dioxide 0.4 % w/w"]
+    assert not comp["selected"] and "safety_relevant" in comp["flags"]
+    assert r["unlocated_requests"] == []  # both claims were located by the AI
+    # The AI's precise span replaces the rule-based whole sentence around it (Art. 10(a) PA).
+    assert not any(p["category"] == "cue" and "recrystallisation" in p["text"] for p in r["proposals"])
+    # Rule findings the AI did not confirm are flagged for a closer look, not dropped.
+    assert any("not_confirmed_by_ai" in p["flags"] for p in r["proposals"])
+    assert not any("Rule-based fallback" in w for w in r["warnings"])
+
+
+def test_rules_only_fallback_carries_the_ai_recommendation(rules, demo):
+    r = _propose(rules, demo)
+    assert r["ai"]["mode"] == "rules-only"
+    assert any(w.startswith("Rule-based fallback only") and "sovereign, domain-specific language model" in w for w in r["warnings"])
+    assert r["ai"]["recommendation"] == s.AI_RECOMMENDATION
+
+
 def test_ai_failure_is_reported_not_fatal(rules, demo):
     r = _propose(rules, demo, complete=lambda system, user: "not json")
     assert not r["ai"]["used"] and r["ai"]["errors"]
