@@ -1,0 +1,180 @@
+{
+  "validation_scope": "Mechanical, identity-substitution and transcription checks; not a new scientific safety assessment or regulatory suitability determination.",
+  "pdf_count": 14,
+  "page_count": 49,
+  "relative_paths_and_page_counts_preserved": true,
+  "duplicated_sections_byte_identical": true,
+  "all_pdfs_open_and_render": true,
+  "all_pdf_pages_searchable": true,
+  "source_identity_token_hits_in_extracted_text_metadata_and_decompressed_objects": [],
+  "source_logo_images_remaining": 0,
+  "opaque_redaction_regions_remaining": 0,
+  "use_level_and_exposure_transcription_checks": "passed",
+  "files": [
+    {
+      "file": "Technical Dossier/Risk Assessment/Dietary exposure Assessment/12. Dietary exposure assessment.pdf",
+      "pages": 2,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "3953e632edffa0957fbf4f2a8f485d20904606163dddb7d3410a52243b50c97a"
+    },
+    {
+      "file": "Technical Dossier/Risk Management/Intended use(s) in food and use level(s) (Proposed normal and maximum use levels)/11. Intended uses in food and use levels Proposed normal and maximum use levels.pdf",
+      "pages": 2,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "ac2f28fee61acc2ededfe5cc13f4a2d5e0f5c42bb2a75af2a13936289d0ffc92"
+    },
+    {
+      "file": "Technical Dossier/Risk Management/The effect of the food enzyme on the final food/15. The effect of the food enzyme on the final food.pdf",
+      "pages": 2,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "89637268a200db46dbbcafae6ccba66fab8afe5c778b8debf0fa393d9d482492"
+    },
+    {
+      "file": "Technical Dossier/Risk Assessment/Overall conclusion on the safety of the food enzyme/13. Overall conclusion on the safety of the food enzyme.pdf",
+      "pages": 1,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "60ec50d3352687d938b9d8748940e525d6cdf620d3a3ae8292fd09ad5acb39af"
+    },
+    {
+      "file": "Technical Dossier/Risk Management/The function and technological need, including a description of the typical process(es) in which the food enzyme may be applied/14. The function and technological need including a description of the typical processes in which the food enzyme may be applied.pdf",
+      "pages": 9,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "946c82d4f1baffea20cc772e575be4904b1b68a64ff79a018ac41488407e7c93"
+    },
+    {
+      "file": "Technical Dossier/Risk Assessment/Intended use(s) in food and use level(s) (Proposed normal and maximum use levels)/11. Intended uses in food and use levels Proposed normal and maximum use levels.pdf",
+      "pages": 2,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "ac2f28fee61acc2ededfe5cc13f4a2d5e0f5c42bb2a75af2a13936289d0ffc92"
+    },
+    {
+      "file": "Technical Dossier/Risk Management/Information on why the use would not mislead the consumer/16. Information on why the use would not mislead the consumer.pdf",
+      "pages": 1,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "7e226f1131f55df97a0ee0c067773e446579855e475a90a1ac669c0fb103c919"
+    },
+    {
+      "file": "Administrative Data/Cover letter/Cover letter_PUBLIC.pdf",
+      "pages": 3,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "444df33a260e1c489e92c024062640cef45ed96aa6bbea4837f71bbf044d3278"
+    },
+    {
+      "file": "Technical Dossier/List of annexes, references and checklist/17. List of Reference.pdf",
+      "pages": 1,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "b84a93cfb62eeb01b95171724c619517b13d1f7c93ccfe73cc4af9a86c2fa016"
+    },
+    {
+      "file": "Technical Dossier/List of annexes, references and checklist/Suitability check list_EFSA - NZYM-KE.pdf",
+      "pages": 16,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "50b9c8f07a70859a00cbd03607389912013b85d3c6e66a35c6253c6a0f66d522"
+    },
+    {
+      "file": "Technical Dossier/Detailed summary/2. Detailed summary.pdf",
+      "pages": 5,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "42292d962ba88f2adbdb9b5aefb13da5c32b634da52b3e901cf3b4627f9d8243"
+    },
+    {
+      "file": "Technical Dossier/Risk Management/Dietary exposure Assessment/12. Dietary exposure assessment.pdf",
+      "pages": 2,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "3953e632edffa0957fbf4f2a8f485d20904606163dddb7d3410a52243b50c97a"
+    },
+    {
+      "file": "Technical Dossier/Risk Assessment/Reaction and fate in foods to which the food enzyme is added/10. Reaction and fate in food to which the food enzyme is added.pdf",
+      "pages": 1,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "fd2bead8c7d4421e9b35ec4c8a2b7fe0db397dd5f813df065c594e5805de01aa"
+    },
+    {
+      "file": "Public summary/Public Summary/Bear in mind that the public summary will be published automatically in the public website and that no personal data should be included therein./1. Public summary.pdf",
+      "pages": 2,
+      "opens_and_renders": true,
+      "all_pages_searchable": true,
+      "all_pages_synthetic_labelled": true,
+      "all_pages_have_company_name": true,
+      "source_logo_images_removed": true,
+      "opaque_redaction_regions_remaining": [],
+      "sha256": "2dfc56658e59156f7c6102d7876b2ceb12fc8ba63e15f7b7c989834325fcc608"
+    }
+  ],
+  "rendered_page_OCR": {
+    "pages": 49,
+    "all_ocr_processes_successful": true,
+    "source_applicant_identity_hits": [],
+    "note": "OCR is an additional visual-content check; it is not a proof of irreversible anonymisation of public scientific references."
+  },
+  "source_body_text_preservation": {
+    "unexpected_removed_tokens": 0,
+    "scope": "Scientific and checklist body text outside modified headers/footers; expected three-to-four process-count correction excluded. Scanned cover pages checked separately."
+  },
+  "visual_review": "All 49 pages reviewed as contact sheets; detailed review of the recreated cover pages and exposure table."
+}
