@@ -633,7 +633,9 @@ def run_checks(files: list[DossierFile], rules: dict, *, domain: str = "feed", a
         "counts": {"blocking": len(blocking), "warnings": len(warnings), "review": len(reviews),
                    "ok": sum(1 for i in R.items if i["status"] == "ok")},
         "results": R.items, "studies": studies, "personal_data": personal,
-        "files": [{"path": f.path, "name": f.name, "part": f.part, "role": f.role, "label": ROLE_LABELS.get(f.role, f.role),
+        # Section roles come from the feed checklist; outside it they would mislabel files (e.g. a "safety" conclusion).
+        "files": [{"path": f.path, "name": f.name, "part": f.part, "role": f.role,
+                   "label": "Technical document" if domain != "feed" and f.role.startswith("sect_") else ROLE_LABELS.get(f.role, f.role),
                    "section": f.section, "size": f.size, "pages": len(f.pages), "unsearchable_pages": len(f.unsearchable_pages),
                    "pdf": f.is_pdf, "error": f.error, "restricted": f.restricted,
                    "personal_data": next((p["count"] for p in personal if p["file"] == f.path), 0)} for f in files],
