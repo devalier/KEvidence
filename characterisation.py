@@ -24,19 +24,20 @@ from __future__ import annotations
 
 import datetime as _dt
 import io
-import ipaddress
 import json
 import logging
 import math
 import os
 import re
-import socket
+import time
 import zipfile
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Callable, Optional
 from urllib.parse import urljoin, urlparse
+
+import netguard
 
 # Guidance is stored per domain: data/guidance/<domain>/ (catalogues, bundled PDFs, output template).
 # data/guidance/domains.json is the registry; a domain is only usable when it is listed there.
@@ -57,7 +58,15 @@ logging.getLogger("pypdf").setLevel(logging.ERROR)
 MAX_FILE_BYTES = int(os.getenv("KEVIDENCE_MAX_FILE_BYTES", str(25 * 1024 * 1024)))
 MAX_FILES = int(os.getenv("KEVIDENCE_MAX_FILES", "30"))
 MAX_LINKED_DOCS = int(os.getenv("KEVIDENCE_MAX_LINKED_DOCS", "15"))
+MAX_TOTAL_BYTES = int(os.getenv("KEVIDENCE_MAX_TOTAL_BYTES", str(200 * 1024 * 1024)))  # uploads + fetched URLs, per analysis
 URL_TIMEOUT_S = 30.0
+URL_DEADLINE_S = 90.0                   # whole download of one URL (a slow-drip server cannot hold a worker)
+URL_BUDGET_S = 240.0                    # all URLs of one analysis
+# Decompression-bomb limits: a 25 MB upload can expand a thousandfold.
+MAX_EXPANDED_BYTES = 150 * 1024 * 1024  # uncompressed size of a DOCX/XLSX container
+MAX_PDF_PAGES = int(os.getenv("KEVIDENCE_MAX_PDF_PAGES", "3000"))
+MAX_TEXT_CHARS = 20_000_000             # extracted text kept per document
+MAX_SHEET_ROWS = 200_000
 SUPPORTED_EXTENSIONS = (".pdf", ".docx", ".xlsx", ".xlsm", ".csv", ".tsv", ".txt", ".md", ".json", ".html", ".htm")
 
 STATUS_LABELS = {
@@ -378,13 +387,18 @@ def _pdf_pages(content: bytes, warnings: list[str]) -> list[str]:
             except Exception:
                 warnings.append("PDF is encrypted and could not be opened without a password.")
                 return []
-        pages = []
-        for page in reader.pages:
+        pages, chars = [], 0
+        for number, page in enumerate(reader.pages):
+            if number >= MAX_PDF_PAGES or chars > MAX_TEXT_CHARS:
+                warnings.append(f"Only the first {number} pages were read (limit {MAX_PDF_PAGES} pages per document).")
+                break
             try:
                 pages.append(page.extract_text() or "")
+                chars += len(pages[-1])
             except Exception:
                 pages.append("")
-                warnings.append("Text extraction failed on at least one PDF page.")
+                if "Text extraction failed on at least one PDF page." not in warnings:
+                    warnings.append("Text extraction failed on at least one PDF page.")
         if pages and sum(len(p.strip()) for p in pages) < 40 * len(pages):
             warnings.append("Very little extractable text: the PDF is probably scanned. OCR is required before this document can be assessed.")
         return pages
@@ -393,38 +407,63 @@ def _pdf_pages(content: bytes, warnings: list[str]) -> list[str]:
         return []
 
 
+def _zip_expands_safely(content: bytes) -> bool:
+    """False for a ZIP container (DOCX/XLSX) whose declared uncompressed size is a decompression bomb.
+    zipfile never reads past the declared size of a member, so the declaration is a real bound."""
+    with zipfile.ZipFile(io.BytesIO(content)) as zf:
+        infos = zf.infolist()
+        return len(infos) <= 5000 and sum(i.file_size for i in infos) <= MAX_EXPANDED_BYTES
+
+
 def _docx_pages(content: bytes, warnings: list[str]) -> list[str]:
     try:
+        if not _zip_expands_safely(content):
+            warnings.append("DOCX is too large once expanded and was not processed.")
+            return []
         with zipfile.ZipFile(io.BytesIO(content)) as zf:
             xml = zf.read("word/document.xml").decode("utf-8", errors="replace")
-    except (zipfile.BadZipFile, KeyError):
+    except (zipfile.BadZipFile, KeyError, OSError, RuntimeError, NotImplementedError, EOFError, ValueError):
         warnings.append("DOCX could not be opened.")
         return []
     xml = re.sub(r"</w:tc>", " | ", xml)
     xml = re.sub(r"</w:p>|<w:br/>|</w:tr>", "\n", xml)
     xml = re.sub(r"<w:tab/>", "\t", xml)
     text = re.sub(r"<[^>]+>", "", xml)
-    text = (text.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
-            .replace("&quot;", '"').replace("&apos;", "'"))
-    return [text]
+    text = (text.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", '"').replace("&apos;", "'")
+            .replace("&amp;", "&"))
+    return [text[:MAX_TEXT_CHARS]]
 
 
 def _xlsx_pages(content: bytes, warnings: list[str]) -> list[str]:
     try:
+        if not _zip_expands_safely(content):
+            warnings.append("Spreadsheet is too large once expanded and was not processed.")
+            return []
         from openpyxl import load_workbook
         wb = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
     except Exception as exc:
         warnings.append(f"Spreadsheet could not be opened ({type(exc).__name__}).")
         return []
-    pages = []
-    for ws in wb.worksheets:
-        lines = [f"[Sheet: {ws.title}]"]
-        for row in ws.iter_rows(values_only=True):
-            cells = ["" if v is None else str(v) for v in row]
-            if any(c.strip() for c in cells):
-                lines.append(" | ".join(cells))
-        pages.append("\n".join(lines))
-    wb.close()
+    pages, rows, chars = [], 0, 0
+    try:
+        for ws in wb.worksheets:
+            lines = [f"[Sheet: {ws.title}]"]
+            for row in ws.iter_rows(values_only=True):
+                rows += 1
+                if rows > MAX_SHEET_ROWS or chars > MAX_TEXT_CHARS:
+                    break
+                cells = ["" if v is None else str(v) for v in row]
+                if any(c.strip() for c in cells):
+                    lines.append(" | ".join(cells))
+                    chars += len(lines[-1])
+            pages.append("\n".join(lines))
+            if rows > MAX_SHEET_ROWS or chars > MAX_TEXT_CHARS:
+                warnings.append(f"Spreadsheet truncated (limit {MAX_SHEET_ROWS} rows per file).")
+                break
+    except Exception as exc:
+        warnings.append(f"Spreadsheet could not be read completely ({type(exc).__name__}).")
+    finally:
+        wb.close()
     return pages
 
 
@@ -495,68 +534,75 @@ def classify_document(doc: Document) -> str:
     return scores[0][1]
 
 
-# --- URL retrieval (SSRF-guarded) -------------------------------------------
+# --- URL retrieval (SSRF-guarded, see netguard.py) --------------------------
 
-def _host_is_public(host: str) -> bool:
-    try:
-        infos = socket.getaddrinfo(host, None)
-    except socket.gaierror:
-        # DNS may only be resolvable by an outbound proxy; treat literal private
-        # names as unsafe and let the HTTP client report failure otherwise.
-        return not (host in ("localhost",) or host.endswith(".local") or host.endswith(".internal"))
-    for info in infos:
-        addr = ipaddress.ip_address(info[4][0])
-        if (addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved
-                or addr.is_multicast or addr.is_unspecified):
-            return False
-    return True
+class FetchBudget:
+    """Bytes and seconds one analysis may spend on URLs, shared by every fetch of the request."""
+
+    def __init__(self, max_bytes: int = MAX_TOTAL_BYTES, seconds: float = URL_BUDGET_S):
+        self.bytes_left = max_bytes
+        self.deadline = time.monotonic() + seconds
+
+    def spend(self, n: int) -> None:
+        self.bytes_left -= n
+        if self.bytes_left < 0:
+            raise ValueError(f"The documents exceed {MAX_TOTAL_BYTES // (1024 * 1024)} MB in total.")
+
+    def check_time(self) -> None:
+        if time.monotonic() > self.deadline:
+            raise ValueError("Retrieving the URLs took too long.")
 
 
 def validate_url(url: str) -> str:
-    parsed = urlparse((url or "").strip())
-    if parsed.scheme not in ("http", "https") or not parsed.hostname:
-        raise ValueError(f"Only http(s) URLs are accepted: {url!r}")
+    """The URL if the server may fetch it: http(s), no embedded credentials, and a host that resolves only
+    to public addresses."""
     try:
-        ip = ipaddress.ip_address(parsed.hostname)
-        if not ip.is_global:
-            raise ValueError(f"URL host is not a public address: {url!r}")
-    except ValueError as exc:
-        if "not a public address" in str(exc):
-            raise
-        if not _host_is_public(parsed.hostname):
-            raise ValueError(f"URL host resolves to a non-public address: {url!r}")
-    return parsed.geturl()
+        return netguard.check_url(url)[0]
+    except netguard.BlockedURL as exc:
+        raise ValueError(f"URL refused ({exc}): {str(url)[:200]!r}") from None
 
 
-def _fetch(url: str, client) -> tuple[bytes, str, str]:
+def _fetch(url: str, client, budget: Optional[FetchBudget] = None) -> tuple[bytes, str, str]:
+    budget = budget or FetchBudget()
     current = validate_url(url)
     for _ in range(4):
+        budget.check_time()
+        started = time.monotonic()
         with client.stream("GET", current, follow_redirects=False) as resp:
             if resp.status_code in (301, 302, 303, 307, 308) and resp.headers.get("location"):
                 current = validate_url(urljoin(current, resp.headers["location"]))
                 continue
-            resp.raise_for_status()
+            if resp.status_code >= 400:
+                raise ValueError(f"the server answered {resp.status_code}")
             chunks, size = [], 0
             for chunk in resp.iter_bytes():
                 size += len(chunk)
                 if size > MAX_FILE_BYTES:
                     raise ValueError(f"Remote document exceeds {MAX_FILE_BYTES // (1024 * 1024)} MB: {current}")
+                budget.spend(len(chunk))
+                budget.check_time()
+                if time.monotonic() - started > URL_DEADLINE_S:
+                    raise ValueError("the download took too long")
                 chunks.append(chunk)
             return b"".join(chunks), resp.headers.get("content-type", ""), current
     raise ValueError(f"Too many redirects: {url}")
 
 
-def fetch_url_documents(url: str, start_index: int, client=None) -> tuple[list[Document], list[str]]:
+def _fetch_error(exc: Exception) -> str:
+    """Why a fetch failed, without echoing transport internals (resolved addresses, proxy details)."""
+    return str(exc) if isinstance(exc, ValueError) else f"could not connect ({type(exc).__name__})"
+
+
+def fetch_url_documents(url: str, start_index: int, client=None, budget: Optional[FetchBudget] = None) -> tuple[list[Document], list[str]]:
     """Fetch a URL. HTML pages are kept as a document and linked dossier files
     (PDF/DOCX/XLSX) are followed, up to MAX_LINKED_DOCS."""
-    import httpx
-
     notes: list[str] = []
     own_client = client is None
-    client = client or httpx.Client(timeout=URL_TIMEOUT_S, headers={"User-Agent": "KEvidence/0.1 (characterisation)"})
+    budget = budget or FetchBudget()
+    client = client or netguard.client(timeout=URL_TIMEOUT_S, headers={"User-Agent": "KEvidence/0.1 (characterisation)"})
     docs: list[Document] = []
     try:
-        content, ctype, final_url = _fetch(url, client)
+        content, ctype, final_url = _fetch(url, client, budget)
         name = os.path.basename(urlparse(final_url).path) or urlparse(final_url).hostname or "url"
         doc = extract_document(name, content, f"D{start_index}", final_url, ctype)
         docs.append(doc)
@@ -574,15 +620,15 @@ def fetch_url_documents(url: str, start_index: int, client=None) -> tuple[list[D
                 )
             for link in doc_links[:MAX_LINKED_DOCS]:
                 try:
-                    c2, t2, f2 = _fetch(link, client)
+                    c2, t2, f2 = _fetch(link, client, budget)
                     docs.append(extract_document(os.path.basename(urlparse(f2).path), c2,
                                                  f"D{start_index + len(docs)}", f2, t2))
                 except Exception as exc:
-                    notes.append(f"Linked document not retrieved ({link}): {exc}")
+                    notes.append(f"Linked document not retrieved ({link[:300]}): {_fetch_error(exc)}")
             if len(doc_links) > MAX_LINKED_DOCS:
                 notes.append(f"{len(doc_links) - MAX_LINKED_DOCS} further linked documents were not followed (limit {MAX_LINKED_DOCS}).")
     except Exception as exc:
-        notes.append(f"URL not retrieved ({url}): {exc}")
+        notes.append(f"URL not retrieved ({url[:300]}): {_fetch_error(exc)}")
     finally:
         if own_client:
             client.close()

@@ -3,6 +3,11 @@ name: security
 on:
   push:
   pull_request:
+  schedule:
+    - cron: "17 5 * * 1"  # weekly: new CVEs appear without any push
+
+permissions:
+  contents: read
 
 jobs:
   pip-audit:

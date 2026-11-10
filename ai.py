@@ -14,12 +14,10 @@ OpenAI-compatible endpoint (on-premises vLLM, Ollama, TGI, an institution's gate
 from __future__ import annotations
 
 import base64
-import ipaddress
 import json
 import os
 import re
 import secrets
-import socket
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,6 +30,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 import accounts
+import netguard
 
 PROVIDERS: dict[str, dict[str, Any]] = {
     "openai": {"label": "OpenAI", "base": "https://api.openai.com/v1", "requires_key": True, "requires_endpoint": False,
@@ -73,8 +72,12 @@ def _master_key() -> bytes:
         # Development: a random key kept next to the accounts database (never committed).
         path: Path = accounts.state_dir() / ".secret_key"
         if not path.exists():
-            path.write_text(secrets.token_urlsafe(48))
-            os.chmod(path, 0o600)
+            try:  # created 0600 from the start, and never overwritten if another worker got there first
+                fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                with os.fdopen(fd, "w") as f:
+                    f.write(secrets.token_urlsafe(48))
+            except FileExistsError:
+                pass
         raw = path.read_text().strip()
     return HKDF(algorithm=hashes.SHA256(), length=32, salt=b"kevidence.ai-credentials.v1", info=b"aes-256-gcm").derive(raw.encode())
 
@@ -108,34 +111,30 @@ def redact(text: str, *secrets_to_hide: Optional[str]) -> str:
 # Outbound request safety (SSRF): a user-supplied endpoint must not reach internal services
 # ---------------------------------------------------------------------------
 
+def _allow_private() -> bool:
+    return os.getenv("KEVIDENCE_ALLOW_PRIVATE_ENDPOINTS", "").lower() in ("1", "true", "yes")
+
+
 def validate_endpoint(url: str) -> tuple[bool, str]:
-    allow_private = os.getenv("KEVIDENCE_ALLOW_PRIVATE_ENDPOINTS", "").lower() in ("1", "true", "yes")
+    """Checks shared with dossier URLs (netguard.py). Private networks and plain http are for on-premises
+    models only (KEVIDENCE_ALLOW_PRIVATE_ENDPOINTS=1); loopback and link-local stay refused even then."""
+    allow_private = _allow_private()
     try:
-        parts = urlsplit(url)
-    except ValueError:
-        return False, "endpoint is not a valid URL"
-    if parts.scheme not in ("https", "http"):
-        return False, "endpoint must use https"
-    if parts.scheme == "http" and not allow_private:
-        return False, "plain http endpoints are not permitted"
-    if not parts.hostname:
-        return False, "endpoint has no host"
-    if parts.username or parts.password:
-        return False, "credentials must not be embedded in the endpoint URL"
-    host = parts.hostname.lower()
-    if host in ("localhost", "metadata.google.internal") or host.endswith(".localhost"):
-        return False, "endpoint host is not permitted"
-    try:
-        infos = socket.getaddrinfo(host, parts.port or (443 if parts.scheme == "https" else 80))
-    except socket.gaierror:
-        return False, "endpoint host does not resolve from this server"
-    for info in infos:
-        addr = ipaddress.ip_address(info[4][0])
-        if addr.is_loopback or addr.is_link_local or addr.is_multicast or addr.is_reserved or addr.is_unspecified:
-            return False, "endpoint resolves to a blocked address range"
-        if addr.is_private and not allow_private:
-            return False, "endpoint resolves to a private address (set KEVIDENCE_ALLOW_PRIVATE_ENDPOINTS=1 for on-premises models)"
+        netguard.check_url(url, allow_private=allow_private, allow_http=allow_private)
+    except netguard.BlockedURL as exc:
+        reason = str(exc)
+        if "private address" in reason:
+            reason += " (set KEVIDENCE_ALLOW_PRIVATE_ENDPOINTS=1 for on-premises models)"
+        return False, "endpoint rejected: " + reason
     return True, ""
+
+
+def _client(endpoint: str, timeout: float) -> httpx.Client:
+    """Fixed provider URLs use a plain client. A user-supplied endpoint gets one that connects only to the
+    address that passed validate_endpoint (no DNS rebinding) and never follows redirects."""
+    if endpoint:
+        return netguard.client(allow_private=_allow_private(), timeout=timeout)
+    return httpx.Client(timeout=timeout, follow_redirects=False)
 
 
 def _base(provider: str, endpoint: str) -> str:
@@ -147,7 +146,7 @@ def _base(provider: str, endpoint: str) -> str:
     if endpoint:
         ok, reason = validate_endpoint(base)
         if not ok:
-            raise AIError(f"Endpoint rejected: {reason}.")
+            raise AIError(f"{reason[0].upper()}{reason[1:]}.")
     return base[: -len("/chat/completions")] if base.endswith("/chat/completions") else base
 
 
@@ -155,12 +154,12 @@ def _base(provider: str, endpoint: str) -> str:
 # Provider calls
 # ---------------------------------------------------------------------------
 
-def _post(url: str, headers: dict, payload: dict, key: str, client: Optional[httpx.Client] = None) -> dict:
+def _post(url: str, headers: dict, payload: dict, key: str, client: Optional[httpx.Client] = None, endpoint: str = "") -> dict:
     try:
         if client is not None:
             r = client.post(url, headers=headers, json=payload)
         else:
-            with httpx.Client(timeout=TIMEOUT_S, follow_redirects=False) as c:
+            with _client(endpoint, TIMEOUT_S) as c:
                 r = c.post(url, headers=headers, json=payload)
     except httpx.RequestError as exc:
         raise AIError(f"Could not reach the AI provider ({type(exc).__name__}).") from None
@@ -184,7 +183,8 @@ def complete(config: dict, messages: list[dict], *, temperature: float = 0.1, ma
              json_mode: bool = False, client: Optional[httpx.Client] = None) -> tuple[str, dict]:
     """One chat completion with a stored configuration. Returns (text, usage)."""
     provider, model, key = config["provider"], config["model"], config.get("api_key") or ""
-    base = _base(provider, config.get("endpoint") or "")
+    endpoint = config.get("endpoint") or ""
+    base = _base(provider, endpoint)
     if provider == "anthropic":
         system = "\n\n".join(m["content"] for m in messages if m["role"] == "system")
         if json_mode:
@@ -193,7 +193,7 @@ def complete(config: dict, messages: list[dict], *, temperature: float = 0.1, ma
                    "messages": [m for m in messages if m["role"] != "system"]}
         if system:
             payload["system"] = system
-        data = _post(f"{base}/messages", {"x-api-key": key, "anthropic-version": "2023-06-01"}, payload, key, client)
+        data = _post(f"{base}/messages", {"x-api-key": key, "anthropic-version": "2023-06-01"}, payload, key, client, endpoint)
         text = "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text")
         if json_mode:
             m = re.search(r"\{.*\}", text, re.S)
@@ -207,11 +207,11 @@ def complete(config: dict, messages: list[dict], *, temperature: float = 0.1, ma
     if json_mode:
         payload["response_format"] = {"type": "json_object"}
     try:
-        data = _post(f"{base}/chat/completions", headers, payload, key, client)
+        data = _post(f"{base}/chat/completions", headers, payload, key, client, endpoint)
     except AIError as exc:
         if json_mode and provider == "openai_compatible" and "returned 4" in str(exc):
             payload.pop("response_format")  # some on-premises servers do not support JSON mode
-            data = _post(f"{base}/chat/completions", headers, payload, key, client)
+            data = _post(f"{base}/chat/completions", headers, payload, key, client, endpoint)
         else:
             raise
     try:
@@ -233,7 +233,7 @@ def list_models(provider: str, api_key: str, endpoint: str, client: Optional[htt
         if client is not None:
             r = client.get(f"{base}/models", headers=headers)
         else:
-            with httpx.Client(timeout=15, follow_redirects=False) as c:
+            with _client(endpoint, 15) as c:
                 r = c.get(f"{base}/models", headers=headers, params={"limit": 1000} if provider == "anthropic" else None)
     except httpx.RequestError as exc:
         raise AIError(f"Could not reach the AI provider ({type(exc).__name__}).") from None
@@ -318,7 +318,7 @@ def add_config(user_id: int, provider: str, model: str, endpoint: str = "", api_
     if endpoint:
         ok, reason = validate_endpoint(endpoint)
         if not ok:
-            raise AIError(f"Endpoint rejected: {reason}.")
+            raise AIError(f"{reason[0].upper()}{reason[1:]}.")
     now = _now()
     with accounts.connect() as conn:
         same = conn.execute("SELECT id, api_key_ciphertext, api_key_hint FROM ai_models WHERE user_id = ? AND provider = ? AND model = ? "

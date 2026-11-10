@@ -46,6 +46,7 @@ AI_BATCH_CHARS = 9000
 MAX_PROPOSALS = 2000
 MAX_CUE_PROPOSALS_PER_RULE = 25
 PREVIEW_WIDTH_PX = 760
+MAX_PREVIEW_PIXELS = 6_000_000
 
 STEP = "sanitisation"
 PERSONAL_RULE = "PA-ANX-39E-1-PERSONAL-DATA"
@@ -599,6 +600,10 @@ def render_previews(doc: pymupdf.Document, limit: int = MAX_PREVIEW_PAGES) -> li
             break
         view = page.rect * page.rotation_matrix if page.rotation else page.rect
         zoom = min(1.5, PREVIEW_WIDTH_PX / max(abs(view.width), 1))
+        # A page can declare any size: bound the bitmap, or one very tall page costs gigabytes of memory.
+        pixels = abs(view.width) * abs(view.height) * zoom * zoom
+        if pixels > MAX_PREVIEW_PIXELS:
+            zoom *= (MAX_PREVIEW_PIXELS / pixels) ** 0.5
         pix = page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), alpha=False)
         data = base64.b64encode(pix.tobytes("jpeg", jpg_quality=62)).decode("ascii")
         out.append({"page": page.number + 1, "width": round(abs(view.width), 2), "height": round(abs(view.height), 2),

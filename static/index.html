@@ -760,7 +760,7 @@ function showSigninProblem(url) {
     <p>The page loaded, but KEvidence's API says no one is signed in, and the sign-in page keeps sending you back here.</p>
     <p style="color:#94a3b8;font-size:14px">For the administrator: (1) the web server must pass <strong>every</strong> path to KEvidence — <code>/</code>, <code>/auth/</code>, <code>/api/</code> and the static files — and must not serve <code>static/index.html</code> itself;
     (2) <code>APP_URL</code> must be exactly the address in the browser bar (scheme, host and any path prefix); with <code>https://</code> the site must be served over https. See README › Reverse proxy.</p>
-    <p><a href="${url}" style="color:#38bdf8">Try the sign-in page again</a></p></div>`;
+    <p><a href="${escapeHtml(safeUrl(url))}" style="color:#38bdf8">Try the sign-in page again</a></p></div>`;
   document.body.appendChild(box);
 }
 window.fetch = async (...args) => {
@@ -779,6 +779,11 @@ const steps = document.querySelectorAll('.step');
 const tabs = document.querySelectorAll('.tab-content');
 const messagesEl = $('messages');
 
+// Links built from data (imported datasets, API answers) may only be http(s) or same-site paths: never javascript: or data:.
+function safeUrl(value) {
+  const url = String(value ?? '').trim();
+  return /^(https?:\/\/|\/(?!\/))/i.test(url) ? url : '';
+}
 function escapeHtml(value) {
   return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
@@ -965,7 +970,7 @@ function renderOpenFoodTox() {
     <div class="metric-grid"><div class="metric"><small>Substances</small><strong>${substances.length}</strong></div><div class="metric"><small>Tox/study records</small><strong>${tox.length}</strong></div><div class="metric"><small>Publication links</small><strong>${pubs.length}</strong></div><div class="metric"><small>Source</small><strong>${escapeHtml(o.source_mode || o.status?.mode || 'OpenFoodTox')}</strong></div></div>
     <h3>Candidate substances</h3><div class="cards">${substances.map(s => `<div class="card"><div class="card-title">${escapeHtml(s.name || s.uuid || 'Substance')}</div><span class="badge">UUID ${escapeHtml(s.uuid || 'n/a')}</span><span class="badge">CAS ${escapeHtml(s.cas || 'n/a')}</span><span class="badge">EC ${escapeHtml(s.ec || 'n/a')}</span></div>`).join('') || '<div class="muted">No substances returned.</div>'}</div>
     <h3>Toxicological values / study documents</h3><ul class="clean">${tox.slice(0, 10).map(t => `<li>${escapeHtml(t.title || t.section || t.uuid || 'Record')}${t.value ? ` — ${escapeHtml(t.value)} ${escapeHtml(t.unit || '')}` : ''}</li>`).join('') || '<li>No toxicological records returned by the configured IUCLID query.</li>'}</ul>
-    <h3>Publication/source links</h3><ul class="clean">${pubs.slice(0, 10).map(p => `<li>${p.url ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.title || p.url)}</a>` : escapeHtml(p.title || p.uuid || 'Publication/source record')}</li>`).join('') || '<li>No publication links returned by the configured OpenFoodTox query.</li>'}</ul>
+    <h3>Publication/source links</h3><ul class="clean">${pubs.slice(0, 10).map(p => `<li>${safeUrl(p.url) ? `<a href="${escapeHtml(safeUrl(p.url))}" target="_blank" rel="noopener">${escapeHtml(p.title || p.url)}</a>` : escapeHtml(p.title || p.uuid || 'Publication/source record')}</li>`).join('') || '<li>No publication links returned by the configured OpenFoodTox query.</li>'}</ul>
     ${renderRelatedAops(o.related_aops || [])}`;
 }
 function renderRelatedAops(aops) {

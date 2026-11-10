@@ -25,6 +25,7 @@ import ai
 import characterisation as charmod
 import completeness as compmod
 import docx_export
+import limits
 import sanitisation as sanmod
 
 # ---------------------------------------------------------------------------
@@ -54,6 +55,8 @@ accounts.init_db()
 _config_problems = accounts.check_configuration()
 if _config_problems:
     raise accounts.ConfigurationError("KEvidence cannot start in production: " + "; ".join(_config_problems))
+for _warning in accounts.configuration_warnings():
+    print(f"WARNING: {_warning}")
 if accounts.mail_transport() == "console":
     print("NOTE: no RESEND_API_KEY or SMTP_HOST set — sign-in links are printed to this console (development only).")
 PUBLIC_PATHS = ("/auth/", "/api/health", "/robots.txt")
@@ -65,12 +68,17 @@ SECURITY_HEADERS = {
     # cross-site check must refuse. URLs (and sign-in tokens in them) still never leave the site.
     "Referrer-Policy": "same-origin",
     "Cross-Origin-Opener-Policy": "same-origin",
-    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Cross-Origin-Resource-Policy": "same-origin",
+    "X-Permitted-Cross-Domain-Policies": "none",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
     # The single-page UI uses inline script/styles; everything else is restricted to this origin.
     "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
                                "img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; "
                                "frame-ancestors 'none'; form-action 'self'",
 }
+if accounts.secure_cookies():
+    # Served over https: tell browsers never to fall back to http for this host.
+    SECURITY_HEADERS["Strict-Transport-Security"] = "max-age=31536000"
 
 
 def _client_ip(request: Request) -> str:
@@ -78,26 +86,55 @@ def _client_ip(request: Request) -> str:
     if os.getenv("TRUST_PROXY"):
         hops = [h.strip() for h in request.headers.get("x-forwarded-for", "").split(",") if h.strip()]
         if hops:
-            return hops[-1]
+            return hops[-1][:64]
     return request.client.host if request.client else ""
 
 
 def _same_origin(request: Request) -> bool:
-    """Refuse cross-site writes: a browser always sends Origin on a cross-site POST."""
+    """Refuse cross-site writes. A browser sends Origin on every cross-site POST; modern ones also send
+    Sec-Fetch-Site, which covers the requests that carry no Origin. Clients that send neither are not
+    browsers and hold no ambient cookie to abuse."""
     origin = request.headers.get("origin")
-    if not origin:
-        return True
-    allowed = {accounts.app_origin(), f"{request.url.scheme}://{request.headers.get('host', '')}"}
-    return origin in allowed
+    if origin:
+        allowed = {accounts.app_origin()}
+        if not accounts.production():
+            # Development: whatever address the browser used (127.0.0.1, localhost, a LAN name).
+            allowed.add(f"{request.url.scheme}://{request.headers.get('host', '')}")
+        return origin in allowed
+    return request.headers.get("sec-fetch-site", "same-origin") in ("same-origin", "none")
+
+
+def _body_limit(method: str, path: str) -> int:
+    """Largest request body a route accepts (limits.BodyLimitMiddleware)."""
+    if method in ("GET", "HEAD", "OPTIONS", "DELETE"):
+        return 64 * 1024
+    slack = 2 * limits.MB  # multipart framing and the form fields
+    if "/api/completeness/" in path:
+        return compmod.MAX_TOTAL_BYTES + slack
+    if path.endswith("/api/characterisation/analyse"):
+        return charmod.MAX_TOTAL_BYTES + slack
+    if "/api/sanitisation/" in path:
+        return sanmod.MAX_FILE_BYTES + 2 * slack
+    if "/auth/" in path:
+        return limits.AUTH_BODY_LIMIT
+    return limits.DEFAULT_BODY_LIMIT
+
+
+def _too_many(wait: float, detail: str = "Too many requests. Slow down and try again shortly.") -> JSONResponse:
+    return JSONResponse({"detail": detail}, status_code=429, headers={"Retry-After": str(int(wait) + 1)})
 
 
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
     path = request.url.path
-    accounts.CURRENT_IP.set(_client_ip(request))
+    ip = _client_ip(request)
+    accounts.CURRENT_IP.set(ip)
     user = accounts.authenticate(request.cookies.get(accounts.session_cookie_name()))
     accounts.CURRENT_USER.set(user)
     request.state.user = user
+    who = f"user:{user['id']}" if user else f"ip:{limits.client_key(ip)}"
+    heavy = limits.enabled() and limits.classify(request.method, path) == "heavy"
+    wait = 0.0 if path.endswith("/api/health") else limits.check(who, request.method, path)
     if request.method not in ("GET", "HEAD", "OPTIONS") and not _same_origin(request):
         response = JSONResponse({"detail": "Cross-site request refused."}, status_code=403)
     elif user is None and not path.startswith(PUBLIC_PATHS):
@@ -105,13 +142,25 @@ async def security_middleware(request: Request, call_next):
             response = JSONResponse({"detail": "Sign in required.", "signin": f"{accounts.app_url()}/auth/signin"}, status_code=401)
         else:
             response = RedirectResponse(f"{accounts.app_url()}/auth/signin", status_code=303)
+    elif wait:
+        response = _too_many(wait)
+    elif heavy and not limits.SLOTS.acquire(who):
+        response = _too_many(15, "The server is busy with other documents, or two of your analyses are still running. Try again in a moment.")
     else:
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        finally:
+            if heavy:
+                limits.SLOTS.release(who)
     for key, value in SECURITY_HEADERS.items():
         response.headers.setdefault(key, value)
     if path.startswith(("/api/", "/auth/")):
         response.headers.setdefault("Cache-Control", "no-store")
     return response
+
+
+# Outermost: oversized bodies are refused before anything reads or buffers them.
+app.add_middleware(limits.BodyLimitMiddleware, limit_for=_body_limit)
 
 
 def _html(body: str, status: int = 200, cookie: Optional[str] = None) -> HTMLResponse:
@@ -123,7 +172,7 @@ def _html(body: str, status: int = 200, cookie: Optional[str] = None) -> HTMLRes
 
 def _auth_throttled(request: Request) -> bool:
     limit, window = accounts.AUTH_REQUESTS_PER_IP
-    return accounts.rate_limited(f"auth:{_client_ip(request)}", limit, window)
+    return accounts.rate_limited(f"auth:{limits.client_key(_client_ip(request))}", limit, window)
 
 
 @app.get("/auth/signin")
@@ -1956,7 +2005,6 @@ def bioactivity_status() -> dict[str, Any]:
     return {
         "configured": configured,
         "mode": "local_epa_bioactivity_sqlite" if configured else "not_configured",
-        "sqlite_path": str(BIOACTIVITY_SQLITE_PATH),
         "source_note": "EPA ToxCast/Tox21 bioactivity data are public HTS/qHTS data, and ToxRefDB contains curated in vivo toxicity study data. KEvidence expects exported CompTox/ToxCast/Tox21/ToxRefDB files to be indexed locally for screening/POD selection.",
         "setup_steps": [
             "Export ToxCast Assays: AC50 / Tox21 / ToxRefDB details from EPA CompTox or download EPA public release files.",
@@ -2043,7 +2091,7 @@ def _score_bioactivity_record(record: dict[str, Any], event_terms: list[dict[str
 
 
 def query_bioactivity(body: dict[str, Any]) -> dict[str, Any]:
-    chemical = str(body.get("chemical") or body.get("query") or body.get("q") or "").strip()
+    chemical = str(body.get("chemical") or body.get("query") or body.get("q") or "").strip()[:300]
     aop_id = _safe_int(body.get("aop_id"))
     limit = min(max(_safe_int(body.get("limit")) or 25, 1), 100)
     if not chemical:
@@ -2127,7 +2175,6 @@ def openfoodtox_status() -> dict[str, Any]:
         "mode": mode,
         "base_url_configured": bool(OPENFOODTOX_IUCLID_BASE_URL),
         "auth_configured": bool(OPENFOODTOX_IUCLID_USERNAME or OPENFOODTOX_IUCLID_PASSWORD),
-        "sqlite_path": str(OPENFOODTOX_SQLITE_PATH),
         "sqlite_available": sqlite_available,
         "substances_path": OPENFOODTOX_SUBSTANCES_PATH,
         "dossiers_path": OPENFOODTOX_DOSSIERS_PATH,
@@ -2315,7 +2362,7 @@ async def query_openfoodtox(body: dict[str, Any]) -> dict[str, Any]:
     configured, return actionable setup guidance rather than pretending data were
     queried.
     """
-    query = str(body.get("query") or body.get("q") or "").strip()
+    query = str(body.get("query") or body.get("q") or "").strip()[:300]
     limit = min(max(_safe_int(body.get("limit")) or 10, 1), 25)
     include_documents = bool(body.get("include_documents", True))
     include_dossiers = bool(body.get("include_dossiers", True))
@@ -2349,9 +2396,11 @@ async def query_openfoodtox(body: dict[str, Any]) -> dict[str, Any]:
         try:
             substance_payload = await _iuclid_get(client, OPENFOODTOX_SUBSTANCES_PATH, params=params)
         except httpx.HTTPStatusError as exc:
-            raise HTTPException(exc.response.status_code, f"IUCLID substance query failed: {exc.response.text[:300]}") from exc
-        except httpx.HTTPError as exc:
-            raise HTTPException(502, f"IUCLID substance query failed: {exc}") from exc
+            print(f"[KEvidence] IUCLID substance query failed: {exc.response.status_code} {exc.response.text[:300]!r}")
+            raise HTTPException(502, f"IUCLID substance query failed (status {exc.response.status_code}).") from None
+        except (httpx.HTTPError, ValueError) as exc:
+            print(f"[KEvidence] IUCLID substance query failed: {type(exc).__name__}: {exc}")
+            raise HTTPException(502, "IUCLID substance query failed: the local IUCLID instance could not be reached.") from None
 
         substances = [_normalize_iuclid_substance(item) for item in _items_from_payload(substance_payload)[:limit]]
         dossiers: list[dict[str, Any]] = []
@@ -2416,6 +2465,8 @@ async def health():
 
 @app.get("/api/aops")
 async def list_aops(search: Optional[str] = None, limit: int = 100):
+    limit = min(max(limit, 1), 500)
+    search = (search or "")[:300]
     if search:
         # AOP discovery needs chemical/stressor lookup as well as title/event text
         # search. Chemicals such as rotenone may appear as prototypical stressors
@@ -2468,12 +2519,18 @@ async def get_aop(aop_id: int):
     return detail
 
 
+MAX_QUESTION_CHARS = 8000
+
+
 @app.post("/api/chat")
 def chat(body: dict):
     """Main chat endpoint — accepts user query, returns LLM answer grounded in AOP data."""
-    query = body.get("message", "").strip()
+    query = body.get("message")
+    query = query.strip() if isinstance(query, str) else ""
     if not query:
         raise HTTPException(400, "message is required")
+    if len(query) > MAX_QUESTION_CHARS:
+        raise HTTPException(413, f"The question is too long (limit {MAX_QUESTION_CHARS} characters).")
 
     workbench_context = body.get("context") if isinstance(body.get("context"), dict) else {}
     step = workbench_context.get("workflow_step")
@@ -2690,6 +2747,7 @@ async def weight_of_evidence(chemical: str, aop_id: Optional[int] = None):
     Given a chemical name, finds associated AOPs and returns structured WoE.
     Optionally filter by specific AOP ID.
     """
+    chemical = chemical[:300]
     aops = find_aops_by_chemical(chemical)
     if not aops:
         return {"chemical": chemical, "aops": [], "summary": "No AOPs found for this chemical."}
@@ -2883,12 +2941,17 @@ def characterisation_analyse(
         raise HTTPException(413, f"At most {charmod.MAX_FILES} files per analysis.")
 
     docs, notes = [], []
+    budget = charmod.FetchBudget()  # bytes shared by uploads and URLs; seconds for the URLs
     for upload in files:
         content = upload.file.read(charmod.MAX_FILE_BYTES + 1)
-        docs.append(charmod.extract_document(upload.filename or "upload", content, f"D{len(docs) + 1}",
-                                             "upload", upload.content_type or ""))
+        try:
+            budget.spend(len(content))
+        except ValueError as exc:
+            raise HTTPException(413, str(exc))
+        docs.append(charmod.extract_document((upload.filename or "upload")[:300], content, f"D{len(docs) + 1}",
+                                             "upload", (upload.content_type or "")[:100]))
     for url in url_list[:10]:
-        fetched, fetch_notes = charmod.fetch_url_documents(url, len(docs) + 1)
+        fetched, fetch_notes = charmod.fetch_url_documents(url[:2000], len(docs) + 1, budget=budget)
         docs.extend(fetched)
         notes.extend(fetch_notes)
     if len(url_list) > 10:
@@ -3206,6 +3269,8 @@ Rules:
 
 async def _read_uploads(files: list[UploadFile]) -> list[tuple[str, bytes]]:
     out, total = [], 0
+    if len(files) > compmod.MAX_FILES:
+        raise HTTPException(413, f"At most {compmod.MAX_FILES} files per dossier.")
     for f in files:
         data = await f.read(compmod.MAX_TOTAL_BYTES + 1)
         total += len(data)
@@ -3334,4 +3399,5 @@ async def serve_static(path: str):
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=3457)
+    # No "server: uvicorn" banner. X-Forwarded-* is honoured only from the local reverse proxy (uvicorn default).
+    uvicorn.run(app, host="127.0.0.1", port=3457, server_header=False)

@@ -208,6 +208,8 @@ The Evidence Assistant uses the signed-in user's own AI configuration (see *Acco
 ├── server.py                          # FastAPI backend: AOP knowledge base, assessment logic, all API routes
 ├── accounts.py                        # Email sign-in, sessions, rate limits, activity log (SQLite in data/state/)
 ├── ai.py                              # Per-user AI configuration (encrypted keys), provider calls, llm_chat()
+├── netguard.py                        # SSRF guard for user-supplied URLs (address checks, DNS pinning)
+├── limits.py                          # Request-size limits, rate limits, cap on concurrent document jobs
 ├── completeness.py                    # Intake: completeness check, study notifications, personal-data screening, missing-information letter
 ├── characterisation.py                # Identity & characterisation: document ingestion, guidance-grounded characterisation and gap analysis
 ├── docx_export.py                     # Markdown → Word (.docx) for the characterisation output
@@ -233,7 +235,7 @@ The Evidence Assistant uses the signed-in user's own AI configuration (see *Acco
 │   ├── aop_ke_mie_ao.tsv, aop_ke_ker.tsv, aop_ke_ec.tsv   # AOP events, KERs, event components
 │   ├── aopwiki_licence_filter.json    # Record of AOP-Wiki content removed for licence reasons
 │   └── aops/                          # Cached AOP text excerpts
-├── tests/                             # Grounding guards, characterisation, sanitisation, accounts, AI configuration, licensing, Word export, HTTP security
+├── tests/                             # Grounding guards, characterisation, sanitisation, accounts, AI configuration, licensing, Word export, HTTP security, hardening
 ├── .github/workflows/                 # pytest and pip-audit on every push
 ├── requirements.txt, requirements-dev.txt
 └── LICENSE                            # AGPL-3.0
@@ -279,12 +281,18 @@ There is no server-wide AI key. Each user opens *AI configuration* and adds thei
 
 ## Deployment security
 
-- **Authentication:** every page and API route requires a signed-in session, except the sign-in flow, `/api/health` and `/robots.txt` (see *Accounts and AI configuration*). Serve over HTTPS only.
-- **Cross-site requests:** state-changing requests whose `Origin` is not the site's own are refused (403); session cookies are `HttpOnly`, `SameSite=Lax` and, over https, `__Host-` prefixed and `Secure`.
+To report a vulnerability, see [SECURITY.md](SECURITY.md).
+
+- **Authentication:** every page and API route requires a signed-in session, except the sign-in flow, `/api/health` and `/robots.txt` (see *Accounts and AI configuration*). Serve over HTTPS only; over https the server sends `Strict-Transport-Security`.
+- **Cross-site requests:** state-changing requests whose `Origin` is not the site's own are refused (403), as are those a browser marks `Sec-Fetch-Site: cross-site` or `same-site`. In production only the origin of `APP_URL` is accepted. Session cookies are `HttpOnly`, `SameSite=Lax` and, over https, `__Host-` prefixed and `Secure`.
 - **CORS:** off by default (the UI is same-origin). To allow other origins, set `KEVIDENCE_CORS_ORIGINS` to a comma-separated list.
+- **Outbound requests (SSRF):** the two URLs a user can make the server fetch, dossier URLs and custom AI endpoints, go through `netguard.py`. Loopback, link-local (cloud metadata), private, carrier-grade NAT and reserved addresses are refused, including IPv4 addresses hidden in IPv6 ones; every redirect hop is checked again; and the connection goes to the address that was checked, so a DNS answer that changes between check and connection (DNS rebinding) cannot reach an internal service. Set `KEVIDENCE_FETCH_PORTS` (e.g. `80,443`) to restrict the ports. Behind an outbound proxy (`HTTPS_PROXY`) the proxy resolves names, so restrict internal destinations there too.
+- **Request size:** bodies over the limit of their route are refused with 413 before they are buffered: 16 MB by default (`KEVIDENCE_MAX_BODY_MB`), one PDF of 25 MB for sanitisation, 200 MB per characterisation (`KEVIDENCE_MAX_TOTAL_BYTES`, uploads plus URLs), 400 MB per dossier for intake. Set the reverse proxy's limit to match what you want to allow.
+- **Rate limits:** per signed-in user (per address before sign-in; per /64 for IPv6): 600 requests a minute overall, 60 document jobs and 120 assistant questions per 10 minutes, 30 calls per 10 minutes that contact a user-supplied AI endpoint. At most 2 document jobs run at once per user and 6 overall (`KEVIDENCE_HEAVY_PER_USER`, `KEVIDENCE_HEAVY_TOTAL`). Over the limit the answer is 429 with `Retry-After`. Override with `KEVIDENCE_RATE_GENERAL`, `_HEAVY`, `_AI`, `_OUTBOUND` as `requests/seconds`; `KEVIDENCE_RATE_LIMIT=off` disables them. Limits are in memory and per process: they stop one abusive client, not a distributed flood. Put a WAF or the proxy's own limits in front for that.
+- **Hostile documents:** uploads are parsed in memory and never written to the application's directories. DOCX, XLSX and ZIP files that would expand beyond their limits (decompression bombs) are refused; PDFs are capped in pages; page previews are capped in pixels; spreadsheet XML is parsed with `defusedxml`. The PDF libraries (PyMuPDF, pypdf) parse untrusted input in the server process: keep them updated (Dependabot and `pip-audit` are configured) and run the service as an unprivileged user with a memory limit (systemd `MemoryMax=`, or a container limit), so a parser bug or an oversized job ends that process instead of the host.
 - **Static files:** only files inside `static/` are served; absolute paths, `..` traversal (including percent-encoded), symlinks leading out and dotfiles are refused (`tests/test_server_security.py`).
-- **Headers:** `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin` on every response (URLs, including sign-in links, never leave the site); `Cache-Control: no-store` on API and sign-in responses. The interactive API docs (`/docs`, `/openapi.json`) are disabled.
-- **Paths:** `KEVIDENCE_HOME` (default `/var/www/kevidence`) sets where `data/` and `static/` are read from; `KEVIDENCE_STATE_DIR` (default `$KEVIDENCE_HOME/data/state`) holds `accounts.db` (users, sessions, activity, encrypted AI keys). Back it up; never commit it.
+- **Headers:** `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, `Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy: same-origin` on every response (URLs, including sign-in links, never leave the site); `Cache-Control: no-store` on API and sign-in responses. The interactive API docs (`/docs`, `/openapi.json`) are disabled. The policy still allows inline scripts, because the single-page UI uses them; the UI therefore escapes everything it renders, including AI answers and document text.
+- **Paths:** `KEVIDENCE_HOME` (default `/var/www/kevidence`) sets where `data/` and `static/` are read from; `KEVIDENCE_STATE_DIR` (default `$KEVIDENCE_HOME/data/state`) holds `accounts.db` (users, sessions, activity, encrypted AI keys). The directory is created readable by the service user only. Back it up; never commit it. API answers do not reveal server paths.
 
 ### Reverse proxy
 
@@ -296,7 +304,7 @@ location / {
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
-    client_max_body_size 30m;
+    client_max_body_size 30m;   # raise it to upload whole dossiers for intake (the application accepts up to 400 MB)
 }
 ```
 
@@ -308,20 +316,20 @@ Set `APP_URL` to exactly the address in the browser (e.g. `https://kevidence.exa
 
 **Activity log:** each user sees their own sign-ins, analyses, exports, AI calls and configuration changes. Administrators listed in `KEVIDENCE_ADMIN_EMAILS` can see everyone's. Document content, questions and keys are never logged.
 
-**AI configuration** works like ICDT_AISH's model targets. Each user saves one or more models: provider (OpenAI, Anthropic, Mistral AI, DeepSeek, Fireworks AI, OpenRouter, or an on-premises OpenAI-compatible endpoint), model identifier, optional endpoint and key. The saved models are listed with their URL and key hint, plus *Use*, *Test* and *Delete* buttons. The model marked *In use* serves every AI feature, so switching lets you compare answers, and the activity log records which model answered each call. A key is entered once per provider: leave it blank when adding another model of the same provider and the saved key is reused. Keys are encrypted with AES-256-GCM, bound to the user, and shown only as `****abcd`. *Load models* lists what the key can use (Fireworks' model list may not be available; type the id). User-supplied endpoints are checked against SSRF: loopback, link-local, metadata and (unless allowed) private addresses are refused. OpenRouter forwards your text to the provider of the chosen model.
+**AI configuration** works like ICDT_AISH's model targets. Each user saves one or more models: provider (OpenAI, Anthropic, Mistral AI, DeepSeek, Fireworks AI, OpenRouter, or an on-premises OpenAI-compatible endpoint), model identifier, optional endpoint and key. The saved models are listed with their URL and key hint, plus *Use*, *Test* and *Delete* buttons. The model marked *In use* serves every AI feature, so switching lets you compare answers, and the activity log records which model answered each call. A key is entered once per provider: leave it blank when adding another model of the same provider and the saved key is reused. Keys are encrypted with AES-256-GCM, bound to the user, and shown only as `****abcd`. *Load models* lists what the key can use (Fireworks' model list may not be available; type the id). User-supplied endpoints are checked against SSRF (see *Deployment security*): loopback, link-local, metadata and (unless allowed) private addresses are refused. OpenRouter forwards your text to the provider of the chosen model.
 
 | Variable | Needed | Purpose |
 |---|---|---|
 | `KEVIDENCE_ENV=production` | production | Refuses to start unless the three settings below are safe. |
 | `APP_URL` | production | Public `https://` URL, including any path prefix. Links and redirects are built from it, never from the `Host` header. |
-| `KEVIDENCE_SECRET_KEY` | production | Long random string. Encrypts stored AI keys and keys the IP hashes in the activity log. In development a random key is generated in the state directory. |
+| `KEVIDENCE_SECRET_KEY` | production | Long random string (32 characters or more; `python -c "import secrets; print(secrets.token_urlsafe(48))"`). Encrypts stored AI keys and keys the IP hashes in the activity log. In development a random key is generated in the state directory. |
 | `RESEND_API_KEY` (+ `MAIL_FROM`) | one mail transport | Send sign-in links through Resend. |
 | `SMTP_HOST`, `SMTP_PORT` (587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_TLS` (`starttls`/`ssl`/`none`) (+ `MAIL_FROM`) | one mail transport | Send through an SMTP server, e.g. an institutional relay. Used when `RESEND_API_KEY` is not set. |
 | `KEVIDENCE_ADMIN_EMAILS` | optional | Comma-separated administrator emails (activity of all users). |
 | `TRUST_PROXY=1` | behind a reverse proxy | Take the client IP from the last `X-Forwarded-For` hop. |
 | `KEVIDENCE_ALLOW_PRIVATE_ENDPOINTS=1` | on-premises models | Allow AI endpoints on private networks (and plain http). |
 | `KEVIDENCE_AI_TIMEOUT` | optional | Seconds per AI call (default 90). |
-- **Dependencies:** no frontend frameworks or CDN scripts; Python dependencies are pinned and checked with `pip-audit` in CI.
+- **Dependencies:** no frontend frameworks or CDN scripts; Python dependencies are pinned and checked with `pip-audit` in CI on every push and weekly; Dependabot proposes updates.
 
 ## Optional data imports
 
@@ -486,7 +494,7 @@ Important limitations:
 Recommended checks before opening a pull request:
 
 ```bash
-python -m py_compile server.py accounts.py ai.py completeness.py characterisation.py sanitisation.py scripts/import_openfoodtox.py scripts/import_epa_bioactivity.py scripts/make_sanitisation_demo.py scripts/make_completeness_demo.py scripts/filter_aopwiki_licences.py
+python -m py_compile server.py accounts.py ai.py netguard.py limits.py completeness.py characterisation.py sanitisation.py scripts/import_openfoodtox.py scripts/import_epa_bioactivity.py scripts/make_sanitisation_demo.py scripts/make_completeness_demo.py scripts/filter_aopwiki_licences.py
 python -m pip install -r requirements-dev.txt
 python -m pytest -q tests
 ```
