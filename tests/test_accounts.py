@@ -34,6 +34,9 @@ def test_sign_in_page_introduces_the_project(anon_client):
     assert 'action="http://127.0.0.1:3457/auth/email"' in page and 'name="email"' in page
     for text in ("Sign in to try it", "Contribute", "Grounded, not generative", "GNU AGPL v3", "github.com/devalier/KEvidence"):
         assert text in page
+    assert "European public regulations and standards" in page
+    assert "without the endorsement of any public administration or institution" in page
+    assert "EFSA" not in page
     assert "&lt;x&gt;" in accounts.sign_in_page("<x>")  # error text is escaped
 
 

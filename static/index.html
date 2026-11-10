@@ -390,11 +390,12 @@
           <div><label for="compType">Type of application</label><select id="compType"><option value="new">New additive / new use (Art. 4)</option><option value="modification">Modification of an authorisation (Art. 13)</option><option value="renewal">Renewal of an authorisation (Art. 14)</option></select></div>
           <div><label for="compApplicant">Applicant (stays public)</label><input id="compApplicant" placeholder="Legal entity named in the application form" maxlength="300"></div>
           <div><label for="compPreapp">Pre-application ID(s)</label><input id="compPreapp" placeholder="From the notification database, if any" maxlength="400"></div>
+          <div id="compSourceWrap" hidden><label for="compSource">Source of the food enzyme</label><select id="compSource"><option value="auto">Detect from the dossier</option><option value="microbial">Microbial</option><option value="plant">Plant</option><option value="animal">Animal</option></select></div>
         </div>
         <label for="compStudies" style="margin-top:10px">Study IDs notified in EFSA's database for this application (one per line or comma-separated)</label>
         <textarea id="compStudies" style="min-height:60px" placeholder="Lets KEvidence verify that every notified study is in the dossier (Art. 22(3) of the pre-submission arrangements)"></textarea>
         <div class="actions"><button class="primary" id="compRunBtn" disabled>Check completeness</button><span class="muted" id="compHint" style="align-self:center">Add the dossier first.</span></div>
-        <div class="warning-box">The dossier is processed in memory for one request and is not stored; the checks run locally (no AI). The feed-additive checklist is grounded in the 2018 public-consultation draft of EFSA's administrative guidance — confirm file naming and structure against the current guidance. Other domains get the format, study-notification, confidentiality and personal-data checks.</div>
+        <div class="warning-box">The dossier is processed in memory for one request and is not stored; the checks run locally (no AI). Checklists loaded: <strong>feed additives</strong> (completeness checklist, grounded in the 2018 public-consultation draft of EFSA's administrative guidance) and <strong>food enzymes</strong> (suitability checklist, Appendix A to EN-6509, with each row quoting the 2021 draft of the CEP scientific guidance) — confirm wording against the current versions. Other domains get the format, study-notification, confidentiality and personal-data checks.</div>
       </div>
       <div class="panel" id="compOutput" hidden></div>
     </section>
@@ -1191,7 +1192,17 @@ async function loadDomains() {
     applyDomain();
   } catch (e) { $('domainGrid').innerHTML = `<div class="muted">Domains unavailable: ${escapeHtml(e.message)}</div>`; }
 }
+function applyCompletenessDomain() {
+  const enz = state.domain === 'food-enzymes';
+  const labels = enz ? { new: 'New food enzyme (Part A)', modification: 'Modification / extension of use (Part B)' }
+    : { new: 'New additive / new use (Art. 4)', modification: 'Modification of an authorisation (Art. 13)', renewal: 'Renewal of an authorisation (Art. 14)' };
+  const current = $('compType').value;
+  $('compType').innerHTML = Object.entries(labels).map(([k, v]) => `<option value="${k}">${escapeHtml(v)}</option>`).join('');
+  $('compType').value = labels[current] ? current : 'new';
+  $('compSourceWrap').hidden = !enz;
+}
 function applyDomain() {
+  applyCompletenessDomain();
   const info = state.domainInfo?.[state.domain] || { label: state.domain, grounded: false };
   document.querySelectorAll('.domain-card').forEach(b => b.classList.toggle('selected', b.dataset.domain === state.domain));
   $('domainChip').textContent = `Domain: ${info.label}${info.grounded ? ' ✓' : ''}`;
@@ -1784,7 +1795,7 @@ async function runCompleteness() {
   try {
     const res = await fetch(`${API_BASE}/completeness/check`, { method: 'POST', body: compFormData({
       domain: state.domain, application_type: $('compType').value, applicant: fieldValue('compApplicant'), dossier_ref: fieldValue('compRef'),
-      pre_application_ids: fieldValue('compPreapp'), notified_study_ids: $('compStudies').value }) });
+      pre_application_ids: fieldValue('compPreapp'), notified_study_ids: $('compStudies').value, enzyme_source: $('compSource').value }) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
     state.completeness = data;
@@ -1808,6 +1819,9 @@ function renderCompleteness() {
     <div class="comp-verdict ${d.verdict}">${escapeHtml(label)}<div style="font-weight:400;font-size:13px;margin-top:4px">Blocking ${c.blocking} · Warnings ${c.warnings} · To review ${c.review} · Passed ${c.ok}</div></div>
     <div class="actions" style="margin-top:0"><button class="primary" id="compLetterBtn">Download request for missing information (.md)</button><button class="secondary" id="compReportBtn">Download check report (.md)</button><button class="secondary" id="compCopyLetterBtn">Copy letter</button></div>
     ${(d.notes || []).length ? `<div class="muted" style="margin-top:8px">${d.notes.map(escapeHtml).join('<br>')}</div>` : ''}
+    ${d.enzyme && d.enzyme.part ? `<div class="muted" style="margin-top:8px"><span class="badge">Food enzyme</span>Checked as <strong>Part ${d.enzyme.part === 'A' ? 'A — new food enzyme' : 'B — modification of an existing authorisation'}</strong>, source <strong>${escapeHtml(d.enzyme.origin)}</strong>${d.enzyme.origin_detected ? ' (detected from the dossier; set it in Step 1 if wrong)' : ''}.</div>` : ''}
+    ${d.applicant_checklist ? `<details style="margin-top:10px"><summary><strong>Applicant's checklist</strong> — ${d.applicant_checklist.counts.provided} provided · ${d.applicant_checklist.counts['not provided']} not provided · ${d.applicant_checklist.counts['not relevant']} not relevant <span class="muted">(${escapeHtml(d.applicant_checklist.file.split('/').pop())})</span></summary>
+      <table class="sample-table comp-table" style="margin-top:6px"><tbody>${d.applicant_checklist.rows.map(r => `<tr><td style="width:120px">${r.answer === 'provided' ? '<span class="chip ok">PROVIDED</span>' : r.answer === 'not relevant' ? '<span class="chip review">NOT RELEVANT</span>' : `<span class="chip fail-warning">${escapeHtml(r.answer.toUpperCase())}</span>`}</td><td class="ev" style="color:var(--text)">${escapeHtml(r.item)}</td></tr>`).join('')}</tbody></table></details>` : ''}
     ${Object.entries(groups).map(([cat, rows]) => `<h3>${escapeHtml(cat)}</h3><table class="sample-table comp-table"><tbody>
       ${rows.sort((a, b) => order[a.status] - order[b.status]).map(r => `<tr><td style="width:96px">${chip(r)}</td><td><strong>${escapeHtml(r.title)}</strong><br><span class="muted">${escapeHtml(r.detail)}</span></td>
         <td class="ev">${ev(r)}</td><td class="ev" style="width:190px" title="${escapeHtml(r.citation.quote)}">${escapeHtml(r.citation.source)}<br>${escapeHtml(r.citation.section)}, p.${r.citation.page}</td></tr>`).join('')}

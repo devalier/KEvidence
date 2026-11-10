@@ -41,7 +41,7 @@ def _failing(result, severity):
 
 # --- Grounding ---------------------------------------------------------------
 
-@pytest.mark.parametrize("index", [0, 1])
+@pytest.mark.parametrize("index", [0, 1, 2])
 def test_every_rule_is_anchored_and_verbatim_on_cited_page(rules, index):
     src = rules["sources"][index]
     g = src["catalogue"]["guidance"]
@@ -112,7 +112,7 @@ def test_bundled_demo_matches_generator():
 # --- Other domains, renewals ---------------------------------------------------------------
 
 def test_other_domain_gets_generic_checks_only(rules):
-    r = cm.check_dossier([("demo.zip", build_demo_zip())], rules, domain="food-enzymes", application_type="new")
+    r = cm.check_dossier([("demo.zip", build_demo_zip())], rules, domain="pesticides", application_type="new")
     by_rule = {}
     for item in r["results"]:
         by_rule.setdefault(item["rule_id"], []).append(item["status"])
@@ -179,7 +179,7 @@ def test_api_check_file_and_rules(client):
     assert client.post("/api/completeness/check", files={"files": ("demo.zip", data, "application/zip")},
                        data={"application_type": "bogus"}).status_code == 400
     sources = client.get("/api/completeness/rules").json()["sources"]
-    assert all(not s["broken"] for s in sources) and len(sources) == 3
+    assert all(not s["broken"] for s in sources) and len(sources) == 4
     events = [e["event"] for e in client.get("/api/activity").json()["events"]]
     assert "completeness.checked" in events
 
@@ -187,3 +187,63 @@ def test_api_check_file_and_rules(client):
 def test_assistant_refuses_unrelated_questions(client):
     r = client.post("/api/chat", json={"message": "Who won the football?", "context": {"workflow_step": "completeness"}}).json()
     assert r["no_data"]
+
+
+# --- Food enzymes: suitability checklist (Appendix A to EN-6509), Part A / Part B ---------------------------
+
+ACME = ROOT / "docs" / "demo" / "Demo_Synthetic_Dossier.zip"
+
+
+@pytest.fixture(scope="module")
+def acme_uploads():
+    if not ACME.exists():
+        pytest.skip("Acme demo dossier not present")
+    z = zipfile.ZipFile(ACME)
+    return [("FEN/" + i.filename, z.read(i)) for i in z.infolist() if not i.is_dir() and not i.filename.startswith("Documentation/")]
+
+
+def _by_rule(result):
+    out = {}
+    for i in result["results"]:
+        out.setdefault(i["rule_id"], []).append(i)
+    return out
+
+
+def test_enzyme_extension_of_use_is_checked_against_part_b(rules, acme_uploads):
+    r = cm.check_dossier(acme_uploads, rules, domain="food-enzymes", application_type="modification", applicant="Acme Enzymatic srl")
+    assert r["enzyme"] == {"part": "B", "origin": "microbial", "origin_detected": True}
+    by = _by_rule(r)
+    for rid in ("FE-IDENTITY", "FE-5.1-INTENDED-USE", "FE-5.4-EXPOSURE", "FE-B-REFERENCE", "FE-B-SOURCE-UNCHANGED"):
+        assert by[rid][0]["status"] == "ok", rid
+    assert by["FE-1.1-WGS"][0]["status"] == "not_applicable"
+    assert r["counts"]["blocking"] == 0 and r["verdict"] == "complete_with_warnings"
+    refs = next(i for i in r["results"] if i["title"].startswith("Copies of bibliographic references"))
+    assert refs["status"] == "fail" and "declares" in refs["detail"]  # ticked as provided, only a list is in the package
+    assert [p["file"].rsplit("/", 1)[-1] for p in r["personal_data"]] == ["Cover_letter.pdf"]
+
+
+def test_enzyme_part_a_lists_the_missing_underlying_data(rules, acme_uploads):
+    r = cm.check_dossier(acme_uploads, rules, domain="food-enzymes", application_type="new")
+    by = _by_rule(r)
+    failing = {rid for rid, items in by.items() if rid.startswith("FE-") and any(i["status"] == "fail" and i["severity"] == "blocking" for i in items)}
+    assert failing == {"FE-1.1-WGS", "FE-1.1-TAXONOMY", "FE-1.2-PRODUCTION", "FE-1.3-PROPERTIES", "FE-1.3-COMPOSITION", "FE-4.1-TOX"}
+    assert by["FE-2.1-PLANT-SOURCE"][0]["status"] == "not_applicable" and by["FE-B-REFERENCE"][0]["status"] == "not_applicable"
+
+
+def test_applicant_checklist_ticks_are_read(rules, acme_uploads):
+    r = cm.check_dossier(acme_uploads, rules, domain="food-enzymes", application_type="modification")
+    ac = r["applicant_checklist"]
+    assert ac["file"].endswith("Suitability_checklist.pdf")
+    assert ac["counts"] == {"provided": 28, "not provided": 0, "not relevant": 128, "none": 0, "several": 0}
+    assert any(row["item"].endswith("Accepted name as recognised by IUBMB") and row["answer"] == "provided" for row in ac["rows"])
+
+
+def test_checklist_parser_and_enzyme_origin():
+    f = cm.DossierFile(path="cl.pdf", data=b"", ext=".pdf", size=0,
+                       pages=["Format requirements\nAll files are searchable\n☒\n☐\n☐\nCopy of the references\n☐ ☒ ☐\nItem without answer\n☐ ☐ ☐"])
+    assert [(r["item"], r["answer"]) for r in cm.parse_checklist(f)] == [
+        ("Format requirements All files are searchable", "provided"), ("Copy of the references", "not provided"),
+        ("Item without answer", "none")]
+    assert cm.enzyme_origin(["Papain extracted from the latex of papaya fruit"]) == "plant"
+    assert cm.enzyme_origin(["Pancreatin from porcine pancreas tissue"]) == "animal"
+    assert cm.enzyme_origin(["produced by fermentation of Bacillus licheniformis"]) == "microbial"

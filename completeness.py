@@ -33,7 +33,8 @@ import characterisation as charmod
 import sanitisation as sanmod
 
 INTAKE_DIR = charmod.GUIDANCE_ROOT / "intake"
-CATALOGUES = ("efsa_feed_completeness_checklist_rules.json", "efsa_2021_pa_presubmission_rules.json")
+CATALOGUES = ("efsa_feed_completeness_checklist_rules.json", "efsa_2021_pa_presubmission_rules.json",
+              "efsa_food_enzyme_suitability_rules.json")
 STEP = "completeness"
 
 MAX_FILES = 300
@@ -209,7 +210,7 @@ ROLE_NAME_RULES = [
     ("confinfo", r"conf_?info|list.{0,5}(of)?.{0,5}confidential|confidential.{0,5}(parts|list)"),
     ("cover_letter", r"efsa_?letter|cover.?letter"),
     ("application_form", r"^annex_?i(?![iv_\d])|application.?form"),
-    ("cclist", r"cc_?list|completeness.?check"),
+    ("cclist", r"cc_?list|completeness.?check|suitability.?check"),
     ("contact", r"^contact|contact.?details"),
     ("pubsum", r"pub_?sum|public.?summary"),
     ("scsum", r"sc_?sum|scientific.?summary"),
@@ -225,7 +226,7 @@ CONTENT_ROLE_RULES = [
     ("scsum", re.compile(r"^\s*(1\.2\.?\s*)?scientific\s+summary\b", re.I | re.M)),
     ("listdoc", re.compile(r"^\s*(1\.3\.?\s*)?list\s+of\s+documents\b", re.I | re.M)),
     ("confinfo", re.compile(r"^\s*(1\.4\.?\s*)?list\s+of\s+(the\s+)?(parts|volumes)[^\n]{0,40}confidential", re.I | re.M)),
-    ("cclist", re.compile(r"completeness\s+check\s*list", re.I)),
+    ("cclist", re.compile(r"(completeness|suitability)\s+check\s*list", re.I)),
     ("application_form", re.compile(r"application\s+for\s+(the\s+)?authori[sz]ation[^\n]{0,80}(1831/2003|feed\s+additive)", re.I)),
     ("cover_letter", re.compile(r"^\s*(dear\s+(sir|madam|colleague)|subject\s*:)", re.I | re.M)),
     ("sect_II", re.compile(r"^\s*section\s+ii\b(?!i)", re.I | re.M)),
@@ -346,6 +347,134 @@ def _shingles(text: str, n: int = 10) -> set[tuple[str, ...]]:
     return {tuple(words[i:i + n]) for i in range(0, max(0, len(words) - n + 1))}
 
 
+# --- Food enzymes (suitability checklist, Appendix A to EN-6509) -------------------------------------
+ENZYME_ORIGIN_CUES = {
+    "microbial": re.compile(r"\b(Bacillus|Aspergillus|Trichoderma|Streptomyces|Saccharomyces|Pichia|Komagataella|Escherichia|"
+                            r"Rhizopus|Penicillium|Kluyveromyces|production strain|fermentation)\b", re.I),
+    "plant": re.compile(r"\b(papain|bromelain|ficin|papaya|pineapple|latex|malted|barley|plant source)\b", re.I),
+    "animal": re.compile(r"\b(pancrea\w*|rennet|chymosin from calf|abomas\w*|porcine|bovine|animal tissue)\b", re.I),
+}
+TOX_WAIVER_RE = re.compile(r"(waiv\w*|exempt\w*|not\s+(be\s+)?(required|needed|necessary)|no\s+need)[^.]{0,120}(toxic|testing|studies)"
+                           r"|(toxic\w*\s+(testing|studies|data))[^.]{0,80}(waiv|not\s+(required|needed|necessary)|exempt)", re.I)
+GENOTOX_RE = re.compile(r"OECD\s*(TG\s*)?47[1-9]|OECD\s*(TG\s*)?48[0-9]|\bAmes\b|reverse\s+mutation|micronucleus", re.I)
+SUBCHRONIC_RE = re.compile(r"OECD\s*(TG\s*)?408|90-?\s*day|sub-?chronic", re.I)
+
+
+def enzyme_origin(texts: list[str]) -> str:
+    joined = "\n".join(texts)
+    counts = {k: len(r.findall(joined)) for k, r in ENZYME_ORIGIN_CUES.items()}
+    best = max(counts, key=counts.get)
+    return best if counts[best] else "microbial"
+
+
+def _find(files: list["DossierFile"], pattern: str) -> Optional[tuple["DossierFile", int]]:
+    rx = re.compile(pattern, re.I)
+    for f in files:
+        for i, page in enumerate(f.pages, 1):
+            if rx.search(page):
+                return f, i
+    return None
+
+
+BOX_RE = re.compile(r"[☐☒☑✓✔■□]")
+CHECKLIST_NOISE = re.compile(r"^(PROVIDED|NOT|RELEVANT|NOT\s+PROVIDED.*|PROVIDED\s+NOT.*|EFSA COMMENTS|FOR EFSA USE|INFORMATION|"
+                             r"Comments.*|Click or tap.*|For EFSA use.*|\d+|www\.efsa.*|(Food|Feed)[^\n]{0,40}-\s*Appendix [A-C]|EFSA Supporting publication.*|"
+                             r"SYNTHETIC PROTOTYPE.*)$", re.I)
+
+
+TICKED = "☒☑✓✔■"
+ANSWERS = ("provided", "not provided", "not relevant")
+
+
+def _parse_checklist_pdf(data: bytes) -> list[dict[str, str]]:
+    """Positional reading of a filled-in EFSA checklist PDF. Tick boxes are grouped into rows by height; a box's column is its
+    left-to-right order (provided / not provided / not relevant; any further column is for EFSA's use). EFSA's templates
+    start each row with a bullet, so a row's text is everything from its bullet to the next one; where a bullet segment holds
+    several box rows, each line goes to the nearest. Section headings and comment boxes (further left) are skipped."""
+    rows: list[dict[str, str]] = []
+    doc = pymupdf.open(stream=data, filetype="pdf")
+    try:
+        for page in doc:
+            boxes, lines, bullets = [], [], []
+            for block in page.get_text("dict")["blocks"]:
+                for line in block.get("lines", []):
+                    text = "".join(sp["text"] for sp in line["spans"])
+                    for sp in line["spans"]:
+                        for i, ch in enumerate(sp["text"]):
+                            if ch in TICKED or ch in "☐□":
+                                boxes.append((sp["bbox"][1], sp["bbox"][0] + i, ch in TICKED))
+                    raw = BOX_RE.sub("", text).strip()
+                    clean = re.sub(r"[\ue000-\uf8ff•▪]", "", raw).strip()
+                    y, x = line["bbox"][1], line["bbox"][0]
+                    if raw and not clean and x < 80:
+                        bullets.append(y)
+                    elif clean and not CHECKLIST_NOISE.match(clean):
+                        lines.append((y, x, clean))
+            if not boxes:
+                continue
+            boxes.sort()
+            groups: list[list] = []
+            for b in boxes:
+                if groups and abs(b[0] - groups[-1][0][0]) < 8:
+                    groups[-1].append(b)
+                else:
+                    groups.append([b])
+            first_box_x = min(b[1] for b in boxes)
+            body = sorted((y, x, t) for y, x, t in lines if 66 <= x < first_box_x - 4)
+            centres = [sum(b[0] for b in g) / len(g) for g in groups]
+            # Rows continued from the previous page have no bullet: everything above the first bullet is one more segment.
+            # A sub-item starting with a dash also starts a row.
+            dashes = [y for y, x, t in body if x < 90 and t[:1] in "-–"]
+            starts = [-1e6] + sorted(set(bullets + dashes))
+            texts: dict[int, list[str]] = {gi: [] for gi in range(len(groups))}
+            for y, x, t in body:
+                seg = max(i for i, s0 in enumerate(starts) if s0 - 4 <= y)
+                lo, hi = starts[seg] - 6, (starts[seg + 1] - 4) if seg + 1 < len(starts) else 10 ** 6
+                candidates = [gi for gi, c in enumerate(centres) if lo <= c < hi] or list(range(len(groups)))
+                texts[min(candidates, key=lambda gi: abs(centres[gi] - y))].append(t)
+            for gi, g in enumerate(groups):
+                g.sort(key=lambda b: b[1])
+                ticked = [i for i, b in enumerate(g[:3]) if b[2]]
+                if len(g) == 2:  # provided / for EFSA use
+                    answer = "provided" if g[0][2] else "none"
+                else:
+                    answer = ANSWERS[ticked[0]] if len(ticked) == 1 else ("none" if not ticked else "several")
+                rows.append({"item": re.sub(r"\s+", " ", " ".join(texts[gi]))[:220] or "(row text not read)", "answer": answer})
+    finally:
+        doc.close()
+    return rows
+
+
+def parse_checklist(f: "DossierFile") -> list[dict[str, str]]:
+    """Rows of a filled-in EFSA checklist: the text of each row and the box ticked (provided / not provided / not relevant).
+    PDFs are read by position; other formats by reading order (the boxes follow each row's text)."""
+    if f.is_pdf and f.data:
+        try:
+            return _parse_checklist_pdf(f.data)
+        except Exception:
+            pass
+    rows, buf, boxes = [], [], []
+    for line in f.text.splitlines():
+        ticks = BOX_RE.findall(line)
+        raw = BOX_RE.sub("", line).strip()
+        text = re.sub(r"[\ue000-\uf8ff•▪]", "", raw).strip()
+        if raw and not text and boxes:   # a bullet on its own line starts the next row
+            buf, boxes = [], []
+        if text and not ticks and not CHECKLIST_NOISE.match(text):
+            if boxes:
+                buf, boxes = [], []
+            buf.append(text)
+        if ticks:
+            boxes.extend(ticks)
+            if len(boxes) >= 3 and buf:
+                three = boxes[:3]
+                ticked = [i for i, b in enumerate(three) if b in "☒☑✓✔■"]
+                label = ("provided", "not provided", "not relevant")[ticked[0]] if len(ticked) == 1 else ("none" if not ticked else "several")
+                rows.append({"item": re.sub(r"\s+", " ", " ".join(buf))[-220:], "answer": label})
+                buf, boxes = [], []
+    return rows
+
+
 class _Results:
     def __init__(self, rules: dict, domain: str, app_type: str):
         self.rules, self.domain, self.app_type = rules, domain, app_type
@@ -371,7 +500,7 @@ class _Results:
 
 def run_checks(files: list[DossierFile], rules: dict, *, domain: str = "feed", application_type: str = "new",
                applicant: str = "", pre_application_ids: list[str] = (), notified_study_ids: list[str] = (),
-               sector: str = "c", scan_personal_data: bool = True) -> dict[str, Any]:
+               sector: str = "c", scan_personal_data: bool = True, enzyme_source: str = "auto") -> dict[str, Any]:
     R = _Results(rules, domain, application_type)
     readable = [f for f in files if not f.error]
     by_role: dict[str, list[DossierFile]] = {}
@@ -541,6 +670,80 @@ def run_checks(files: list[DossierFile], rules: dict, *, domain: str = "feed", a
                   [ev(src, page)], title=f"{num} {label}", severity="info")
     R.add("CC-OMISSION-JUSTIFIED", "info", "Omissions marked “justified” above need the officer's judgement.")
 
+    # --- Food enzymes: suitability checklist (Part A new enzyme / Part B modification) ------------------
+    enzyme = {}
+    if domain == "food-enzymes":
+        evidence_files = [f for f in readable if f.role != "cclist"]
+        part = "B" if application_type in ("modification", "renewal") else "A"
+        origin = enzyme_source if enzyme_source in ENZYME_ORIGIN_CUES else enzyme_origin([f.text for f in evidence_files])
+        enzyme = {"part": part, "origin": origin, "origin_detected": enzyme_source not in ENZYME_ORIGIN_CUES}
+        for src in rules["sources"]:
+            for e in src["catalogue"]["entries"]:
+                if "food-enzymes" not in e.get("domains", []) or e["check"] not in ("fe", "fe_tox"):
+                    continue
+                if part not in e.get("parts", ["A", "B"]):
+                    R.add(e["id"], "not_applicable", f"Part {'A (new food enzyme)' if 'A' in e['parts'] else 'B (modification)'} only.")
+                    continue
+                if e.get("origins") and origin not in e["origins"]:
+                    R.add(e["id"], "not_applicable", f"Applies to enzymes of {', '.join(e['origins'])} origin; this one reads as {origin}.")
+                    continue
+                if e["check"] == "fe_tox":
+                    waiver = _find(evidence_files, TOX_WAIVER_RE.pattern)
+                    geno, sub = _find(evidence_files, GENOTOX_RE.pattern), _find(evidence_files, SUBCHRONIC_RE.pattern)
+                    if geno and sub:
+                        R.add(e["id"], "ok", "Genotoxicity and 90-day studies located.", [ev(geno[0], geno[1]), ev(sub[0], sub[1])])
+                    elif waiver:
+                        R.add(e["id"], "justified", "No complete toxicological data set, but an exemption is claimed: check the conditions "
+                              "of section 4.1 (QPS strain, no concern from the genetic modification or the process).", [ev(waiver[0], waiver[1])])
+                    else:
+                        missing = [n for n, h in (("genotoxicity (OECD TG 471/487)", geno), ("90-day study (OECD TG 408)", sub)) if not h]
+                        R.add(e["id"], "fail", "Not located: " + ", ".join(missing) + "; no exemption claimed.",
+                              [ev(h[0], h[1]) for h in (geno, sub) if h])
+                    continue
+                hits, missing = [], []
+                for group in e.get("patterns", []):
+                    h = _find(evidence_files, "|".join(f"(?:{g})" for g in group))
+                    (hits.append(ev(h[0], h[1])) if h else missing.append(" / ".join(group)[:80]))
+                conditional = e["severity"] == "warning"
+                if not missing:
+                    R.add(e["id"], "ok", "Located.", hits)
+                else:
+                    R.add(e["id"], "fail", ("Not located" + (" (if applicable)" if conditional else "") + ": " + "; ".join(missing)), hits)
+        for e_id in ("FE-OMISSION", "FE-4.3-GENOTOX", "FE-4.4-90DAY"):
+            R.add(e_id, "info", "Reference.")
+
+    # The applicant's own filled-in checklist (feed completeness checklist, enzyme suitability checklist).
+    applicant_checklist = None
+    for f in by_role.get("cclist", []):
+        rows = parse_checklist(f)
+        if not rows:
+            continue
+        counts = {k: sum(r["answer"] == k for r in rows) for k in ("provided", "not provided", "not relevant", "none", "several")}
+        applicant_checklist = {"file": f.path, "counts": counts, "rows": rows}
+        rule = "FE-OMISSION" if domain == "food-enzymes" else "CC-OMISSION-JUSTIFIED"
+        flagged = [r for r in rows if r["answer"] in ("not provided", "none", "several")]
+        R.add(rule, "review" if flagged else "ok",
+              f"The applicant's checklist answers {len(rows)} rows: {counts['provided']} provided, {counts['not provided']} not provided, "
+              f"{counts['not relevant']} not relevant" + (f", {counts['none'] + counts['several']} unanswered or ambiguous" if counts['none'] + counts['several'] else "")
+              + (". Rows declared not provided need a justification in the dossier." if counts["not provided"] else "."),
+              [ev(f) | {"note": f"{r['answer']}: {r['item'][:120]}"} for r in flagged[:12]],
+              title="Applicant's checklist — declared answers", severity="warning" if counts["not provided"] else "info")
+        # Declared versus found: copies of the bibliographic references, one file each.
+        ref_row = next((r for r in rows if re.search(r"cop(y|ies) of (the )?bibliographic references", r["item"], re.I)), None)
+        if ref_row and ref_row["answer"] == "provided":
+            # A reference *list* is named just "References" (or "17_References", "List of references"...); copies of
+            # references carry their own titles.
+            is_list = lambda x: re.fullmatch(r"[\d\W_]*(list\W*of\W*)?(references?|bibliography|literature)(\W*list)?",
+                                             PurePosixPath(x.name).stem.lower()) is not None or x.role == "listdoc"
+            ref_copies = [x for x in readable if x.role == "other" and re.search(r"referen|literature|bibliograph", x.path, re.I)
+                          and not is_list(x)]
+            R.add("CC-STRUCT-ONE-FILE-PER-SECTION", "ok" if ref_copies else "fail",
+                  (f"{len(ref_copies)} reference cop(ies) located." if ref_copies else
+                   "The checklist declares the copies of the bibliographic references provided (\u201c" + ref_row["item"][-110:] +
+                   "\u201d), but only a list of references was found, no copies."),
+                  [ev(f)], title="Copies of bibliographic references — declared vs found", severity="warning")
+        break
+
     # --- Study notifications (Art. 32b GFL; pre-submission arrangements Art. 19-23) ----------------
     studies = []
     known_ids = [s.strip() for s in notified_study_ids if s.strip()]
@@ -632,7 +835,7 @@ def run_checks(files: list[DossierFile], rules: dict, *, domain: str = "feed", a
         "verdict": "incomplete" if blocking else "complete_with_warnings" if warnings or reviews else "complete",
         "counts": {"blocking": len(blocking), "warnings": len(warnings), "review": len(reviews),
                    "ok": sum(1 for i in R.items if i["status"] == "ok")},
-        "results": R.items, "studies": studies, "personal_data": personal,
+        "results": R.items, "studies": studies, "personal_data": personal, "enzyme": enzyme, "applicant_checklist": applicant_checklist,
         # Section roles come from the feed checklist; outside it they would mislabel files (e.g. a "safety" conclusion).
         "files": [{"path": f.path, "name": f.name, "part": f.part, "role": f.role,
                    "label": "Technical document" if domain != "feed" and f.role.startswith("sect_") else ROLE_LABELS.get(f.role, f.role),
