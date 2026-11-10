@@ -40,6 +40,7 @@ STEP = "completeness"
 MAX_FILES = 300
 MAX_FILE_BYTES = 60 * 1024 * 1024          # read files up to 60 MB so files over the 30 MB rule can be flagged
 MAX_TOTAL_BYTES = 400 * 1024 * 1024
+MAX_TEXT_PAGES = 5000                      # text extraction per file
 MAX_SCAN_PAGES = 250                       # personal-data scan per file
 GUIDANCE_FILE_LIMIT = 30 * 1024 * 1024
 NOTIFICATION_START = date(2021, 3, 27)
@@ -159,7 +160,14 @@ def read_upload(uploads: list[tuple[str, bytes]]) -> tuple[list[DossierFile], li
                     continue
                 if info.filename.lower().endswith(".zip"):
                     notes.append(f"{info.filename}: nested archives are not expanded.")
-                add(info.filename, zf.read(info))
+                try:
+                    member = zf.read(info)
+                except Exception as exc:  # encrypted, corrupt or unsupported member
+                    notes.append(f"{info.filename}: could not be read from the archive ({type(exc).__name__}).")
+                    files.append(DossierFile(path=_safe_path(info.filename), data=b"", ext=PurePosixPath(info.filename).suffix.lower(),
+                                             size=info.file_size, error="unreadable in the archive"))
+                    continue
+                add(info.filename, member)
         else:
             add(name, data)
     if not files:
@@ -192,6 +200,8 @@ def _read_text(f: DossierFile) -> None:
                 if blocked:
                     f.restricted = "security settings prevent " + " and ".join(blocked)
             for page in doc:
+                if page.number >= MAX_TEXT_PAGES:
+                    break
                 text = page.get_text("text")
                 f.pages.append(text)
                 if len(text.strip()) < 20:
@@ -926,15 +936,16 @@ def check_dossier(uploads: list[tuple[str, bytes]], rules: dict, **kw) -> dict[s
 
 def extract_file(uploads: list[tuple[str, bytes]], path: str) -> tuple[str, bytes]:
     """One file of the uploaded dossier (e.g. to sanitise it), looked up by its normalised path."""
-    files, _ = read_upload_raw(uploads)
+    files, _ = read_upload_raw(uploads, _safe_path(path))
     for f in files:
         if f.path == _safe_path(path):
             return f.name, f.data
     raise CompletenessError("File not found in the dossier.")
 
 
-def read_upload_raw(uploads: list[tuple[str, bytes]]) -> tuple[list[DossierFile], list[str]]:
-    """read_upload without text extraction or classification (fast path for extract_file)."""
+def read_upload_raw(uploads: list[tuple[str, bytes]], wanted: str) -> tuple[list[DossierFile], list[str]]:
+    """The file at path `wanted`, without text extraction or classification (extract_file). Only that
+    member of an archive is expanded, not the whole dossier."""
     files: list[DossierFile] = []
     for name, data in uploads:
         if name.lower().endswith(".zip"):
@@ -943,11 +954,14 @@ def read_upload_raw(uploads: list[tuple[str, bytes]]) -> tuple[list[DossierFile]
             except zipfile.BadZipFile:
                 raise CompletenessError(f"{name}: not a readable ZIP archive.") from None
             infos = [i for i in zf.infolist() if not i.is_dir()]
-            if sum(i.file_size for i in infos) > MAX_TOTAL_BYTES:
+            if sum(i.file_size for i in infos) > MAX_TOTAL_BYTES or len(infos) > MAX_FILES:
                 raise CompletenessError(f"{name}: the archive is too large once expanded.")
             for info in infos:
-                if info.file_size <= MAX_FILE_BYTES:
-                    files.append(DossierFile(path=_safe_path(info.filename), data=zf.read(info), ext="", size=info.file_size))
+                if info.file_size <= MAX_FILE_BYTES and _safe_path(info.filename) == wanted:
+                    try:
+                        files.append(DossierFile(path=wanted, data=zf.read(info), ext="", size=info.file_size))
+                    except Exception:
+                        raise CompletenessError(f"{name}: the file could not be read from the archive.") from None
         else:
             files.append(DossierFile(path=_safe_path(name), data=data, ext="", size=len(data)))
     return files, []

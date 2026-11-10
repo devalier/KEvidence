@@ -80,8 +80,24 @@ def session_cookie_name() -> str:
 def state_dir() -> Path:
     home = Path(os.getenv("KEVIDENCE_HOME", "/var/www/kevidence"))
     d = Path(os.getenv("KEVIDENCE_STATE_DIR") or home / "data" / "state")
-    d.mkdir(parents=True, exist_ok=True)
+    if not d.exists():
+        d.mkdir(parents=True, exist_ok=True)
+        try:
+            os.chmod(d, 0o700)  # accounts, sessions and encrypted keys: the service user only
+        except OSError:
+            pass
     return d
+
+
+def configuration_warnings() -> list[str]:
+    """Weaknesses worth fixing that do not stop the server."""
+    warnings = []
+    key = os.getenv("KEVIDENCE_SECRET_KEY") or ""
+    if production() and 0 < len(key) < 32:
+        warnings.append("KEVIDENCE_SECRET_KEY is shorter than 32 characters; use a long random value "
+                        "(python -c \"import secrets; print(secrets.token_urlsafe(48))\"). Changing it makes "
+                        "users re-enter their AI keys.")
+    return warnings
 
 
 def admin_emails() -> set[str]:
@@ -242,16 +258,26 @@ def ip_hash(ip: str) -> str:
 
 def normalise_email(email: str) -> str:
     email = (email or "").strip().lower()
-    return email if EMAIL_RE.match(email) and len(email) <= 254 else ""
+    # isprintable: no control or invisible characters, which could split mail headers or make two
+    # addresses look the same in the activity log.
+    return email if len(email) <= 254 and email.isprintable() and EMAIL_RE.match(email) else ""
 
 
 # ---------------------------------------------------------------------------
 # Rate limiting (persisted, so a restart does not reset an attacker's budget)
 # ---------------------------------------------------------------------------
 
+_rate_swept = datetime.fromtimestamp(0, timezone.utc)
+
+
 def rate_limited(key: str, limit: int, window_s: int) -> bool:
+    global _rate_swept
     now = _now()
     with _lock, connect() as conn:
+        if (now - _rate_swept).total_seconds() > 3600:
+            # Buckets are keyed by client address: without this the table grows with every address ever seen.
+            conn.execute("DELETE FROM rate_buckets WHERE window_start < ?", (_iso(now - timedelta(days=1)),))
+            _rate_swept = now
         row = conn.execute("SELECT window_start, count FROM rate_buckets WHERE key = ?", (key[:180],)).fetchone()
         if not row or datetime.fromisoformat(row["window_start"]) + timedelta(seconds=window_s) <= now:
             conn.execute("INSERT OR REPLACE INTO rate_buckets (key, window_start, count) VALUES (?, ?, 1)", (key[:180], _iso(now)))

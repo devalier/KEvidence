@@ -15,6 +15,8 @@ os.environ.pop("KEVIDENCE_ENV", None)
 os.environ.pop("APP_URL", None)
 os.environ.pop("RESEND_API_KEY", None)
 os.environ.pop("SMTP_HOST", None)
+# The suite sends hundreds of requests as one user; rate limits are tested on their own (test_hardening.py).
+os.environ["KEVIDENCE_RATE_LIMIT"] = "off"
 
 
 def sign_in(client, email="tester@example.org"):
