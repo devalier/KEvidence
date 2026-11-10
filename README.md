@@ -1,6 +1,8 @@
 # KEvidence
 
-**An open-source prototype workbench for food and feed safety risk assessment, built in the open so that public administrations and risk assessors can test it, challenge it and build on it.**
+**An open-source prototype workbench for food and feed safety risk assessment, built in the open for public administrations and risk assessors to test, challenge and build on. Grounded in European public regulations and standards.**
+
+> Independent prototype, developed without the endorsement of any public administration or institution. Not a source of regulatory conclusions.
 
 KEvidence follows a regulatory scientific assessment from dossier to publication. A scientific officer uploads the applicant's documents and KEvidence:
 
@@ -8,13 +10,13 @@ KEvidence follows a regulatory scientific assessment from dossier to publication
 1. **characterises the substance or product** against the applicable guidance, citing document and page for every value and listing data gaps;
 2. **structures hazard and exposure evidence** along the four Codex risk-assessment steps (Adverse Outcome Pathways, OpenFoodTox reference points, NAM points of departure, exposure estimates, screening margins);
 3. **drafts the uncertainty analysis and the scientific opinion** for expert refinement;
-4. **prepares documents for publication** under the Transparency Regulation, masking confidential information and personal data according to EFSA's rules.
+4. **prepares documents for publication** under the Transparency Regulation, masking confidential information and personal data according to the published practical arrangements.
 
 **Grounded, not generative.** Every requirement KEvidence checks is quoted verbatim from official guidance bundled with the code, and the tests fail if a quote or page reference drifts from the source PDF. The assistant answers only from that guidance and says so when it cannot. Extraction runs locally. AI features use each user's own provider and key (OpenAI, Anthropic, Mistral AI in the EU, DeepSeek, Fireworks AI, OpenRouter or an on-premises model), are off until the user configures one, and send dossier content only when ticked for that run.
 
 **It assists experts; it does not decide.** Adequacy, safety conclusions and confidentiality decisions stay with the risk assessor and the competent authority.
 
-**Status:** prototype. Twelve EFSA areas can be selected (feed additives, food additives, flavourings, enzymes, food contact materials, novel foods, GMOs, pesticides, contaminants, biological hazards, NAMs/AOPs, other); every one gets the risk-assessment workflow and publication. The guidance-grounded tools exist so far for EU **feed additives** (EFSA FEEDAP guidance: identity and characterisation, with consumer, target-species, environment, microorganism, renewal, QPS/WGS and VICH sources). The sanitisation step covers all sectors of the EFSA rules (General Food Law, GMOs, feed additives, smoke flavourings, food contact materials, food improvement agents, plant protection products, novel foods).
+**Status:** prototype. KEvidence works from European public regulations and standards — EU food and feed law, the Transparency Regulation and the published scientific and administrative guidance that implements them — across twelve regulated areas (feed additives, food additives, flavourings, enzymes, food contact materials, novel foods, GMOs, pesticides, contaminants, biological hazards, NAMs/AOPs, other); every one gets the risk-assessment workflow and publication. Guidance-grounded tools cover **feed additives** (intake completeness, and identity and characterisation from the FEEDAP guidance with consumer, target-species, environment, microorganism, renewal, QPS/WGS and VICH sources) and **food enzymes** (intake suitability checklist) today. The sanitisation step covers all sectors of the transparency rules (General Food Law, GMOs, feed additives, smoke flavourings, food contact materials, food improvement agents, plant protection products, novel foods).
 
 ## Contribute — public administrations and risk assessment experts welcome
 
@@ -90,7 +92,7 @@ Mirrors EFSA's front desk (FDP unit), which checks every application on receipt 
 
 ### Identity & characterisation — feed additives (chemical MVP)
 
-Assists EFSA scientific officers with the characterisation section of a feed additive assessment.
+Assists scientific officers with the characterisation section of a feed additive assessment.
 
 - **Input:** confidential applicant documents — uploads (PDF, DOCX, XLSX, CSV/TSV, TXT/MD, JSON, HTML) and/or URLs (a PDF/DOCX/XLSX link, or an HTML page whose linked documents are followed). Product form, routes of administration, production type, additive type, current authorisation, preparations/formulations under application, and each component (name, CAS, role).
 - **Output (on screen, as Markdown and as a Word file):** the *Download Word (.docx)* button converts exactly the Markdown on screen (`docx_export.py`, `POST /api/characterisation/export.docx`; nothing is stored), so the two cannot differ. Tables keep their header rows across pages and have content-based column widths; footnotes appear as numbered notes under their table; the page header marks it as a draft for scientific-officer verification. Content:
@@ -457,7 +459,7 @@ Example output fields include:
 
 ## Scientific and regulatory caveats
 
-KEvidence is a prototype decision-support workbench. It should not be used as a stand-alone regulatory conclusion engine.
+KEvidence is an independent prototype decision-support workbench, developed without the endorsement of any public administration or institution. It should not be used as a stand-alone regulatory conclusion engine.
 
 Important limitations:
 
