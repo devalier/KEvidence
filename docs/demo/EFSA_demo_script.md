@@ -130,7 +130,7 @@ Timings are cumulative. Spoken text in quotes. Actions in **bold**.
 
 **Back to Identity & characterisation → open *About the guidance grounding* (shows e.g. "29/29 entries anchored verbatim" per source).**
 
-> "About 220 rules from thirteen EFSA and related documents — the ten behind characterisation (FEEDAP characterisation, consumer safety, target species, environment, microorganisms, renewal, QPS, WGS, VICH), our transparency arrangements, our pre-submission arrangements, and the administrative guidance with its completeness checklist — each quoted word for word with its page. The PDFs are bundled, unmodified. At start-up every quote is re-anchored against the PDF text, and about 200 automated tests fail if a single quote or page number drifts. It's grounded, not generative."
+> "244 rules from fourteen EFSA and related documents — the ten behind characterisation (FEEDAP characterisation, consumer safety, target species, environment, microorganisms, renewal, QPS, WGS, VICH), our transparency arrangements, our pre-submission arrangements, the feed administrative guidance with its completeness checklist, and the food enzyme guidance behind the suitability checklist — each quoted word for word with its page. The PDFs are bundled, unmodified. At start-up every quote is re-anchored against the PDF text, and 202 automated tests fail if a single quote or page number drifts. It's grounded, not generative."
 
 Optional, only if time and the AI is configured: in Publication, ask the Evidence Assistant something outside the rules (e.g. "What is the ADI of vanillin?"). It refuses and says why.
 
@@ -144,7 +144,7 @@ Optional, only if time and the AI is configured: in Publication, ask the Evidenc
 > - The hazard, exposure and risk-characterisation steps are structured scaffolding — AOP-Wiki, OpenFoodTox, NAM screening margins — not validated thresholds.
 > - It runs locally. AI is off by default, uses *your* provider, and sends nothing unless you tick it per run.
 >
-> Now the point. **Switch to the GitHub tab, show the commit history.** I started this in June. Over seventy commits. Every feature you saw went from idea to working, tested software in hours, not procurement cycles. Release cycles went from months to minutes.
+> Now the point. **Switch to the GitHub tab, show the commit history.** I started this on 7 June. About eighty commits. Every feature you saw went from idea to working, tested software in hours, not procurement cycles. Release cycles went from months to minutes.
 >
 > Adding your area — pesticides, GMOs, enzymes — needs no code: a folder with your guidance PDFs and a list of requirements quoted from them. You know the guidance. I don't. That's the division of labour: you bring the judgment, the machine brings the computing.
 >

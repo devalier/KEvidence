@@ -491,8 +491,8 @@ border-top:1px solid var(--line);padding-top:10px;align-self:end}}
 <section class="intro" aria-label="About KEvidence">
 <div class="brand"><div class="logo">K</div><b>KEvidence</b><span class="tag">open-source prototype</span></div>
 <h1>An open workbench for <em>food and feed safety risk assessment</em>, from dossier to published opinion.</h1>
-<p class="lead">Built in the open so that public administrations and risk assessors can test it, challenge it and build on it.
-Twelve EFSA areas can be selected; the guidance-grounded tools cover feed additives today, and demo files are included.</p>
+<p class="lead">Built in the open for public administrations and risk assessors to test, challenge and build on.
+Grounded in European public regulations and standards across twelve regulated areas; feed additives and food enzymes are covered today.</p>
 <div class="flow">
 <div><b>Characterise</b>Identity and composition checked against guidance, cited by page.</div>
 <div><b>Assess</b>The four Codex steps, with AOPs, NAMs and OpenFoodTox.</div>
@@ -528,7 +528,7 @@ Twelve EFSA areas can be selected; the guidance-grounded tools cover feed additi
 <p class="fine">What you do is recorded in an activity log you can see. Documents you upload are processed in memory and not stored.</p>
 </div>
 </section>
-<footer class="foot"><span>Prototype decision-support tool — not a source of regulatory conclusions.</span>
+<footer class="foot"><span>Independent prototype, developed without the endorsement of any public administration or institution. Not a source of regulatory conclusions.</span>
 <span>Free software under the <a href="https://github.com/devalier/KEvidence/blob/main/LICENSE">GNU AGPL v3</a> · <a href="https://github.com/devalier/KEvidence">Source code</a> · AOP data: AOP-Wiki, CC BY-SA 4.0</span></footer>
 </div></body></html>"""
 
