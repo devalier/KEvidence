@@ -1,6 +1,8 @@
-# KEvidence — 10-minute demo for EFSA scientific management
+# KEvidence — 10-minute demo for regulatory science management
 
-Audience: GMO, pesticides, feed additives, enzymes, toxicology experts. Sceptical of AI.
+> Independent prototype, developed without the endorsement of any public administration or institution. Not a source of regulatory conclusions.
+
+Audience: scientific managers and experts of a European food and feed safety body — GMO, pesticides, feed additives, enzymes, toxicology. Sceptical of AI.
 Thesis: **AI is not a chatbot. It is the fourth generation of computing, and it lets anyone build the tool they need. KEvidence is the proof.**
 
 Rule for the whole talk: show, don't tell. Every claim below is something on screen.
@@ -60,17 +62,17 @@ Timings are cumulative. Spoken text in quotes. Actions in **bold**.
 
 **Click through the twelve domain cards in Mandate & question.**
 
-> "Twelve EFSA areas: feed, food additives, enzymes, FCM, novel foods, GMOs, pesticides, contaminants, biohazards, NAMs. All get the workflow and publication. One — feed additives — is *grounded*: the tool checks a dossier against the guidance itself. That's what I'll show. I'll come back to your area at the end."
+> "Twelve regulated areas under EU food and feed law: feed, food additives, enzymes, FCM, novel foods, GMOs, pesticides, contaminants, biohazards, NAMs. All get the workflow and publication. One — feed additives — is *grounded*: the tool checks a dossier against the guidance itself. That's what I'll show. I'll come back to your area at the end."
 
 ### Act 3 — Intake: the completeness check (2:15 – 3:45)
 
 **Intake → Completeness & sanitisation → upload `completeness_demo_dossier.zip`, applicant `Demo Feed Additives S.A.`, notified study IDs `STUDY-DEMO-0042, STUDY-DEMO-0099` → *Check completeness*.** (About a second, locally, no AI.)
 
-> "Before anyone assesses anything, the front desk spends up to a month on this: is the dossier complete, are the studies notified, is the confidentiality request in order, is there personal data that must not be published. A fictional feed application, fifteen files, in the folder structure of our administrative guidance."
+> "Before anyone assesses anything, the front desk spends up to a month on this: is the dossier complete, are the studies notified, is the confidentiality request in order, is there personal data that must not be published. A fictional feed application, fifteen files, in the folder structure the published administrative guidance sets out."
 
 **Point at the red verdict: *Incomplete — 5 blocking, 5 warnings*. Scroll through the blocking items.**
 
-> "No completeness checklist. No efficacy section. The public summary repeats a sentence from the confidential manufacturing process — it would have been published. A tolerance study that started in 2023 with no study ID: under Article 32b that puts validity at risk. And a study notified in our database that isn't in the dossier. Each line names the rule it comes from — our administrative guidance, our pre-submission arrangements — and the file and page it found."
+> "No completeness checklist. No efficacy section. The public summary repeats a sentence from the confidential manufacturing process — it would have been published. A tolerance study that started in 2023 with no study ID: under Article 32b that puts validity at risk. And a study notified in the notification database that isn't in the dossier. Each line names the rule it comes from — the administrative guidance, the pre-submission arrangements — and the file and page it found."
 
 **Point at one warning (*2.4 heading not located*, or the scanned annex). Then click *Download request for missing information*, open it for 3 seconds.**
 
@@ -112,7 +114,7 @@ Timings are cumulative. Spoken text in quotes. Actions in **bold**.
 
 **Publication → upload `sanitisation_demo_study_report.pdf`, applicant `Demo Feed Additives S.A.` → *Propose redactions*.**
 
-> "Every study we publish has to be sanitised under 178/2002 as amended by the Transparency Regulation, following our own practical arrangements."
+> "Every study that is published has to be sanitised under 178/2002 as amended by the Transparency Regulation, following the published practical arrangements."
 
 **Show the page preview with boxes.**
 
@@ -124,13 +126,13 @@ Timings are cumulative. Spoken text in quotes. Actions in **bold**.
 
 **Click *Generate sanitised PDF*. Show the verification report; click *Download sanitised PDF*, try to select text under a box.**
 
-> "Real redaction, not a black rectangle over text you can copy out. Then it re-reads its own output: masked text gone, comments, links and metadata stripped. Verification passed. The decision on confidentiality stays with EFSA, Article 11."
+> "Real redaction, not a black rectangle over text you can copy out. Then it re-reads its own output: masked text gone, comments, links and metadata stripped. Verification passed. The decision on confidentiality stays with the assessing authority, Article 11."
 
 ### Act 6 — Why you can trust what it shows (7:45 – 8:30)
 
 **Back to Identity & characterisation → open *About the guidance grounding* (shows e.g. "29/29 entries anchored verbatim" per source).**
 
-> "244 rules from fourteen EFSA and related documents — the ten behind characterisation (FEEDAP characterisation, consumer safety, target species, environment, microorganisms, renewal, QPS, WGS, VICH), our transparency arrangements, our pre-submission arrangements, the feed administrative guidance with its completeness checklist, and the food enzyme guidance behind the suitability checklist — each quoted word for word with its page. The PDFs are bundled, unmodified. At start-up every quote is re-anchored against the PDF text, and 202 automated tests fail if a single quote or page number drifts. It's grounded, not generative."
+> "244 rules from fourteen European public guidance documents — the ten behind characterisation (FEEDAP characterisation, consumer safety, target species, environment, microorganisms, renewal, QPS, WGS, VICH), the transparency arrangements, the pre-submission arrangements, the feed administrative guidance with its completeness checklist, and the food enzyme guidance behind the suitability checklist — each quoted word for word with its page. The PDFs are bundled, unmodified. At start-up every quote is re-anchored against the PDF text, and 202 automated tests fail if a single quote or page number drifts. It's grounded, not generative."
 
 Optional, only if time and the AI is configured: in Publication, ask the Evidence Assistant something outside the rules (e.g. "What is the ADI of vanillin?"). It refuses and says why.
 
@@ -148,13 +150,13 @@ Optional, only if time and the AI is configured: in Publication, ask the Evidenc
 >
 > Adding your area — pesticides, GMOs, enzymes — needs no code: a folder with your guidance PDFs and a list of requirements quoted from them. You know the guidance. I don't. That's the division of labour: you bring the judgment, the machine brings the computing.
 >
-> It's open source, AGPL. Break it. Tell me where it's wrong."
+> It's open source, AGPL, and independent — no public administration or institution has endorsed it. Break it. Tell me where it's wrong."
 
 ### Optional — the enzyme variant of Act 3 (if the room is enzyme-heavy, or in Q&A)
 
 **Mandate & question → domain *Food enzymes*. Intake → type of application *Modification / extension of use (Part B)* → upload the unzipped dossier folder with the "dossier folder" button (`Documentation` removed beforehand), applicant `Acme Enzymatic srl` → *Check completeness*.**
 
-> "A real-world-shaped enzyme package — an alpha-amylase use extension, fourteen PDFs in dossier folders, the applicant replaced by a fictional company. It's checked against our suitability checklist for food enzymes, Part B: reference to the existing authorisation, source unchanged, intended uses, exposure with FEIM — all located."
+> "A real-world-shaped enzyme package — an alpha-amylase use extension, fourteen PDFs in dossier folders, the applicant replaced by a fictional company. It's checked against the published suitability checklist for food enzymes, Part B: reference to the existing authorisation, source unchanged, intended uses, exposure with FEIM — all located."
 
 **Open *Applicant's checklist* (28 provided, 128 not relevant), then point at the warning *Copies of bibliographic references — declared vs found*.**
 
@@ -176,10 +178,10 @@ Expect, as Part B: *Complete, with warnings* — the references declared-vs-foun
 |---|---|
 | "Does our dossier go to OpenAI / the US?" | No. Extraction, gap analysis and sanitisation run on the server, no AI. AI is per user, off by default, ticked per run; Mistral (EU) or an on-premises model are options. |
 | "It hallucinates." | The parts shown use no generation. Requirements are verbatim quotes checked by tests. When AI drafts, every number is checked against the dossier and untraced numbers are flagged. |
-| "Who validated it?" | Nobody yet. It's a prototype. That's the ask: your experts reviewing the catalogues and rules. |
+| "Who validated it?" | Nobody. It's an independent prototype, not endorsed by any public administration or institution. That's the ask: your experts reviewing the catalogues and rules. |
 | "Can it do microbial / GMO / pesticide dossiers?" | Workflow and sanitisation yes (all Annex sectors a–h). Intake checklists exist for feed additives and food enzymes; characterisation grounding only for feed additives. The rest is a data task, not a code task. |
 | "Is it IUCLID-compatible?" | OpenFoodTox can be read from a local IUCLID 6 instance; dossier import from IUCLID is not built. |
-| "Can it replace the front desk's completeness check?" | No. It does the mechanical part in seconds so staff spend their time on judgement: is a justification valid, is a study really in scope. It flags; EFSA or the Commission decides validity. |
+| "Can it replace the front desk's completeness check?" | No. It does the mechanical part in seconds so staff spend their time on judgement: is a justification valid, is a study really in scope. It flags; the competent authority decides validity. |
 | "How does it know a study had to be notified?" | It reads the study start date in the report: from 27 March 2021 it expects a study ID or a justification (pre-submission arrangements, Art. 19 and 21). Enter the IDs from the notification database and it also checks that every notified study is in the dossier (Art. 22(3)). |
 | "Who maintains it?" | Open source; any administration can run and adapt it. Built with AI, maintainable with AI. |
 
