@@ -10,7 +10,7 @@ python-multipart==0.0.33
 openpyxl==3.1.5
 pypdf==7.0.1
 python-docx==1.2.0
-pymupdf==1.28.2
+pymupdf==2.1
 defusedxml==0.7.1
 
 # Transitive pins held back on purpose (reason, date). Remove a line when its reason no longer holds.
