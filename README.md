@@ -239,7 +239,8 @@ The Evidence Assistant uses the signed-in user's own AI configuration (see *Acco
 │   └── aops/                          # Cached AOP text excerpts
 ├── tests/                             # Grounding guards, characterisation, sanitisation, accounts, AI configuration, licensing, Word export, HTTP security, hardening
 ├── .github/workflows/                 # pytest and pip-audit on every push
-├── requirements.txt, requirements-dev.txt
+├── requirements.in, requirements-dev.in   # Direct dependencies (edit these)
+├── requirements.txt, requirements-dev.txt # Generated locks: every package pinned with hashes
 └── LICENSE                            # AGPL-3.0
 ```
 
@@ -331,7 +332,34 @@ Set `APP_URL` to exactly the address in the browser (e.g. `https://kevidence.exa
 | `TRUST_PROXY=1` | behind a reverse proxy | Take the client IP from the last `X-Forwarded-For` hop. |
 | `KEVIDENCE_ALLOW_PRIVATE_ENDPOINTS=1` | on-premises models | Allow AI endpoints on private networks (and plain http). |
 | `KEVIDENCE_AI_TIMEOUT` | optional | Seconds per AI call (default 90). |
-- **Dependencies:** no frontend frameworks or CDN scripts; Python dependencies are pinned and checked with `pip-audit` in CI on every push and weekly; Dependabot proposes updates.
+- **Dependencies:** no frontend frameworks or CDN scripts. Every Python package, transitive ones included, is pinned with its hash (`requirements.txt`), so an install cannot pull in anything that was not reviewed; CI actions are pinned to commits. `pip-audit` checks the lock on every push and weekly. See *Dependencies* below before accepting any update.
+
+## Dependencies
+
+`requirements.in` and `requirements-dev.in` list the direct dependencies. `requirements.txt` and `requirements-dev.txt` are generated from them and pin **every** package, transitive ones included, with hashes; `pip install -r requirements.txt` therefore installs exactly the reviewed set or fails. Upgrading an existing server with it also moves already-installed transitive packages (Starlette, h11, AnyIO, certifi…) to their reviewed versions.
+
+Before accepting an update, Dependabot's or anyone's:
+
+1. **Advisories for the new version and the old one.** Check the GitHub Advisory Database (`affects:<package>`) *and* the project's own *Security* tab: some projects publish repository advisories that never reach PyPI or `pip-audit` (pydantic GHSA-3r8g-cqwr-jr29 and GHSA-qpmf-fgh3-ff25 did not). Take the first release that fixes every advisory, not necessarily the one proposed.
+2. **Changelog between the two versions**, for security fixes that have no advisory yet (pypdf, for one, publishes advisories days after the fix release).
+3. **Release age and origin.** Prefer releases at least 7 days old. For a younger one (taken only for a security fix), check on PyPI that it carries a provenance attestation from the project's own repository, or that the project never had one.
+4. **Transitive changes.** Regenerate the lock and read its diff: every new or changed package gets steps 1–3.
+
+Regenerate the locks (Python 3.12, as CI):
+
+```bash
+pip install pip-tools
+```
+
+```bash
+pip-compile --generate-hashes --allow-unsafe --strip-extras --no-emit-index-url -o requirements.txt requirements.in
+```
+
+```bash
+pip-compile --generate-hashes --allow-unsafe --strip-extras --no-emit-index-url -o requirements-dev.txt requirements-dev.in
+```
+
+Pin a transitive package in `requirements.in` only to hold it back, with the reason and date in a comment. Do not install `httpx2` (Starlette's test client suggests it): it had four advisories in September 2026, and KEvidence does not need it.
 
 ## Optional data imports
 

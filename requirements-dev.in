@@ -1,0 +1,4 @@
+# Test-only dependencies, constrained to the production lock. Regenerate requirements-dev.txt with:
+#   pip-compile --generate-hashes --allow-unsafe --strip-extras -o requirements-dev.txt requirements-dev.in
+-c requirements.txt
+pytest==9.0.3

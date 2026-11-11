@@ -1,11 +1,18 @@
 version: 2
+# Version updates wait 7 days after a release before Dependabot proposes it: compromised or broken releases are
+# usually caught and yanked within days. Security updates are not delayed by the cool-down.
+# Before merging any update, check it as described in README > Dependencies.
 updates:
   - package-ecosystem: pip
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 10
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
