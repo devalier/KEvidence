@@ -202,11 +202,12 @@ def auth_email(request: Request, email: str = Form("")):
 
 
 @app.get("/auth/verify")
-def auth_verify_page(token: str = ""):
-    email = accounts.login_token_email(token[:200])
+def auth_verify_page(token: Optional[str] = None):
+    token = (token or "")[:200]
+    email = accounts.login_token_email(token)
     if not email:
         return _html(accounts.message_page("This link has expired", "Sign-in links work once and expire after 15 minutes."), 400)
-    return _html(accounts.confirm_page(email, token[:200]))
+    return _html(accounts.confirm_page(email, token))
 
 
 @app.post("/auth/verify")
@@ -1120,7 +1121,8 @@ def find_aops_by_chemical(chemical_name: str) -> list:
                     t = cur.fetchone()
                     found_title = t[0] if t else f"AOP {aop_id}"
                     break
-                except Exception:
+                except Exception as exc:  # one unreadable cache file must not stop the search
+                    print(f"[KEvidence] Skipped {fpath.name} in stressor search: {type(exc).__name__}")
                     continue
 
             if found_aop_id:
@@ -1185,8 +1187,8 @@ def _decompose_query(query: str) -> list:
             entities = _json.loads(json_match.group())
             if isinstance(entities, list):
                 return [e.lower().strip() for e in entities if isinstance(e, str)][:3]
-    except Exception:
-        pass
+    except Exception as exc:  # no AI configured, provider error or unparsable answer: no decomposition
+        print(f"[KEvidence] Query decomposition unavailable: {type(exc).__name__}")
     return []
 
 

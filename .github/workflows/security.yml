@@ -25,3 +25,20 @@ jobs:
         run: pip install pip-audit
       - name: Audit every locked package (transitive included) for known CVEs
         run: pip-audit --require-hashes -r requirements.txt -r requirements-dev.txt
+
+  bandit:
+    name: bandit (static security analysis, same scope as the deploy gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install bandit
+        run: pip install bandit==1.9.4
+      - name: Application code, any severity (what the deploy gate blocks on)
+        run: bandit -q -r . -x ./tests
+      - name: Tests, medium severity and above
+        run: bandit -q -r tests -ll

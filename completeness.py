@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import re
 import zipfile
 from dataclasses import dataclass, field
@@ -31,6 +32,8 @@ import pymupdf
 
 import characterisation as charmod
 import sanitisation as sanmod
+
+log = logging.getLogger("kevidence.completeness")
 
 INTAKE_DIR = charmod.GUIDANCE_ROOT / "intake"
 CATALOGUES = ("efsa_feed_completeness_checklist_rules.json", "efsa_2021_pa_presubmission_rules.json",
@@ -461,8 +464,8 @@ def parse_checklist(f: "DossierFile") -> list[dict[str, str]]:
     if f.is_pdf and f.data:
         try:
             return _parse_checklist_pdf(f.data)
-        except Exception:
-            pass
+        except Exception as exc:  # unusual layout or damaged PDF: fall back to reading order below
+            log.info("checklist %s: positional parsing failed (%s), reading text order instead", f.path, type(exc).__name__)
     rows, buf, boxes = [], [], []
     for line in f.text.splitlines():
         ticks = BOX_RE.findall(line)
@@ -806,7 +809,7 @@ def run_checks(files: list[DossierFile], rules: dict, *, domain: str = "feed", a
         R.add(rid, "info", "Procedural reference.")
 
     # --- Personal data in the non-confidential version (Art. 4(5) of the transparency arrangements) --------
-    personal = []
+    personal, unscanned = [], []
     if scan_personal_data:
         trules = rules["transparency"]
         for f in nonconf:
@@ -814,26 +817,40 @@ def run_checks(files: list[DossierFile], rules: dict, *, domain: str = "feed", a
                 continue
             count, kinds = 0, set()
             if f.is_pdf:
+                doc = None
                 try:
                     doc = pymupdf.open(stream=f.data, filetype="pdf")
                     if doc.page_count > MAX_SCAN_PAGES:
                         doc.select(list(range(MAX_SCAN_PAGES)))
                     col, _ = sanmod.detect_local(doc, trules, sector, applicant)
-                    doc.close()
                     hits = [p for p in col.items if p["kind"] == "personal_data" and p["selected"]]
                     count, kinds = len(hits), {p["category"] for p in hits}
-                except Exception:
+                except Exception as exc:
+                    # Never report a file we could not read as free of personal data: list it for a manual check.
+                    log.warning("personal-data scan failed for %s: %s", f.path, type(exc).__name__)
+                    unscanned.append(f.path)
                     continue
+                finally:
+                    if doc is not None:
+                        doc.close()
             else:
                 hits = sanmod.EMAIL_RE.findall(f.text) + [m for m in sanmod.TITLE_RE.findall(f.text)]
                 count, kinds = len(hits), {"email/name"} if hits else set()
             if count:
                 personal.append({"file": f.path, "count": count, "kinds": sorted(kinds), "pdf": f.is_pdf})
-        R.add("PA-ART4-5-PERSONAL-DATA", "fail" if personal else "ok",
-              f"Personal data found in {len(personal)} non-confidential file(s): sanitise before publication." if personal
-              else "No personal data detected in the non-confidential files (local rules only: check names without titles by eye).",
-              [{"file": p["file"], "page": None, "note": f"{p['count']} item(s): {', '.join(p['kinds'])}"} for p in personal],
-              severity="warning")
+        evidence = ([{"file": p["file"], "page": None, "note": f"{p['count']} item(s): {', '.join(p['kinds'])}"} for p in personal]
+                    + [{"file": path, "page": None, "note": "could not be scanned: check by eye"} for path in unscanned])
+        if personal:
+            status, detail = "fail", f"Personal data found in {len(personal)} non-confidential file(s): sanitise before publication."
+        elif unscanned:
+            status, detail = "review", (f"{len(unscanned)} non-confidential file(s) could not be scanned for personal data: "
+                                        "check them by eye before publication.")
+        else:
+            status, detail = "ok", ("No personal data detected in the non-confidential files (local rules only: check names "
+                                    "without titles by eye).")
+        if personal and unscanned:
+            detail += f" {len(unscanned)} further file(s) could not be scanned: check them by eye."
+        R.add("PA-ART4-5-PERSONAL-DATA", status, detail, evidence, severity="warning")
     R.add("CC-TIMELINE-30WD", "info", "Target: outcome communicated within 30 working days of receipt; the applicant has 30 days to "
                                       "answer a request for missing information.")
 

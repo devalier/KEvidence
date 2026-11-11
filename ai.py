@@ -255,8 +255,14 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-_PUBLIC_COLS = ("id, provider, model, endpoint, api_key_hint, active, created_at, updated_at, last_checked_at, "
-                "last_check_ok, last_check_message")
+# Columns the UI may see (never the key ciphertext). Queries below are literal strings: nothing is ever
+# formatted into SQL.
+_SELECT_PUBLIC_BY_ID = ("SELECT id, provider, model, endpoint, api_key_hint, active, created_at, updated_at, last_checked_at, "
+    "last_check_ok, last_check_message FROM ai_models WHERE id = ?")
+_SELECT_PUBLIC_BY_USER = ("SELECT id, provider, model, endpoint, api_key_hint, active, created_at, updated_at, last_checked_at, "
+    "last_check_ok, last_check_message FROM ai_models WHERE user_id = ? ORDER BY id")
+_SELECT_PUBLIC_ACTIVE = ("SELECT id, provider, model, endpoint, api_key_hint, active, created_at, updated_at, last_checked_at, "
+    "last_check_ok, last_check_message FROM ai_models WHERE user_id = ? AND active = 1")
 
 
 def _public(row) -> dict:
@@ -272,14 +278,14 @@ def _public(row) -> dict:
 
 def list_configs(user_id: int) -> list[dict]:
     with accounts.connect() as conn:
-        rows = conn.execute(f"SELECT {_PUBLIC_COLS} FROM ai_models WHERE user_id = ? ORDER BY id", (user_id,)).fetchall()
+        rows = conn.execute(_SELECT_PUBLIC_BY_USER, (user_id,)).fetchall()
     return [_public(r) for r in rows]
 
 
 def public_config(user_id: int) -> Optional[dict]:
     """The model in use, as the UI may see it, or None."""
     with accounts.connect() as conn:
-        row = conn.execute(f"SELECT {_PUBLIC_COLS} FROM ai_models WHERE user_id = ? AND active = 1", (user_id,)).fetchone()
+        row = conn.execute(_SELECT_PUBLIC_ACTIVE, (user_id,)).fetchone()
     return _public(row) if row else None
 
 
@@ -342,7 +348,7 @@ def add_config(user_id: int, provider: str, model: str, endpoint: str = "", api_
                                      (user_id, provider, model, endpoint, ct, hint, now, now)).lastrowid
         if activate:
             conn.execute("UPDATE ai_models SET active = (id = ?) WHERE user_id = ?", (config_id, user_id))
-        row = conn.execute(f"SELECT {_PUBLIC_COLS} FROM ai_models WHERE id = ?", (config_id,)).fetchone()
+        row = conn.execute(_SELECT_PUBLIC_BY_ID, (config_id,)).fetchone()
     return _public(row)
 
 
@@ -351,7 +357,7 @@ def select_config(user_id: int, config_id: int) -> dict:
     with accounts.connect() as conn:
         _owned(conn, user_id, config_id)
         conn.execute("UPDATE ai_models SET active = (id = ?) WHERE user_id = ?", (config_id, user_id))
-        row = conn.execute(f"SELECT {_PUBLIC_COLS} FROM ai_models WHERE id = ?", (config_id,)).fetchone()
+        row = conn.execute(_SELECT_PUBLIC_BY_ID, (config_id,)).fetchone()
     return _public(row)
 
 
@@ -378,7 +384,7 @@ def check_config(user_id: int, config_id: Optional[int] = None, client: Optional
     with accounts.connect() as conn:
         conn.execute("UPDATE ai_models SET last_checked_at = ?, last_check_ok = ?, last_check_message = ? WHERE id = ?",
                      (_now(), int(ok), msg[:400], cfg["id"]))
-        row = conn.execute(f"SELECT {_PUBLIC_COLS} FROM ai_models WHERE id = ?", (cfg["id"],)).fetchone()
+        row = conn.execute(_SELECT_PUBLIC_BY_ID, (cfg["id"],)).fetchone()
     return _public(row)
 
 

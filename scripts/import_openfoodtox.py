@@ -17,11 +17,13 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sqlite3
-import urllib.error
-import urllib.request
 from pathlib import Path
+from urllib.parse import urljoin, urlsplit
 from typing import Iterable, Any
+
+import httpx
 
 
 def clean_cell(value):
@@ -78,38 +80,75 @@ def iter_input_rows(path: Path) -> Iterable[tuple[str, dict[str, str]]]:
 
 ZENODO_RECORD_ID = "19388272"
 ZENODO_API_URL = f"https://zenodo.org/api/records/{ZENODO_RECORD_ID}"
+# The download link comes from Zenodo's answer, so it is checked like any untrusted URL: https only, Zenodo hosts
+# only (on every redirect hop too), bounded size. No file:, ftp: or other schemes, no other hosts.
+ALLOWED_HOSTS = {"zenodo.org", "www.zenodo.org"}
+MAX_DOWNLOAD_BYTES = 500 * 1024 * 1024
+OFFLINE_HINT = ("If this server has restricted outbound access, download the Excel file manually and rerun with "
+                "--input /path/to/file.xlsx.")
+
+
+def _checked_url(url: str) -> str:
+    parts = urlsplit(str(url))
+    if parts.scheme != "https" or (parts.hostname or "").lower() not in ALLOWED_HOSTS or parts.username or parts.password:
+        raise SystemExit(f"Refusing to download from {str(url)[:200]!r}: only https://zenodo.org URLs are accepted.")
+    return parts.geturl()
+
+
+def _get(client: httpx.Client, url: str, out=None) -> bytes:
+    """GET a Zenodo URL, following at most 5 redirects, each one re-checked. Streams into `out` when given."""
+    current = _checked_url(url)
+    for _ in range(6):
+        with client.stream("GET", current) as response:
+            if response.is_redirect:
+                current = _checked_url(urljoin(current, response.headers.get("location", "")))
+                continue
+            response.raise_for_status()
+            size, chunks = 0, []
+            for chunk in response.iter_bytes(1024 * 1024):
+                size += len(chunk)
+                if size > MAX_DOWNLOAD_BYTES:
+                    raise SystemExit(f"Download from Zenodo exceeds {MAX_DOWNLOAD_BYTES // (1024 * 1024)} MB; aborted.")
+                if out is not None:
+                    out.write(chunk)
+                else:
+                    chunks.append(chunk)
+            return b"".join(chunks)
+    raise SystemExit("Too many redirects from Zenodo.")
 
 
 def download_latest_openfoodtox_excel(cache_dir: Path) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
-    try:
-        with urllib.request.urlopen(ZENODO_API_URL, timeout=60) as response:
-            record: dict[str, Any] = json.loads(response.read().decode("utf-8"))
-    except urllib.error.URLError as exc:
-        raise SystemExit(f"Could not reach Zenodo to download OpenFoodTox: {exc}. If this server has restricted outbound access, download the Excel file manually and rerun with --input /path/to/file.xlsx.") from exc
+    with httpx.Client(timeout=httpx.Timeout(300, connect=30), follow_redirects=False,
+                      headers={"User-Agent": "KEvidence-OpenFoodTox-importer"}) as client:
+        try:
+            record: dict[str, Any] = json.loads(_get(client, ZENODO_API_URL).decode("utf-8"))
+        except (httpx.HTTPError, ValueError) as exc:
+            raise SystemExit(f"Could not read the OpenFoodTox record from Zenodo ({type(exc).__name__}). {OFFLINE_HINT}") from exc
 
-    files = record.get("files") or []
-    xlsx_file = next((f for f in files if str(f.get("key", "")).lower().endswith(".xlsx")), None)
-    if not xlsx_file:
-        raise SystemExit("No .xlsx file found in the OpenFoodTox Zenodo record.")
+        files = record.get("files") or []
+        xlsx_file = next((f for f in files if str(f.get("key", "")).lower().endswith(".xlsx")), None)
+        if not xlsx_file:
+            raise SystemExit("No .xlsx file found in the OpenFoodTox Zenodo record.")
 
-    filename = Path(xlsx_file["key"]).name
-    output_path = cache_dir / filename
-    links = xlsx_file.get("links") or {}
-    download_url = links.get("self") or links.get("download")
-    if not download_url:
-        raise SystemExit("The OpenFoodTox Zenodo record did not include a download URL for the Excel file.")
+        # The file name also comes from the record: keep a plain name, never a path.
+        filename = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(str(xlsx_file["key"])).name).lstrip(".") or "openfoodtox.xlsx"
+        output_path = cache_dir / filename
+        links = xlsx_file.get("links") or {}
+        download_url = links.get("self") or links.get("download")
+        if not download_url:
+            raise SystemExit("The OpenFoodTox Zenodo record did not include a download URL for the Excel file.")
 
-    print(f"Downloading {filename} from Zenodo record {ZENODO_RECORD_ID}...")
-    try:
-        with urllib.request.urlopen(download_url, timeout=300) as response, output_path.open("wb") as out:
-            while True:
-                chunk = response.read(1024 * 1024)
-                if not chunk:
-                    break
-                out.write(chunk)
-    except urllib.error.URLError as exc:
-        raise SystemExit(f"Could not download {filename} from Zenodo: {exc}. If this server has restricted outbound access, download the Excel file manually and rerun with --input /path/to/file.xlsx.") from exc
+        print(f"Downloading {filename} from Zenodo record {ZENODO_RECORD_ID}...")
+        partial = output_path.with_name(output_path.name + ".part")
+        try:
+            with partial.open("wb") as out:
+                _get(client, download_url, out)
+            partial.replace(output_path)
+        except httpx.HTTPError as exc:
+            raise SystemExit(f"Could not download {filename} from Zenodo ({type(exc).__name__}). {OFFLINE_HINT}") from exc
+        finally:
+            partial.unlink(missing_ok=True)
     return output_path
 
 

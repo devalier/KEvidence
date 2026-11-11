@@ -332,7 +332,7 @@ Set `APP_URL` to exactly the address in the browser (e.g. `https://kevidence.exa
 | `TRUST_PROXY=1` | behind a reverse proxy | Take the client IP from the last `X-Forwarded-For` hop. |
 | `KEVIDENCE_ALLOW_PRIVATE_ENDPOINTS=1` | on-premises models | Allow AI endpoints on private networks (and plain http). |
 | `KEVIDENCE_AI_TIMEOUT` | optional | Seconds per AI call (default 90). |
-- **Dependencies:** no frontend frameworks or CDN scripts. Every Python package, transitive ones included, is pinned with its hash (`requirements.txt`), so an install cannot pull in anything that was not reviewed; CI actions are pinned to commits. `pip-audit` checks the lock on every push and weekly. See *Dependencies* below before accepting any update.
+- **Dependencies:** no frontend frameworks or CDN scripts. Every Python package, transitive ones included, is pinned with its hash (`requirements.txt`), so an install cannot pull in anything that was not reviewed; CI actions are pinned to commits. `pip-audit` checks the lock and Bandit the code on every push and weekly (Bandit with the same scope as the deploy gate: everything but `tests/`, any severity). Keep Bandit at zero findings: fix the code rather than adding `# nosec`, and when a finding is a false positive that cannot be avoided, put `# nosec <test id>` on that line with the reason in a comment above. See *Dependencies* below before accepting any update.
 
 ## Dependencies
 
