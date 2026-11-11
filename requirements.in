@@ -1,0 +1,19 @@
+# Direct dependencies. requirements.txt is generated from this file and pins every package, transitive ones
+# included, with hashes. Edit this file, then regenerate (see README, "Dependencies"):
+#   pip-compile --generate-hashes --allow-unsafe --strip-extras -o requirements.txt requirements.in
+fastapi==0.141.1
+uvicorn==0.30.0
+cryptography==50.0.2
+pydantic==2.14.3
+httpx==0.28.1
+python-multipart==0.0.33
+openpyxl==3.1.5
+pypdf==7.0.1
+python-docx==1.2.0
+pymupdf==1.28.2
+defusedxml==0.7.1
+
+# Transitive pins held back on purpose (reason, date). Remove a line when its reason no longer holds.
+# annotated-doc 0.0.6 (fastapi) was published 2026-11-10 without a provenance attestation and fixes nothing
+# security-relevant: stay on 0.0.5 until it has aged past the cool-down.
+annotated-doc==0.0.5
