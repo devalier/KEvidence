@@ -2,7 +2,7 @@
 # included, with hashes. Edit this file, then regenerate (see README, "Dependencies"):
 #   pip-compile --generate-hashes --allow-unsafe --strip-extras -o requirements.txt requirements.in
 fastapi==0.141.1
-uvicorn==0.30.0
+uvicorn==0.54.0
 cryptography==50.0.2
 pydantic==2.14.3
 httpx==0.28.1
