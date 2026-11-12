@@ -29,7 +29,7 @@ def direct_network(monkeypatch):
 # --- SSRF --------------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("ip", [
-    "127.0.0.1", "::1", "0.0.0.0", "169.254.169.254", "10.0.0.5", "192.168.1.1", "172.16.0.1",
+    "127.0.0.1", "::1", "169.254.169.254", "10.0.0.5", "192.168.1.1", "172.16.0.1",
     "100.64.0.1", "100.100.100.200",       # carrier-grade NAT: cloud metadata on some providers
     "::ffff:127.0.0.1", "::ffff:10.0.0.1",  # IPv4-mapped
     "2002:7f00:1::", "64:ff9b::7f00:1", "::7f00:1",  # 6to4, NAT64 and IPv4-compatible forms of 127.0.0.1
@@ -37,6 +37,11 @@ def direct_network(monkeypatch):
 ])
 def test_non_public_addresses_are_blocked(ip):
     assert netguard.address_block_reason(ip)
+
+
+def test_unspecified_address_is_blocked():
+    # The SSRF guard must refuse it; nothing binds to it here.
+    assert netguard.address_block_reason("0.0.0.0")  # nosec B104
 
 
 @pytest.mark.parametrize("ip", ["8.8.8.8", "1.1.1.1", "2606:4700:4700::1111"])
@@ -283,3 +288,61 @@ def test_listing_limit_is_capped(client):
 def test_emails_with_invisible_characters_are_refused(email):
     import accounts
     assert accounts.normalise_email(email) == ""
+
+
+# --- Bandit follow-ups ------------------------------------------------------------------------------------
+
+def _importer():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("import_openfoodtox", server.KEVIDENCE_HOME / "scripts" / "import_openfoodtox.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.mark.parametrize("url", ["file:///etc/passwd", "http://zenodo.org/x", "https://evil.example/x.xlsx",
+                                 "https://user:pw@zenodo.org/x", "ftp://zenodo.org/x", "https://zenodo.org.evil.example/x"])
+def test_openfoodtox_importer_refuses_non_zenodo_urls(url):
+    with pytest.raises(SystemExit):
+        _importer()._checked_url(url)
+
+
+def test_openfoodtox_importer_rechecks_redirects_and_names(monkeypatch, tmp_path):
+    mod = _importer()
+    record = {"files": [{"key": "../../evil name.xlsx", "links": {"self": "https://zenodo.org/f/1"}}]}
+
+    def handler(request):
+        if request.url.path.endswith(mod.ZENODO_RECORD_ID):
+            return httpx.Response(200, json=record)
+        return httpx.Response(302, headers={"location": "file:///etc/passwd"})
+    real = httpx.Client
+    monkeypatch.setattr(mod.httpx, "Client", lambda **kw: real(transport=httpx.MockTransport(handler), **kw))
+    with pytest.raises(SystemExit, match="only https://zenodo.org"):
+        mod.download_latest_openfoodtox_excel(tmp_path)
+    assert list(tmp_path.iterdir()) == []  # nothing written, no partial file left behind
+
+    def ok(request):
+        return httpx.Response(200, json=record) if request.url.path.endswith(mod.ZENODO_RECORD_ID) else httpx.Response(200, content=b"xlsx")
+    monkeypatch.setattr(mod.httpx, "Client", lambda **kw: real(transport=httpx.MockTransport(ok), **kw))
+    out = mod.download_latest_openfoodtox_excel(tmp_path)
+    assert out.parent == tmp_path and out.name == "evil_name.xlsx" and out.read_bytes() == b"xlsx"
+
+
+def test_personal_data_scan_failure_is_not_reported_as_clean(monkeypatch):
+    import completeness as compmod
+    import sanitisation as sanmod
+    from pathlib import Path
+    zip_bytes = (Path(server.KEVIDENCE_HOME) / "static/samples/completeness_demo_dossier.zip").read_bytes()
+
+    def broken(*args, **kwargs):
+        raise RuntimeError("parser crashed")
+    monkeypatch.setattr(sanmod, "detect_local", broken)
+    result = compmod.check_dossier([("dossier.zip", zip_bytes)], server.COMPLETENESS_RULES, domain="feed", application_type="new",
+                                   sector=server._sani_sector("", "feed"))
+    item = next(i for i in result["results"] if i["rule_id"] == "PA-ART4-5-PERSONAL-DATA")
+    assert item["status"] == "review" and "could not be scanned" in item["detail"]
+    assert any(e["note"].startswith("could not be scanned") for e in item["evidence"])
+
+
+def test_sign_in_link_without_token_is_refused(anon_client):
+    assert anon_client.get("/auth/verify").status_code == 400

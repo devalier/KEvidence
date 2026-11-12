@@ -43,8 +43,8 @@ def test_server_excludes_non_by_sa_and_tags_db():
     with sqlite3.connect(str(server.DB_PATH)) as c:
         assert c.execute("SELECT value FROM meta WHERE key='data_tag'").fetchone()[0] == server.DB_DATA_TAG
         removed = [r["wiki_id"] for r in json.loads((DATA / "aopwiki_licence_filter.json").read_text())["removed_aops"]]
-        q = f"SELECT COUNT(*) FROM aops WHERE id IN ({','.join('?' * len(removed))})"
-        assert c.execute(q, removed).fetchone()[0] == 0
+        ids = {row[0] for row in c.execute("SELECT id FROM aops")}
+        assert not ids & set(removed)
 
 
 def test_filter_script_on_a_fresh_export(tmp_path):
