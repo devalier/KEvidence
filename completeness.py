@@ -943,6 +943,11 @@ def missing_information_letter(result: dict[str, Any], dossier_ref: str = "", ap
 
 def check_dossier(uploads: list[tuple[str, bytes]], rules: dict, **kw) -> dict[str, Any]:
     files, notes = read_upload(uploads)
+    return check_files(files, notes, rules, **kw)
+
+
+def check_files(files: list[DossierFile], notes: list[str], rules: dict, **kw) -> dict[str, Any]:
+    """check_dossier on a dossier already read (the automatic entry path reads it once for every step)."""
     dossier_ref = kw.pop("dossier_ref", "")
     result = run_checks(files, rules, **kw)
     result["notes"] = notes + [f"{f.path}: {f.error}" for f in files if f.error]

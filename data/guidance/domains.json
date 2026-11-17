@@ -46,6 +46,17 @@
         "qps": "efsa_2026_9823_qps_cycle_assessments.json",
         "mic": "feedap_2018_5206_mic_cutoffs.json",
         "vich": "vich_gl18r2_solvents.json"
+      },
+      "legal_context": "Regulation (EC) No 1831/2003 on additives for use in animal nutrition",
+      "dossier_cues": {
+        "regulations": [
+          "1831\\s*/\\s*2003"
+        ],
+        "phrases": [
+          "\\bfeed\\s+additives?\\b",
+          "\\btarget\\s+species\\b",
+          "\\bcomplete\\s+feed\\b"
+        ]
       }
     },
     {
@@ -53,49 +64,127 @@
       "label": "Food additives",
       "panel": "FAF",
       "description": "Additives intentionally added to food (Regulation (EC) No 1333/2008), including re-evaluations.",
-      "transparency_sector": "f"
+      "transparency_sector": "f",
+      "legal_context": "Regulation (EC) No 1333/2008 on food additives",
+      "dossier_cues": {
+        "regulations": [
+          "1333\\s*/\\s*2008"
+        ],
+        "phrases": [
+          "\\bfood\\s+additives?\\b",
+          "\\bE\\s?\\d{3}[a-z]?\\b"
+        ]
+      }
     },
     {
       "id": "flavourings",
       "label": "Food flavourings and smoke flavourings",
       "panel": "FAF",
       "description": "Flavouring substances (Regulation (EC) No 1334/2008) and smoke flavourings (Regulation (EC) No 2065/2003).",
-      "transparency_sector": "f"
+      "transparency_sector": "f",
+      "legal_context": "Regulation (EC) No 1334/2008 on flavourings / Regulation (EC) No 2065/2003 on smoke flavourings",
+      "dossier_cues": {
+        "regulations": [
+          "1334\\s*/\\s*2008",
+          "2065\\s*/\\s*2003"
+        ],
+        "phrases": [
+          "\\bflavouring\\s+substances?\\b",
+          "\\bsmoke\\s+flavourings?\\b"
+        ]
+      }
     },
     {
       "id": "food-enzymes",
       "label": "Food enzymes",
       "panel": "FEZ",
       "description": "Food enzymes (Regulation (EC) No 1332/2008), including production strains.",
-      "transparency_sector": "f"
+      "transparency_sector": "f",
+      "legal_context": "Regulation (EC) No 1332/2008 on food enzymes",
+      "dossier_cues": {
+        "regulations": [
+          "1332\\s*/\\s*2008"
+        ],
+        "phrases": [
+          "\\bfood\\s+enzymes?\\b",
+          "\\bIUBMB\\b",
+          "\\bEC\\s+\\d+\\.\\d+\\.\\d+\\.\\d+\\b"
+        ]
+      }
     },
     {
       "id": "fcm",
       "label": "Food contact materials",
       "panel": "FCM",
       "description": "Substances in materials and articles in contact with food (Regulation (EC) No 1935/2004).",
-      "transparency_sector": "e"
+      "transparency_sector": "e",
+      "legal_context": "Regulation (EC) No 1935/2004 on materials and articles intended to come into contact with food",
+      "dossier_cues": {
+        "regulations": [
+          "1935\\s*/\\s*2004",
+          "10\\s*/\\s*2011"
+        ],
+        "phrases": [
+          "\\bfood\\s+contact\\s+materials?\\b",
+          "\\bmigration\\b"
+        ]
+      }
     },
     {
       "id": "novel-foods",
       "label": "Novel foods, nutrition and food supplements",
       "panel": "NDA",
       "description": "Novel and traditional foods (Regulation (EU) 2015/2283), nutrient sources, health claims.",
-      "transparency_sector": "h"
+      "transparency_sector": "h",
+      "legal_context": "Regulation (EU) 2015/2283 on novel foods",
+      "dossier_cues": {
+        "regulations": [
+          "2015\\s*/\\s*2283",
+          "2017\\s*/\\s*2470"
+        ],
+        "phrases": [
+          "\\bnovel\\s+foods?\\b",
+          "\\btraditional\\s+food\\b"
+        ]
+      }
     },
     {
       "id": "gmo",
       "label": "Genetically modified organisms",
       "panel": "GMO",
       "description": "GM food and feed (Regulation (EC) No 1829/2003) and environmental release (Directive 2001/18/EC).",
-      "transparency_sector": "b"
+      "transparency_sector": "b",
+      "legal_context": "Regulation (EC) No 1829/2003 on genetically modified food and feed",
+      "dossier_cues": {
+        "regulations": [
+          "1829\\s*/\\s*2003",
+          "2001\\s*/\\s*18\\s*/\\s*EC",
+          "503\\s*/\\s*2013"
+        ],
+        "phrases": [
+          "\\bgenetically\\s+modified\\s+(?:food|feed|plants?)\\b",
+          "\\btransformation\\s+event\\b"
+        ]
+      }
     },
     {
       "id": "pesticides",
       "label": "Plant protection products and residues",
       "panel": "PPR",
       "description": "Active substances (Regulation (EC) No 1107/2009) and maximum residue levels (Regulation (EC) No 396/2005).",
-      "transparency_sector": "g"
+      "transparency_sector": "g",
+      "legal_context": "Regulation (EC) No 1107/2009 (plant protection products) / Regulation (EC) No 396/2005 (MRLs)",
+      "dossier_cues": {
+        "regulations": [
+          "1107\\s*/\\s*2009",
+          "396\\s*/\\s*2005"
+        ],
+        "phrases": [
+          "\\bplant\\s+protection\\s+products?\\b",
+          "\\bmaximum\\s+residue\\s+levels?\\b",
+          "\\bactive\\s+substance\\b"
+        ]
+      }
     },
     {
       "id": "contaminants",

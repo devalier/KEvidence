@@ -40,6 +40,7 @@ KEVIDENCE_HOME=$PWD python server.py      # http://127.0.0.1:3457
 
 Open the page and sign in with any email address: without a mail transport configured, the one-time sign-in link is printed in the server console. Optionally add your own AI provider and key in *AI configuration*. Then try the fictional demo material (also linked from *Guide & samples*):
 
+- **From a dossier (automatic path):** in *Start*, upload `static/samples/completeness_demo_dossier.zip` and click *Read the dossier*. KEvidence detects the domain (feed additives), fills the intake, problem-formulation, exposure and publication fields it can derive (each with file and page), and runs the completeness check and the characterisation. The manual path below remains for work without a dossier.
 - **Characterisation:** choose *Feed additives* in *Mandate & question*, then upload `static/samples/characterisation_demo_dossier.md` in *Identity & characterisation* and click *Characterise from documents*.
 - **Sanitisation:** upload `static/samples/sanitisation_demo_study_report.pdf` in *Publication*, applicant `Demo Feed Additives S.A.`, and click *Propose redactions*.
 - **Completeness check:** upload `static/samples/completeness_demo_dossier.zip` in *Completeness & sanitisation*, applicant `Demo Feed Additives S.A.`, notified study IDs `STUDY-DEMO-0042, STUDY-DEMO-0099`, and click *Check completeness*.
@@ -47,6 +48,8 @@ Open the page and sign in with any email address: without a mail transport confi
 ---
 
 ## How the workflow is organised
+
+**Two entry points.** *From a dossier*: one upload; `dossier_profile.py` derives every form field the dossier answers by local pattern matching (no AI), citing file and page, and `/api/dossier/intake` chains the completeness check and, in a grounded domain, the characterisation. Domain detection uses the `dossier_cues` (regulation numbers, product-type phrases) and `legal_context` of each domain in `data/guidance/domains.json`. Fields the dossier cannot answer stay empty; notified study IDs are never taken from the dossier, because the Art. 22(3) check compares the dossier against them. *Manually*: choose the domain and fill in the forms.
 
 **Risk analysis** is the whole governance cycle — risk assessment, risk management, and risk communication (EU General Food Law, Regulation (EC) No 178/2002). KEvidence supports the scientific **risk assessment** part, which Codex defines as four steps. The workbench follows that structure, with problem formulation as the practical framing step:
 

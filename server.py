@@ -24,6 +24,7 @@ import accounts
 import ai
 import characterisation as charmod
 import completeness as compmod
+import dossier_profile
 import docx_export
 import limits
 import sanitisation as sanmod
@@ -109,7 +110,7 @@ def _body_limit(method: str, path: str) -> int:
     if method in ("GET", "HEAD", "OPTIONS", "DELETE"):
         return 64 * 1024
     slack = 2 * limits.MB  # multipart framing and the form fields
-    if "/api/completeness/" in path:
+    if "/api/completeness/" in path or path.endswith("/api/dossier/intake"):
         return compmod.MAX_TOTAL_BYTES + slack
     if path.endswith("/api/characterisation/analyse"):
         return charmod.MAX_TOTAL_BYTES + slack
@@ -3334,6 +3335,86 @@ async def completeness_file(files: list[UploadFile] = File(...), path: str = For
     safe = re.sub(r"[^A-Za-z0-9._-]+", "_", name)[:120] or "file"
     return Response(content=data, media_type="application/pdf" if data[:5] == b"%PDF-" else "application/octet-stream",
                     headers={"Content-Disposition": f'attachment; filename="{safe}"'})
+
+
+def _char_file_rank(f) -> int:
+    """Order in which dossier files feed the characterisation when the dossier has more files than it reads."""
+    if f.role == "annex":
+        return 1 if f.section in ("", "II") else 5
+    return {"sect_II": 0, "scsum": 2, "pubsum": 3, "application_form": 4}.get(f.role, 9)
+
+
+def _characterise_dossier_files(files: list, domain: str, meta: dict, substance: Optional[dict] = None) -> dict:
+    """Characterisation of the dossier already read for intake, without a second upload."""
+    bundle = CHAR_DOMAINS[domain]
+    readable = [f for f in files if f.pages and not f.error and f.size <= charmod.MAX_FILE_BYTES]
+    readable.sort(key=lambda f: (_char_file_rank(f), f.path))
+    chosen = readable[:charmod.MAX_FILES]
+    docs = [charmod.extract_document(f.name[:300], f.data, f"D{i}", "dossier") for i, f in enumerate(chosen, 1)]
+    for d, f in zip(docs, chosen):
+        d.name = f.path[:300]
+    notes = [f"{len(readable) - len(chosen)} dossier file(s) not read for characterisation (limit {charmod.MAX_FILES}); "
+             "Section II and its annexes come first."] if len(readable) > len(chosen) else []
+    result = charmod.analyse_dossier(docs, meta, bundle["primary"]["catalogue"], bundle["primary"]["pages"], notes)
+    result["domain"] = {"id": bundle["id"], "label": bundle["label"]}
+    result["llm"] = {"requested": False, "used": False}
+    # The intake profile found the product name in a labelled field the characterisation does not read: show where.
+    if substance and substance.get("value") and meta.get("product_name") == substance["value"] and not result["detected"]["all"].get("product_name"):
+        src = substance.get("source") or {}
+        found = {"value": substance["value"], "citation": f"{src.get('file', '').rsplit('/', 1)[-1]} p.{src.get('page')}"}
+        result["detected"]["all"]["product_name"] = found
+        result["detected"]["inferred_and_used"]["product_name"] = found
+    return result
+
+
+@app.post("/api/dossier/intake")
+async def dossier_intake(
+    files: list[UploadFile] = File(...),
+    domain: str = Form(""),
+    notified_study_ids: str = Form(""),
+    enzyme_source: str = Form("auto"),
+    meta: str = Form("{}"),
+    steps: str = Form("all"),
+):
+    """Automatic entry path: read the dossier once, derive every form field it can answer (with file and page),
+    then run the completeness check and, in a grounded domain, the characterisation with those fields.
+    `domain` overrides the detected domain; `meta` (characterisation details the assessor entered) overrides the
+    derived ones; `steps="characterisation"` re-runs only the characterisation. In memory; nothing stored; no AI."""
+    if domain and domain not in DOMAIN_INFO:
+        raise HTTPException(400, f"Unknown domain '{domain}'.")
+    if steps not in ("all", "characterisation"):
+        raise HTTPException(400, "steps must be 'all' or 'characterisation'.")
+    user_meta = _char_meta(meta)
+    uploads = await _read_uploads(files)
+
+    def run() -> dict:
+        try:
+            dfiles, notes = compmod.read_upload(uploads)
+        except compmod.CompletenessError as exc:
+            raise HTTPException(400, str(exc))
+        profile = dossier_profile.derive(dfiles, CHAR_REGISTRY, domain)
+        f = profile["fields"]
+        dom = f["domain"]["value"] or "other"
+        app_type = f["application_type"]["value"] or "new"
+        applicant = f["applicant"]["value"] or ""
+        completeness = None if steps == "characterisation" else compmod.check_files(
+            dfiles, notes, COMPLETENESS_RULES, domain=dom, application_type=app_type, applicant=applicant[:300],
+            dossier_ref=(f["dossier_ref"]["value"] or "")[:80], pre_application_ids=f["pre_application_ids"]["value"][:200],
+            notified_study_ids=_id_list(notified_study_ids), sector=_sani_sector("", dom),
+            enzyme_source=enzyme_source if enzyme_source in ("auto", "microbial", "plant", "animal") else "auto")
+        characterisation = None
+        if dom in CHAR_DOMAINS:
+            derived = {"routes": f["routes"]["value"], "product_name": (f["substance"]["value"] or "")[:200]}
+            characterisation = _characterise_dossier_files(dfiles, dom, {**derived, **{k: v for k, v in user_meta.items() if v}}, f["substance"])
+        return {"profile": profile, "domain": {"id": dom, "label": DOMAIN_INFO[dom]["label"], "grounded": dom in CHAR_DOMAINS},
+                "completeness": completeness, "characterisation": characterisation}
+
+    result = await run_in_threadpool(run)
+    comp = result["completeness"] or {}
+    accounts.log("dossier.intake", {"domain": result["domain"]["id"], "detected": bool(result["profile"]["fields"]["domain"]["value"]),
+                                    "steps": steps, "files": len(comp.get("files", [])), "verdict": comp.get("verdict", ""),
+                                    "characterised": result["characterisation"] is not None})
+    return result
 
 
 def completeness_chat(query: str, workbench_context: dict) -> dict:
