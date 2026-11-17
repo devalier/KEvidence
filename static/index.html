@@ -365,7 +365,7 @@
             <label for="intakeStudies" style="margin-top:10px">Study IDs notified in EFSA's database (optional)</label>
             <textarea id="intakeStudies" style="min-height:48px" placeholder="Not in the dossier: the completeness check compares the dossier against this list (Art. 22(3))"></textarea>
             <div class="actions"><button class="primary" id="intakeRunBtn" disabled>Read the dossier</button><span class="muted" id="intakeHint" style="align-self:center">Add the dossier first.</span></div>
-            <p class="muted" style="font-size:12px">Processed in memory for one request, not stored; local pattern matching, no AI. Every filled field shows where it was found — confirm or correct it.</p>
+            <p class="muted" style="font-size:12px">Not kept: used for one request and discarded (files over 1 MB pass briefly through the server's temporary storage); local pattern matching, no AI. Every filled field shows where it was found — confirm or correct it.</p>
           </div>
           <div class="path-card">
             <h3 style="margin-top:0">Manually <span class="badge workflow">choose a domain</span></h3>
@@ -430,7 +430,7 @@
         <label for="compStudies" style="margin-top:10px">Study IDs notified in EFSA's database for this application (one per line or comma-separated)</label>
         <textarea id="compStudies" style="min-height:60px" placeholder="Lets KEvidence verify that every notified study is in the dossier (Art. 22(3) of the pre-submission arrangements)"></textarea>
         <div class="actions"><button class="primary" id="compRunBtn" disabled>Check completeness</button><span class="muted" id="compHint" style="align-self:center">Add the dossier first.</span></div>
-        <div class="warning-box">The dossier is processed in memory for one request and is not stored; the checks run locally (no AI). Checklists loaded: <strong>feed additives</strong> (completeness checklist, grounded in the 2018 public-consultation draft of EFSA's administrative guidance) and <strong>food enzymes</strong> (suitability checklist, Appendix A to EN-6509, with each row quoting the 2021 draft of the CEP scientific guidance) — confirm wording against the current versions. Other domains get the format, study-notification, confidentiality and personal-data checks.</div>
+        <div class="warning-box">The dossier is used for one request and not kept (files over 1 MB pass briefly through the server's temporary storage); the checks run locally (no AI). Checklists loaded: <strong>feed additives</strong> (completeness checklist, grounded in the 2018 public-consultation draft of EFSA's administrative guidance) and <strong>food enzymes</strong> (suitability checklist, Appendix A to EN-6509, with each row quoting the 2021 draft of the CEP scientific guidance) — confirm wording against the current versions. Other domains get the format, study-notification, confidentiality and personal-data checks.</div>
       </div>
       <div class="panel" id="compOutput" hidden></div>
     </section>
@@ -453,7 +453,7 @@
         <h3>Step 2 — Run</h3>
         <div class="actions"><button class="primary" id="charAnalyseBtn" disabled>Characterise from documents</button><span class="muted" id="charRunHint" style="align-self:center">Add at least one document or URL first.</span></div>
         <div class="actions"><button class="primary" id="charWordBtn" disabled>Download Word (.docx)</button><button class="secondary" id="charDownloadBtn" disabled>Download Markdown</button><button class="secondary" id="charCopyBtn" disabled>Copy Markdown</button></div>
-        <div class="warning-box">Documents are processed in memory for one request and are not stored. Identification, extraction and gap analysis run locally (no LLM). Scanned PDFs need OCR first. Dossier portals rendered by JavaScript (e.g. Open EFSA) cannot be read by URL — download the documents and upload them.</div>
+        <div class="warning-box">Documents are used for one request and not kept (files over 1 MB pass briefly through the server's temporary storage). Identification, extraction and gap analysis run locally (no LLM). Scanned PDFs need OCR first. Dossier portals rendered by JavaScript (e.g. Open EFSA) cannot be read by URL — download the documents and upload them.</div>
       </div>
 
       <details class="panel" id="charOptional">
@@ -606,7 +606,7 @@
         <textarea id="saniRequests" style="min-height:80px" placeholder="recrystallisation from ethanol at 45 °C for 6 hours | Art. 39(2)(a) GFL&#10;Fictional Chemicals Ltd | Art. 39(2)(c) GFL"></textarea>
         <div class="check-row"><label><input type="checkbox" id="saniAllowLlm"> AI review: also send the page text to the AI provider you configured to find personal data and Annex items the rules miss, and to locate request items described in words. Leave unticked unless approved for confidential documents.</label></div>
         <div class="actions"><button class="primary" id="saniAnalyseBtn" disabled>Propose redactions</button><span class="muted" id="saniRunHint" style="align-self:center">Choose a PDF first.</span></div>
-        <div class="warning-box">The document is processed in memory for one request and is not stored. Local rules run without any LLM. Scanned pages without a text layer cannot be read: run OCR first. KEvidence proposes; the decision on confidentiality is EFSA's (Art. 11 of the practical arrangements).</div>
+        <div class="warning-box">The document is used for one request and not kept (files over 1 MB pass briefly through the server's temporary storage). Local rules run without any LLM. Scanned pages without a text layer cannot be read: run OCR first. KEvidence proposes; the decision on confidentiality is EFSA's (Art. 11 of the practical arrangements).</div>
       </div>
 
       <div class="panel" id="saniReview" hidden>
@@ -1683,7 +1683,9 @@ async function applySanitisation() {
       ${check(v.checks.metadata_cleared && v.checks.no_xmp_metadata, `Document metadata and XMP cleared${r.metadata_cleared.length ? ` (${r.metadata_cleared.join(', ')})` : ''}`)}
       ${check(v.checks.no_annotations, `No comments/annotations (${r.annotations_removed} removed; ${r.form_fields_removed} form field(s) removed)`)}
       ${check(v.checks.no_embedded_files, `No attachments (${r.embedded_files_removed} removed)`)}
+      ${check(v.checks.no_outline && v.checks.masked_text_absent_from_structures, `No bookmarks, page labels or named destinations (${r.outline_entries_removed} bookmark(s) removed); masked text absent from every PDF structure${v.masked_text_in_structures?.length ? ` — still found: ${v.masked_text_in_structures.join('; ')}` : ''}`)}
       ${check(true, `${r.links_removed} link(s) removed (mailto and links under masked areas)`)}</ul>
+      <p class="muted">Checks read text, not pixels: text inside images (scans, pictures of tables) must be reviewed by eye.</p>
       ${v.residual.length ? `<div class="warning-box">${v.residual.length} masked item(s) still appear unmasked elsewhere: ${v.residual.map(x => `${escapeHtml(x.id)} (masked p.${x.page}) on p.${x.still_on_pages.join(', ')}${x.same_page ? ' — SAME PAGE' : ''}`).join('; ')}. Use “Mask more text” to cover every occurrence if it must be masked.</div>` : ''}`;
     $('saniPdfBtn').disabled = false; $('saniLogBtn').disabled = false;
   } catch (e) {

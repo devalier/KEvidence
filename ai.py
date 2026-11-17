@@ -18,7 +18,9 @@ import json
 import os
 import re
 import secrets
+import threading
 import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -50,6 +52,12 @@ PROVIDERS: dict[str, dict[str, Any]] = {
                           "hint": "vLLM, Ollama, TGI, llama.cpp or an institutional gateway serving /v1/chat/completions."},
 }
 TIMEOUT_S = float(os.getenv("KEVIDENCE_AI_TIMEOUT", "90"))
+# A provider (custom endpoints are user-chosen) must not be able to hold a worker or its memory: responses are read
+# as a stream up to a byte cap and a total deadline, and only a few calls run at once.
+MAX_RESPONSE_BYTES = int(os.getenv("KEVIDENCE_AI_MAX_RESPONSE_BYTES", str(8 * 1024 * 1024)))
+MAX_MODELS = 2000
+AI_CONCURRENCY = int(os.getenv("KEVIDENCE_AI_CONCURRENCY", "8"))
+AI_CONCURRENCY_PER_USER = int(os.getenv("KEVIDENCE_AI_CONCURRENCY_PER_USER", "2"))
 
 
 class AIError(RuntimeError):
@@ -137,6 +145,70 @@ def _client(endpoint: str, timeout: float) -> httpx.Client:
     return httpx.Client(timeout=timeout, follow_redirects=False)
 
 
+class AIBusy(AIError):
+    """Too many AI calls in progress (overall or for this user); the caller should retry shortly."""
+
+
+_slots_lock = threading.Lock()
+_slots_total = 0
+_slots_user: dict[Any, int] = {}
+
+
+@contextmanager
+def _slot():
+    """Admission control for outbound AI calls: refuse rather than queue, so waiting calls never pile up threads."""
+    global _slots_total
+    user = accounts.CURRENT_USER.get()
+    who = user["id"] if user else None
+    with _slots_lock:
+        if _slots_total >= AI_CONCURRENCY or _slots_user.get(who, 0) >= AI_CONCURRENCY_PER_USER:
+            raise AIBusy("Too many AI requests are running; try again in a moment.")
+        _slots_total += 1
+        _slots_user[who] = _slots_user.get(who, 0) + 1
+    try:
+        yield
+    finally:
+        with _slots_lock:
+            _slots_total -= 1
+            _slots_user[who] -= 1
+            if not _slots_user[who]:
+                del _slots_user[who]
+
+
+def _bounded(c: httpx.Client, method: str, url: str, total_s: float, **kw) -> tuple[int, bytes]:
+    """Send a request and read the (decompressed) body up to MAX_RESPONSE_BYTES within total_s seconds overall."""
+    deadline = time.monotonic() + total_s
+    with c.stream(method, url, **kw) as r:
+        declared = r.headers.get("content-length", "")
+        if declared.isdigit() and int(declared) > MAX_RESPONSE_BYTES:
+            raise AIError("The AI provider's response is too large.")
+        body = bytearray()
+        for chunk in r.iter_bytes():
+            body += chunk
+            if len(body) > MAX_RESPONSE_BYTES:
+                raise AIError("The AI provider's response is too large.")
+            if time.monotonic() > deadline:
+                raise AIError("The AI provider took too long to answer.")
+        return r.status_code, bytes(body)
+
+
+def _call(method: str, url: str, endpoint: str, timeout: float, client: Optional[httpx.Client], **kw) -> tuple[int, Any]:
+    """One bounded provider call. Returns (status, parsed JSON or None when the body is not JSON)."""
+    try:
+        with _slot():
+            if client is not None:
+                status, raw = _bounded(client, method, url, timeout, **kw)
+            else:
+                with _client(endpoint, timeout) as c:
+                    status, raw = _bounded(c, method, url, timeout, **kw)
+    except httpx.RequestError as exc:
+        raise AIError(f"Could not reach the AI provider ({type(exc).__name__}).") from None
+    try:
+        return status, json.loads(raw)
+    except (ValueError, UnicodeDecodeError):
+        return status, None
+
+
 def _base(provider: str, endpoint: str) -> str:
     if provider not in PROVIDERS:
         raise AIError(f"Unknown provider '{provider}'.")
@@ -155,28 +227,18 @@ def _base(provider: str, endpoint: str) -> str:
 # ---------------------------------------------------------------------------
 
 def _post(url: str, headers: dict, payload: dict, key: str, client: Optional[httpx.Client] = None, endpoint: str = "") -> dict:
-    try:
-        if client is not None:
-            r = client.post(url, headers=headers, json=payload)
-        else:
-            with _client(endpoint, TIMEOUT_S) as c:
-                r = c.post(url, headers=headers, json=payload)
-    except httpx.RequestError as exc:
-        raise AIError(f"Could not reach the AI provider ({type(exc).__name__}).") from None
-    if r.status_code in (401, 403):
+    status, body = _call("POST", url, endpoint, TIMEOUT_S, client, headers=headers, json=payload)
+    if status in (401, 403):
         raise AIError("The AI provider rejected the API key.")
-    if r.status_code >= 400:
+    if status >= 400:
         msg = ""
-        try:
-            body = r.json()
-            msg = (body.get("error") or {}).get("message", "") if isinstance(body.get("error"), dict) else str(body.get("error") or "")
-        except ValueError:
-            pass
-        raise AIError(redact(f"The AI provider returned {r.status_code}{': ' + msg[:200] if msg else ''}.", key))
-    try:
-        return r.json()
-    except ValueError:
-        raise AIError("The AI provider returned an unreadable response.") from None
+        if isinstance(body, dict):
+            err = body.get("error")
+            msg = str((err.get("message") if isinstance(err, dict) else err) or "")
+        raise AIError(redact(f"The AI provider returned {status}{': ' + msg[:200] if msg else ''}.", key))
+    if not isinstance(body, dict):
+        raise AIError("The AI provider returned an unreadable response.")
+    return body
 
 
 def complete(config: dict, messages: list[dict], *, temperature: float = 0.1, max_tokens: int = 1200,
@@ -229,22 +291,17 @@ def list_models(provider: str, api_key: str, endpoint: str, client: Optional[htt
         raise AIError("Enter the API key first.")
     headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01"} if provider == "anthropic" else (
         {"Authorization": f"Bearer {api_key}"} if api_key else {})
-    try:
-        if client is not None:
-            r = client.get(f"{base}/models", headers=headers)
-        else:
-            with _client(endpoint, 15) as c:
-                r = c.get(f"{base}/models", headers=headers, params={"limit": 1000} if provider == "anthropic" else None)
-    except httpx.RequestError as exc:
-        raise AIError(f"Could not reach the AI provider ({type(exc).__name__}).") from None
-    if r.status_code in (401, 403):
+    status, body = _call("GET", f"{base}/models", endpoint, 15, client, headers=headers,
+                         params={"limit": 1000} if provider == "anthropic" else None)
+    if status in (401, 403):
         raise AIError("The AI provider rejected the API key.")
-    if r.status_code >= 400:
-        raise AIError(f"The AI provider returned {r.status_code}.")
+    if status >= 400:
+        raise AIError(f"The AI provider returned {status}.")
     try:
-        return sorted({str(m["id"]) for m in r.json()["data"]})
-    except (ValueError, KeyError, TypeError):
+        ids = {str(m["id"])[:200] for m in body["data"][:MAX_MODELS]}
+    except (KeyError, TypeError):
         raise AIError("The AI provider returned an unrecognised model list.") from None
+    return sorted(ids)
 
 
 # ---------------------------------------------------------------------------

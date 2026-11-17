@@ -692,7 +692,7 @@ def apply(content: bytes, redactions: Any, *, label_boxes: bool = False, title: 
             by_page.setdefault(r["page"], []).append(r)
         masked_texts = [_norm(r["text"]) for r in reds if r["text"] and r["category"] != "signature"]
         report = {"redaction_boxes": 0, "pages_redacted": len(by_page), "annotations_removed": 0, "form_fields_removed": 0,
-                  "links_removed": 0, "embedded_files_removed": doc.embfile_count(),
+                  "links_removed": 0, "embedded_files_removed": doc.embfile_count(), "outline_entries_removed": len(doc.get_toc(simple=True)),
                   "metadata_cleared": sorted(k for k, v in (doc.metadata or {}).items() if v and k not in ("format", "encryption"))}
         for page in doc:
             # Comments, highlights and form fields can carry names and claimed text: remove them all.
@@ -723,11 +723,47 @@ def apply(content: bytes, redactions: Any, *, label_boxes: bool = False, title: 
         doc.scrub(attached_files=True, clean_pages=True, embedded_files=True, hidden_text=False, javascript=True, metadata=True,
                   redactions=True, remove_links=False, reset_fields=True, reset_responses=True, thumbnails=True, xml_metadata=True)
         doc.set_metadata({"title": (title or "Non-confidential version")[:200], "producer": "KEvidence sanitisation"})
+        # Navigation structures repeat document text (bookmark titles, page labels, named destinations) and are not
+        # touched by page redaction: remove them. The verification below scans every object for masked text.
+        doc.set_toc([])
+        _drop_catalog_keys(doc, ("PageLabels", "Names", "Dests", "StructTreeRoot", "MarkInfo", "Outlines"))
         out = doc.tobytes(garbage=4, deflate=True, clean=True, no_new_id=False)
     finally:
         doc.close()
     report["verification"] = verify(out, reds)
     return out, report
+
+
+def _drop_catalog_keys(doc: "pymupdf.Document", keys: tuple[str, ...]) -> None:
+    cat = doc.pdf_catalog()
+    for key in keys:
+        if doc.xref_get_key(cat, key)[0] != "null":
+            doc.xref_set_key(cat, key, "null")
+
+
+def _pdf_string_forms(text: str) -> list[bytes]:
+    """How a string can appear in a PDF object's source: literal, UTF-16BE hex (as PyMuPDF writes outline titles), PDFDoc hex."""
+    literal = text.encode("latin-1", "ignore")
+    return [f for f in (literal, ("FEFF" + text.encode("utf-16-be").hex()).upper().encode(), literal.hex().upper().encode()) if len(f) >= 3]
+
+
+def _structures_with_text(doc: "pymupdf.Document", texts: list[str]) -> list[str]:
+    """Masked texts found in any PDF object outside the page content streams (outline, names, labels, structure tree,
+    link actions, form data): a page-text check cannot see these."""
+    needles = {t: _pdf_string_forms(t) for t in texts}
+    found = []
+    for xref in range(1, doc.xref_length()):
+        try:
+            src = doc.xref_object(xref, compressed=True).encode("latin-1", "ignore")
+        except Exception:
+            # An object that cannot be read cannot be shown to be clean: fail the check rather than skip it.
+            found.append(f"(unreadable PDF object {xref})")
+            src = b""
+        upper = src.upper()  # hex strings may be written in either case; literals are matched exactly
+        for t, forms in needles.items():
+            if t not in found and (forms[0] in src or any(f in upper for f in forms[1:])):
+                found.append(t)
+    return found
 
 
 def verify(pdf: bytes, reds: list[dict[str, Any]]) -> dict[str, Any]:
@@ -745,6 +781,8 @@ def verify(pdf: bytes, reds: list[dict[str, Any]]) -> dict[str, Any]:
             left = [i + 1 for i, p in enumerate(pages) if c in p]
             if left:
                 residual.append({"id": r["id"], "page": r["page"], "still_on_pages": left, "same_page": r["page"] in left})
+        selected = sorted({_norm(r["text"]) for r in reds if r["category"] != "signature" and len(_compact(r["text"])) >= 3})
+        in_structures = _structures_with_text(doc, selected)
         meta_left = sorted(k for k, v in (doc.metadata or {}).items() if v and k not in ("format", "encryption", "title", "producer", "creationDate", "modDate"))
         checks = {
             # Text masked on a page must be gone from that page; copies elsewhere that were not selected are reported.
@@ -754,8 +792,12 @@ def verify(pdf: bytes, reds: list[dict[str, Any]]) -> dict[str, Any]:
             "no_xmp_metadata": not (doc.get_xml_metadata() or "").strip(),
             "metadata_cleared": not meta_left,
             "not_encrypted": not doc.is_encrypted,
+            "no_outline": not doc.get_toc(simple=True),
+            # Bookmarks, page labels, named destinations, tagged-PDF text and link actions must not repeat masked text.
+            "masked_text_absent_from_structures": not in_structures,
         }
-        return {"passed": all(checks.values()), "checks": checks, "residual": residual, "pages": doc.page_count}
+        return {"passed": all(checks.values()), "checks": checks, "residual": residual, "pages": doc.page_count,
+                "masked_text_in_structures": in_structures}
     finally:
         doc.close()
 
