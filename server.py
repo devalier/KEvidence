@@ -304,7 +304,7 @@ def ai_test_config(request: Request, config_id: int):
     try:
         cfg = ai.check_config(user["id"], config_id)
     except ai.AIError as exc:
-        raise HTTPException(404 if "does not exist" in str(exc) else 400, str(exc))
+        raise HTTPException(429 if isinstance(exc, ai.AIBusy) else 404 if "does not exist" in str(exc) else 400, str(exc))
     accounts.log("ai.model_tested", {"provider": cfg["provider"], "model": cfg["model"], "ok": cfg["last_check_ok"]}, user)
     return _ai_state(user["id"])
 
@@ -326,7 +326,7 @@ def ai_models(body: dict):
     try:
         models = ai.list_models(str(body.get("provider") or ""), str(body.get("api_key") or "")[:500], str(body.get("endpoint") or "")[:400])
     except ai.AIError as exc:
-        raise HTTPException(400, str(exc))
+        raise HTTPException(429 if isinstance(exc, ai.AIBusy) else 400, str(exc))
     return {"models": models}
 
 
@@ -2997,6 +2997,8 @@ def characterisation_export_docx(body: dict):
     accounts.log("characterisation.exported_docx", {"chars": len(markdown)})
     try:
         content = docx_export.markdown_to_docx(markdown, title)
+    except docx_export.ExportTooLarge as exc:
+        raise HTTPException(413, str(exc))
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     return Response(content=content, media_type=docx_export.DOCX_MEDIA_TYPE,

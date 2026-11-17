@@ -298,3 +298,40 @@ def test_request_items_are_grouped_as_requests_and_applicant_line_address_kept(r
                   requests_raw="recrystallisation from ethanol at 45 °C for 6 hours | Art. 39(2)(a) GFL")
     assert r["summary"].get("request") == 1
     assert not any("Exemple" in p["text"] for p in r["proposals"])  # address on the applicant's line, no address given
+
+
+# --- Navigation structures (security review F1) -----------------------------------------------
+
+def _pdf_with_secret_in_navigation(secret: str) -> tuple[bytes, list]:
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), secret)
+    doc.set_toc([[1, secret, 1], [1, "Introduction", 1]])
+    doc.set_page_labels([{"startpage": 0, "prefix": f"{secret}-", "style": "D", "firstpagenum": 1}])
+    rects = [list(r) for r in page.search_for(secret)]
+    data = doc.tobytes()
+    doc.close()
+    return data, rects
+
+
+def test_apply_removes_masked_text_from_bookmarks_and_page_labels():
+    secret = "CONFIDENTIAL_CLIENT_ACME"
+    data, rects = _pdf_with_secret_in_navigation(secret)
+    out, report = s.apply(data, [{"page": 1, "rects": rects, "text": secret, "category": "personal_data", "id": "R1"}])
+    clean = pymupdf.open(stream=out, filetype="pdf")
+    assert clean.get_toc() == [] and clean.get_page_labels() == []
+    assert secret not in clean[0].get_text()
+    clean.close()
+    assert secret.encode() not in out and ("FEFF" + secret.encode("utf-16-be").hex()).upper().encode() not in out.upper()
+    assert report["outline_entries_removed"] == 2
+    v = report["verification"]
+    assert v["passed"] and v["checks"]["no_outline"] and v["checks"]["masked_text_absent_from_structures"]
+
+
+def test_verification_fails_when_masked_text_survives_in_a_bookmark():
+    secret = "CONFIDENTIAL_CLIENT_ACME"
+    data, _ = _pdf_with_secret_in_navigation(secret)
+    v = s.verify(data, [{"page": 1, "text": secret, "category": "personal_data", "id": "R1"}])
+    assert not v["passed"]
+    assert not v["checks"]["no_outline"] and not v["checks"]["masked_text_absent_from_structures"]
+    assert v["masked_text_in_structures"] == [secret]

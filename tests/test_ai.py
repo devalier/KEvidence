@@ -166,3 +166,54 @@ def test_config_api_lists_switches_and_never_returns_keys(client):
     events = [e["event"] for e in client.get("/api/activity").json()["events"]]
     assert {"ai.model_saved", "ai.model_selected", "ai.model_deleted"} <= set(events)
     assert client.post("/api/ai/configs", json={"provider": "openai_compatible", "model": "llama"}).status_code == 400  # needs endpoint
+
+
+# --- Bounded provider responses (security review F5) --------------------------------------------
+
+def test_oversized_response_is_refused_while_streaming(monkeypatch):
+    monkeypatch.setattr(ai, "MAX_RESPONSE_BYTES", 1000)
+    sent = []
+
+    def endless():
+        for _ in range(100):
+            sent.append(1)
+            yield b"x" * 100
+
+    client = _transport(lambda req: httpx.Response(200, content=endless()))
+    with pytest.raises(ai.AIError, match="too large"):
+        ai.list_models("openai", "k" * 10, "", client=client)
+    assert len(sent) < 20  # stopped near the cap, not after reading everything
+
+
+def test_declared_oversized_response_is_refused_before_reading(monkeypatch):
+    monkeypatch.setattr(ai, "MAX_RESPONSE_BYTES", 1000)
+    client = _transport(lambda req: httpx.Response(200, headers={"content-length": "5000"}, content=b"x" * 5000))
+    with pytest.raises(ai.AIError, match="too large"):
+        ai.complete({"provider": "openai", "model": "m", "api_key": "k" * 10}, [{"role": "user", "content": "x"}], client=client)
+
+
+def test_slow_streaming_response_hits_the_total_deadline(monkeypatch):
+    clock = iter(range(0, 10_000, 50))  # each read advances 50 s
+    monkeypatch.setattr(ai.time, "monotonic", lambda: next(clock))
+
+    def trickle():
+        while True:
+            yield b" "
+
+    with pytest.raises(ai.AIError, match="too long"):
+        ai.list_models("openai", "k" * 10, "", client=_transport(lambda req: httpx.Response(200, content=trickle())))
+
+
+def test_concurrent_calls_over_the_budget_are_refused(monkeypatch):
+    monkeypatch.setattr(ai, "AI_CONCURRENCY_PER_USER", 1)
+    client = _transport(lambda req: httpx.Response(200, json={"data": [{"id": "m"}]}))
+    with ai._slot():
+        with pytest.raises(ai.AIBusy):
+            ai.list_models("openai", "k" * 10, "", client=client)
+    assert ai.list_models("openai", "k" * 10, "", client=client) == ["m"]  # the slot is released
+
+
+def test_model_list_is_bounded():
+    data = {"data": [{"id": f"m{i}" + "x" * 500} for i in range(ai.MAX_MODELS + 50)]}
+    models = ai.list_models("openai", "k" * 10, "", client=_transport(lambda req: httpx.Response(200, json=data)))
+    assert len(models) == ai.MAX_MODELS and max(map(len, models)) == 200

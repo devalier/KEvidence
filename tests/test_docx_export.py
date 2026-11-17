@@ -195,3 +195,31 @@ def test_analyse_then_export_equals_the_screen(client):
     text = "\n".join(p.text for p in d.paragraphs)
     assert "Characterisation of the additive — DemoVan 99" in text and "Data-gap analysis against the guidance" in text
     assert len(d.tables) >= 5
+
+
+# --- Table amplification (security review F2) --------------------------------------------------
+
+def test_compact_wide_table_is_refused_before_any_table_is_built(monkeypatch):
+    built = []
+    monkeypatch.setattr(dx, "_add_table", lambda *a: built.append(a))
+    md = "|" + "x|" * 1000 + "\n|---|\n" + "|x|\n" * 1000  # ~6 kB asking for 1,001,000 cells
+    with pytest.raises(dx.ExportTooLarge):
+        dx.markdown_to_docx(md)
+    assert built == []
+
+
+def test_many_cells_and_many_lines_are_refused():
+    with pytest.raises(dx.ExportTooLarge):
+        dx.markdown_to_docx("|" + "a|" * 30 + "\n|---|\n" + ("|" + "b|" * 30 + "\n") * 2000)  # 60,030 cells
+    with pytest.raises(dx.ExportTooLarge):
+        dx.markdown_to_docx("x\n" * (dx.MAX_LINES + 1))
+
+
+def test_demo_characterisation_is_within_the_limits(demo_markdown):
+    dx.check_shape(demo_markdown.split("\n"))
+
+
+def test_api_export_refuses_amplification_with_413(client):
+    md = "|" + "x|" * 1000 + "\n|---|\n" + "|x|\n" * 1000
+    r = client.post("/api/characterisation/export.docx", json={"markdown": md})
+    assert r.status_code == 413

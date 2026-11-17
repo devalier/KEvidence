@@ -25,6 +25,17 @@ from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
 MAX_MARKDOWN_CHARS = 3_000_000
+# Word builds every table cell as XML objects: a few bytes of Markdown can ask for millions of cells, so the shape of
+# the document is bounded before anything is built. Real characterisations stay far below these.
+MAX_LINES = 100_000
+MAX_TABLE_COLUMNS = 40
+MAX_TABLE_CELLS = 40_000
+MAX_TOTAL_CELLS = 200_000
+MAX_TABLES = 500
+
+
+class ExportTooLarge(ValueError):
+    """The document would be too large to build; the request is refused before any allocation."""
 DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 BODY_FONT = "Calibri"
@@ -268,14 +279,41 @@ def _configure(doc: Any, title: str, header_text: str) -> None:
     cp.created = _dt.datetime.now(_dt.timezone.utc).replace(tzinfo=None)
 
 
+def check_shape(lines: list[str]) -> None:
+    """Refuse documents whose tables (padded to their widest row, as Word builds them) or length exceed the limits.
+    Mirrors the table detection of markdown_to_docx."""
+    if len(lines) > MAX_LINES:
+        raise ExportTooLarge(f"Too many lines to export (limit {MAX_LINES}).")
+    i, n, tables, total = 0, len(lines), 0, 0
+    while i < n:
+        if lines[i].strip().startswith("|") and i + 1 < n and _TABLE_SEP.match(lines[i + 1].strip()):
+            width, rows = len(_split_row(lines[i])), 1
+            i += 2
+            while i < n and lines[i].strip().startswith("|"):
+                width = max(width, len(_split_row(lines[i])))
+                rows += 1
+                i += 1
+            tables += 1
+            total += rows * width
+            if width > MAX_TABLE_COLUMNS:
+                raise ExportTooLarge(f"A table has {width} columns (limit {MAX_TABLE_COLUMNS}).")
+            if rows * width > MAX_TABLE_CELLS:
+                raise ExportTooLarge(f"A table has {rows * width} cells (limit {MAX_TABLE_CELLS}).")
+            if tables > MAX_TABLES or total > MAX_TOTAL_CELLS:
+                raise ExportTooLarge("The document has too many tables or table cells to export.")
+            continue
+        i += 1
+
+
 def markdown_to_docx(markdown: str, title: str = "Characterisation of the additive", header_text: Optional[str] = None) -> bytes:
     """Convert the step 0 Markdown to a .docx and return its bytes."""
     if len(markdown) > MAX_MARKDOWN_CHARS:
-        raise ValueError("Markdown is too large to export")
+        raise ExportTooLarge("Markdown is too large to export")
+    lines = markdown.replace("\r\n", "\n").split("\n")
+    check_shape(lines)
     doc = Document()
     _configure(doc, title, header_text or "KEvidence · draft for scientific-officer verification · may contain confidential dossier information")
     notes = _Footnotes()
-    lines = markdown.replace("\r\n", "\n").split("\n")
     i, n, first_h1 = 0, len(lines), True
     para: list[str] = []
 
