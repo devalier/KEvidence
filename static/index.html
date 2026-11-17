@@ -285,6 +285,14 @@
   .domain-card strong { display: block; font-size: 14px; }
   .domain-card .muted { font-size: 12px; margin-top: 4px; }
   .badge.grounded { color: var(--success); } .badge.workflow { color: var(--text2); }
+  .path-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  @media (max-width: 760px) { .path-grid { grid-template-columns: 1fr; } }
+  .path-card { background: var(--bg); border: 1px solid var(--surface2); border-radius: var(--radius); padding: 14px; }
+  .derived { border-color: rgba(74,222,128,.55) !important; box-shadow: inset 3px 0 0 var(--success); }
+  .intake-steps { list-style: none; padding: 0; margin: 6px 0 10px; }
+  .intake-steps li { padding: 6px 0; border-bottom: 1px solid var(--surface2); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .intake-steps li .grow { flex: 1; min-width: 200px; }
+  #intakeOutput .badge { white-space: nowrap; }
   .ai-list { width: 100%; border-collapse: collapse; font-size: 13px; }
   .ai-list th { text-align: left; color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; padding: 6px 8px; border-bottom: 1px solid var(--surface2); }
   .ai-list td { padding: 6px 8px; border-bottom: 1px solid var(--surface2); vertical-align: middle; }
@@ -321,8 +329,9 @@
 
 <div class="app-shell">
   <nav aria-label="Assessment workflow">
+    <button class="step active" data-tab="start"><span class="num blank">▶</span><span class="lbl">Start<small>From a dossier, or manually</small></span></button>
     <div class="nav-group">Assessment</div>
-    <button class="step active" data-tab="problem"><span class="num blank">◆</span><span class="lbl">Mandate &amp; question<small>Domain, question, scope</small></span></button>
+    <button class="step" data-tab="problem"><span class="num blank">◆</span><span class="lbl">Mandate &amp; question<small>Domain, question, scope</small></span></button>
     <div class="nav-group">Intake</div>
     <button class="step" data-tab="completeness"><span class="num blank">◆</span><span class="lbl">Completeness &amp; sanitisation<small>Check the dossier, find personal data</small></span></button>
     <div class="nav-group">Dossier evaluation</div>
@@ -343,9 +352,35 @@
   </nav>
 
   <main>
-    <section id="problem" class="tab-content active">
+    <section id="start" class="tab-content active">
+      <div class="panel">
+        <h2>Start an assessment</h2>
+        <p class="help">Two ways in. <strong>From a dossier</strong>: upload the application once; KEvidence detects the domain and fills in every field the dossier answers — intake, mandate &amp; question, characterisation, exposure and publication — then runs the completeness check and, in a grounded domain, the characterisation. <strong>Manually</strong>: choose the domain and fill in the forms yourself, e.g. for a mandate without a dossier.</p>
+        <div class="path-grid">
+          <div class="path-card">
+            <h3 style="margin-top:0">From a dossier <span class="badge grounded">automatic</span></h3>
+            <div><label for="intakeFiles">Files, or a ZIP of the dossier</label><input id="intakeFiles" type="file" multiple accept=".zip,.pdf,.docx,.xlsx,.xlsm,.csv,.tsv,.txt,.md,.json,.html,.htm"></div>
+            <div style="margin-top:8px"><label for="intakeFolder">…or the dossier folder (keeps its structure)</label><input id="intakeFolder" type="file" webkitdirectory directory multiple></div>
+            <div id="intakeFileInfo" class="muted" style="margin-top:6px"></div>
+            <label for="intakeStudies" style="margin-top:10px">Study IDs notified in EFSA's database (optional)</label>
+            <textarea id="intakeStudies" style="min-height:48px" placeholder="Not in the dossier: the completeness check compares the dossier against this list (Art. 22(3))"></textarea>
+            <div class="actions"><button class="primary" id="intakeRunBtn" disabled>Read the dossier</button><span class="muted" id="intakeHint" style="align-self:center">Add the dossier first.</span></div>
+            <p class="muted" style="font-size:12px">Processed in memory for one request, not stored; local pattern matching, no AI. Every filled field shows where it was found — confirm or correct it.</p>
+          </div>
+          <div class="path-card">
+            <h3 style="margin-top:0">Manually <span class="badge workflow">choose a domain</span></h3>
+            <p class="muted">Choose the domain and fill in the problem formulation in <em>Mandate &amp; question</em>, then work through the steps in any order. Use this without a dossier, or to assess a question rather than an application.</p>
+            <div class="actions"><button class="secondary" id="startManualBtn">Choose a domain →</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="intakeOutput" hidden></div>
+    </section>
+
+    <section id="problem" class="tab-content">
       <div class="panel">
         <h2>Mandate &amp; question</h2>
+        <p class="muted" id="problemFromDossier">Have the applicant's dossier? <button class="ghost" data-jump="start">Start from the dossier</button> — the domain and every field it answers are filled in for you.</p>
         <h3 style="margin-top:4px">Domain</h3>
         <p class="help" style="margin-bottom:4px">Choose the area of the assessment. Every domain gets the risk-assessment workflow, the AOP/NAM tools and publication (sanitisation). Domains marked <span class="badge grounded">guidance grounded</span> also get the identity &amp; characterisation tool and an assistant that answers only from the bundled guidance. Your area is not grounded yet? Its guidance can be added without code — see the Guide.</p>
         <div class="domain-grid" id="domainGrid"><div class="muted">Loading domains…</div></div>
@@ -353,7 +388,7 @@
         <p class="help">Problem formulation is the practical first step of a modern risk assessment — it is not one of the four formal Codex steps, but it frames all of them. Define the question, scope, population, endpoint, product/use scenario, data needs, and decision context. KEvidence carries this structured context into hazard identification, hazard characterisation, exposure assessment, and risk characterisation.</p>
         <div class="grid">
           <div><label for="chemicalInput">Substance / stressor identity</label><input id="chemicalInput" placeholder="e.g., rotenone; CAS/EC/InChIKey if known"></div>
-          <div><label for="assessmentTypeInput">Assessment type</label><select id="assessmentTypeInput"><option value="">Select assessment type…</option><option>New application</option><option>Renewal / re-evaluation</option><option>Read-across support</option><option>TTC consideration</option><option>Genotoxicity follow-up</option><option>Endocrine activity follow-up</option><option>Cumulative assessment</option><option>Data-gap analysis</option></select></div>
+          <div><label for="assessmentTypeInput">Assessment type</label><select id="assessmentTypeInput"><option value="">Select assessment type…</option><option>New application</option><option>Modification / extension of use</option><option>Renewal / re-evaluation</option><option>Read-across support</option><option>TTC consideration</option><option>Genotoxicity follow-up</option><option>Endocrine activity follow-up</option><option>Cumulative assessment</option><option>Data-gap analysis</option></select></div>
           <div><label for="outputPurposeInput">Required output purpose</label><select id="outputPurposeInput" required><option value="">Select purpose…</option><option value="triage">Triage / prioritization</option><option value="data-gap planning">Data-gap planning</option><option value="evidence mapping">Evidence mapping</option><option value="read-across support">Read-across support</option><option value="draft narrative support">Draft narrative support</option></select></div>
           <div><label for="regulatoryQuestionInput">Regulatory question</label><input id="regulatoryQuestionInput" placeholder="e.g., Does the proposed use raise a neurotoxicity concern?"></div>
           <div><label for="matrixInput">Matrix / product</label><input id="matrixInput" placeholder="e.g., cereal products, food contact coating, feed premix"></div>
@@ -649,6 +684,7 @@
         <p class="help">A one-page guide to the Codex risk-assessment workflow. Risk assessment is the scientific part of risk analysis (which also covers risk management and risk communication). Problem formulation frames the four Codex steps below; keep every generated statement traceable to source data and expert judgement.</p>
         <div class="manual-grid">
           <div class="manual-steps">
+            <div class="manual-step"><strong>Start — from a dossier or manually.</strong><span class="muted"><em>From a dossier</em>: upload the application once (files, folder or ZIP). KEvidence detects the domain from the regulations and product type it cites, fills every field the dossier answers (applicant, reference, application type, pre-application IDs, substance, species, use level, routes, legal context, problem formulation), runs the completeness check and, in a grounded domain, the characterisation. Filled fields are outlined in green with their file and page; edit any to override. Notified study IDs come from EFSA's database, not the dossier. <em>Manually</em>: choose the domain and fill in the forms.</span></div>
             <div class="manual-step"><strong>Mandate &amp; question — domain and problem formulation.</strong><span class="muted">Choose the domain (every domain gets the workflow and publication; grounded domains also get guidance-checked characterisation), then enter the substance/stressor, use scenario, endpoint of concern and decision context. This frames the four Codex steps.</span></div>
             <div class="manual-step"><strong>Intake — completeness &amp; sanitisation.</strong><span class="muted">Upload the dossier (files, its folder or a ZIP), choose the application type and enter any notified study IDs. KEvidence checks structure and format, the administrative documents, Sections I–V, study notifications (Art. 32b GFL), the confidentiality request and personal data, then drafts the request for missing information. <em>Sanitise</em> opens a file in Publication.</span></div>
             <div class="manual-step"><strong>Identity &amp; characterisation — what exactly is being assessed?</strong><span class="muted">In a grounded domain (today: feed additives), upload or link the applicant's documents and click <em>Characterise from documents</em>. KEvidence identifies the additive and its components from the documents (optional details only to correct it), maps the evidence to each requirement of the FEEDAP identity/characterisation guidance (EFSA Journal 2017;15(10):5023), cites document and page for every value, lists data gaps, and exports the characterisation as Markdown.</span></div>
@@ -772,7 +808,7 @@ window.fetch = async (...args) => {
   }
   return res;
 };
-const state = { chemical: '', context: {}, candidateAops: [], selectedAop: null, selectedAopDetail: null, assessment: null, quantitative: null, openfoodtox: null, characterisation: null, activeTab: 'problem', domain: 'feed' };
+const state = { chemical: '', context: {}, candidateAops: [], selectedAop: null, selectedAopDetail: null, assessment: null, quantitative: null, openfoodtox: null, characterisation: null, activeTab: 'start', domain: 'feed', dossier: null };
 
 const $ = id => document.getElementById(id);
 const steps = document.querySelectorAll('.step');
@@ -1255,6 +1291,7 @@ async function loadCharacterisationGuidance() {
 async function runCharacterisation() {
   const files = $('charFiles').files;
   const urls = fieldValue('charUrls');
+  if (!files.length && !urls && state.dossier) return runCharacterisationFromDossier();
   if (!files.length && !urls) { $('charOutput').innerHTML = '<div class="muted">Step 1: upload at least one document or enter a URL.</div>'; return; }
   const fd = new FormData();
   [...files].forEach(f => fd.append('files', f, f.name));
@@ -1437,9 +1474,11 @@ $('charWordBtn').addEventListener('click', downloadCharacterisationWord);
 $('charCopyBtn').addEventListener('click', copyCharacterisation);
 $('charUseIdentityBtn').addEventListener('click', useCharacterisedIdentity);
 function updateCharRunState() {
-  const ready = $('charFiles').files.length > 0 || fieldValue('charUrls').length > 0;
+  const own = $('charFiles').files.length > 0 || fieldValue('charUrls').length > 0;
+  const ready = own || Boolean(state.dossier);
   $('charAnalyseBtn').disabled = !ready;
-  $('charRunHint').textContent = ready ? 'Ready — KEvidence will identify the substance from the documents.' : 'Add at least one document or URL first.';
+  $('charRunHint').textContent = own ? 'Ready — KEvidence will identify the substance from the documents.'
+    : ready ? `Ready — uses the dossier loaded in Start (${state.dossier.uploads.length} file(s)). Add documents here only to use others.` : 'Add at least one document or URL first.';
 }
 $('charFiles').addEventListener('change', () => {
   $('charFileList').textContent = [...$('charFiles').files].map(f => `${f.name} (${Math.ceil(f.size / 1024)} kB)`).join(' · ');
@@ -1770,16 +1809,22 @@ loadMe();
 // ---------------------------------------------------------------------------
 // Intake — completeness check & sanitisation
 // ---------------------------------------------------------------------------
-function compUploads() {
-  const files = [...$('compFiles').files].map(f => ({ file: f, name: f.name }));
-  [...$('compFolder').files].forEach(f => files.push({ file: f, name: f.webkitRelativePath || f.name }));
+function pickedUploads(filesId, folderId) {
+  const files = [...$(filesId).files].map(f => ({ file: f, name: f.name }));
+  [...$(folderId).files].forEach(f => files.push({ file: f, name: f.webkitRelativePath || f.name }));
   return files;
+}
+// Files chosen here win; otherwise the dossier loaded in Start is used, so it is uploaded by the user only once.
+function compUploads() {
+  const own = pickedUploads('compFiles', 'compFolder');
+  return own.length ? own : (state.dossier?.uploads || []);
 }
 function updateCompRunState() {
   const u = compUploads();
   const size = u.reduce((a, x) => a + x.file.size, 0);
   $('compRunBtn').disabled = !u.length;
-  $('compFileInfo').textContent = u.length ? `${u.length} file(s), ${(size / 1048576).toFixed(1)} MB` : '';
+  const own = pickedUploads('compFiles', 'compFolder').length;
+  $('compFileInfo').textContent = u.length ? `${u.length} file(s), ${(size / 1048576).toFixed(1)} MB${own ? '' : ' — the dossier loaded in Start'}` : '';
   $('compHint').textContent = u.length ? 'Ready.' : 'Add the dossier first.';
 }
 async function loadCompletenessRules() {
@@ -1858,6 +1903,148 @@ async function sanitiseFromDossier(path, btn) {
   } catch (e) { alert(`Could not open the file: ${e.message}`); }
   finally { btn.textContent = label; btn.disabled = false; }
 }
+// ---------------------------------------------------------------------------
+// Start — automatic path: one dossier upload fills every field it can answer
+// ---------------------------------------------------------------------------
+// [profile field, form input]. A field may feed several inputs (e.g. the applicant: intake and publication).
+const INTAKE_TARGETS = [
+  ['substance', 'chemicalInput'], ['assessment_type', 'assessmentTypeInput'], ['output_purpose', 'outputPurposeInput'],
+  ['regulatory_question', 'regulatoryQuestionInput'], ['matrix', 'matrixInput'], ['intended_use', 'intendedUseInput'],
+  ['use_level', 'useLevelInput'], ['population', 'populationInput'], ['route', 'routeInput'],
+  ['authorization_status', 'authorizationInput'], ['legal_context', 'legalContextInput'], ['decision_context', 'decisionContextInput'],
+  ['dossier_ref', 'compRef'], ['application_type', 'compType'], ['applicant', 'compApplicant'], ['pre_application_ids', 'compPreapp'],
+  ['applicant', 'saniApplicant'], ['use_level', 'exposureOccurrence'], ['route', 'exposureRouteInput'], ['population', 'exposurePopulationInput'],
+];
+const INTAKE_LABELS = { domain: 'Domain', application_type: 'Type of application', applicant: 'Applicant', dossier_ref: 'Dossier reference',
+  pre_application_ids: 'Pre-application ID(s)', substance: 'Substance / product', species: 'Target species', use_level: 'Use level',
+  routes: 'Administration routes (characterisation)', assessment_type: 'Assessment type', authorization_status: 'Authorisation status',
+  intended_use: 'Intended use', matrix: 'Matrix / product', population: 'Population / species', route: 'Exposure route',
+  legal_context: 'Legal context', decision_context: 'Decision context', regulatory_question: 'Regulatory question', output_purpose: 'Output purpose',
+  notified_study_ids: 'Notified study IDs', endpoint_domain: 'Endpoint of concern', duration: 'Exposure duration' };
+const BASIS = { found: ['grounded', 'from the dossier'], inferred: ['grounded', 'inferred'], default: ['workflow', 'default — check'], chosen: ['', 'chosen by you'] };
+function intakeSource(f) {
+  if (!f?.source) return f?.basis === 'default' ? 'Default' : '';
+  const s = f.source;
+  return `${s.file.split('/').filter(Boolean).pop()}${s.page ? ` p.${s.page}` : ''}`;
+}
+function intakeValue(v) { return Array.isArray(v) ? v.join(', ') : (v ?? ''); }
+function clearDerived() {
+  document.querySelectorAll('.derived').forEach(el => {
+    if (el.tagName !== 'SELECT') el.value = '';
+    el.classList.remove('derived'); el.removeAttribute('title');
+  });
+}
+function markDerived(el, f) {
+  el.classList.add('derived');
+  el.title = `${BASIS[f.basis]?.[1] || f.basis}${intakeSource(f) ? `: ${intakeSource(f)}` : ''}${f.note ? ` — ${f.note}` : ''}. Edit to override.`;
+  if (!el.dataset.derivedHook) {
+    el.dataset.derivedHook = '1';
+    ['input', 'change'].forEach(ev => el.addEventListener(ev, e => { if (e.isTrusted) { el.classList.remove('derived'); el.removeAttribute('title'); } }));
+  }
+}
+function applyIntakeFields(fields) {
+  clearDerived();
+  INTAKE_TARGETS.forEach(([key, id]) => {
+    const f = fields[key], el = $(id);
+    const v = intakeValue(f?.value);
+    if (!el || !v) return;
+    if (el.tagName === 'SELECT' && ![...el.options].some(o => o.value === v)) return;
+    el.value = v;
+    markDerived(el, f);
+  });
+  const routes = fields.routes?.value || [];
+  document.querySelectorAll('#charRoutes input').forEach(i => { i.checked = routes.includes(i.value); });
+  if (routes.length) markDerived($('charRoutes'), fields.routes);
+  captureProblem();
+}
+function intakeUploadsPicked() { return pickedUploads('intakeFiles', 'intakeFolder'); }
+function updateIntakeRunState() {
+  const u = intakeUploadsPicked();
+  const size = u.reduce((a, x) => a + x.file.size, 0);
+  $('intakeRunBtn').disabled = !u.length;
+  $('intakeFileInfo').textContent = u.length ? `${u.length} file(s), ${(size / 1048576).toFixed(1)} MB` : '';
+  $('intakeHint').textContent = u.length ? 'Ready.' : 'Add the dossier first.';
+}
+function intakeFormData(uploads, extra) {
+  const fd = new FormData();
+  uploads.forEach(u => fd.append('files', u.file, u.name));
+  Object.entries(extra).forEach(([k, v]) => fd.append(k, v));
+  return fd;
+}
+async function runIntake(domainOverride = '') {
+  const uploads = domainOverride ? state.dossier.uploads : intakeUploadsPicked();
+  if (!uploads.length) return;
+  $('intakeRunBtn').disabled = true; $('intakeHint').textContent = 'Reading the dossier, checking completeness, characterising…';
+  try {
+    const res = await fetch(`${API_BASE}/dossier/intake`, { method: 'POST', body: intakeFormData(uploads, {
+      domain: domainOverride, notified_study_ids: $('intakeStudies').value, enzyme_source: 'auto' }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    state.dossier = { uploads, result: data, domainOverride };
+    // The dossier now feeds every step: clear files chosen separately there.
+    ['compFiles', 'compFolder', 'charFiles'].forEach(id => { $(id).value = ''; });
+    $('charFileList').textContent = '';
+    setDomain(data.domain.id);
+    applyIntakeFields(data.profile.fields);
+    $('compStudies').value = $('intakeStudies').value;
+    state.completeness = data.completeness; renderCompleteness(); updateCompRunState();
+    if (data.characterisation) { state.characterisation = data.characterisation; renderCharacterisation(); }
+    updateCharRunState();
+    renderIntake();
+    $('intakeHint').textContent = 'Done.';
+  } catch (e) { $('intakeHint').textContent = `Failed: ${e.message}`; }
+  finally { $('intakeRunBtn').disabled = !intakeUploadsPicked().length; }
+}
+async function runCharacterisationFromDossier() {
+  $('charOutput').innerHTML = '<div class="muted">Reading the dossier loaded in Start and mapping evidence to the guidance…</div>';
+  $('charAnalyseBtn').disabled = true;
+  try {
+    const res = await fetch(`${API_BASE}/dossier/intake`, { method: 'POST', body: intakeFormData(state.dossier.uploads, {
+      domain: state.domain, steps: 'characterisation', meta: JSON.stringify(characterisationMeta()) }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    if (!data.characterisation) throw new Error(`no guidance is bundled for ${data.domain.label}`);
+    state.characterisation = data.characterisation;
+    renderCharacterisation();
+  } catch (e) {
+    $('charOutput').innerHTML = `<div class="muted">Characterisation failed: ${escapeHtml(e.message)}</div>`;
+  } finally { updateCharRunState(); }
+}
+function renderIntake() {
+  const d = state.dossier.result, f = d.profile.fields, c = d.completeness, ch = d.characterisation;
+  const domainField = f.domain;
+  const verdict = { incomplete: 'Incomplete', complete_with_warnings: 'Complete, with warnings', complete: 'Complete' }[c.verdict] || c.verdict;
+  const gaps = ch ? (ch.summary?.gap || 0) + (ch.summary?.partial || 0) : 0;
+  const filled = $('problem').querySelectorAll('.derived').length;
+  const options = Object.values(state.domainInfo || {}).map(x => `<option value="${escapeHtml(x.id)}"${x.id === d.domain.id ? ' selected' : ''}>${escapeHtml(x.label)}</option>`).join('');
+  const rows = Object.entries(f).filter(([k]) => k !== 'domain').map(([k, x]) => {
+    const [cls, lbl] = BASIS[x.basis] || ['workflow', 'not found'];
+    const v = k === 'application_type' && x.value ? ($('compType').querySelector(`option[value="${x.value}"]`)?.textContent || x.value) : intakeValue(x.value);
+    return `<tr><td>${escapeHtml(INTAKE_LABELS[k] || k)}</td><td>${v ? escapeHtml(v) : '<span class="muted">not found — fill in if needed</span>'}${x.note ? `<br><span class="muted">${escapeHtml(x.note)}</span>` : ''}</td>
+      <td>${v ? `<span class="badge ${cls}">${escapeHtml(lbl)}</span>` : ''}</td><td class="ev" title="${escapeHtml(x.source?.file || '')}">${escapeHtml(v ? intakeSource(x) : '')}</td></tr>`;
+  }).join('');
+  const notDerivable = Object.entries(d.profile.not_derivable || {}).map(([k, why]) => `<div><strong>${escapeHtml(INTAKE_LABELS[k] || k)}</strong> — ${escapeHtml(why)}</div>`).join('');
+  $('intakeOutput').hidden = false;
+  $('intakeOutput').innerHTML = `<h3 style="margin-top:0">Dossier read — ${d.profile.files_read} of ${d.profile.files_total} file(s) with text</h3>
+    <div class="grid" style="align-items:end"><div><label for="intakeDomain">Domain ${domainField.value ? `<span class="badge ${BASIS[domainField.basis]?.[0] || ''}">${escapeHtml(BASIS[domainField.basis]?.[1] || '')}${intakeSource(domainField) ? `: ${escapeHtml(intakeSource(domainField))}` : ''}</span>` : '<span class="badge workflow">not detected — choose it</span>'}</label>
+      <select id="intakeDomain">${options}</select></div>
+      <div class="muted">${escapeHtml(domainField.note || (domainField.value ? 'Changing it re-reads the dossier under that domain.' : 'No regulation or product type of a registered domain was found; the checks ran as “Other”.'))}</div></div>
+    <ul class="intake-steps">
+      <li><span class="grow"><strong>Completeness &amp; sanitisation</strong> — ${escapeHtml(verdict)}: blocking ${c.counts.blocking}, warnings ${c.counts.warnings}, to review ${c.counts.review}</span><button class="secondary" data-jump="completeness">Open</button></li>
+      <li><span class="grow"><strong>Identity &amp; characterisation</strong> — ${ch ? `${gaps} gap(s) or partial requirement(s) against the ${escapeHtml(d.domain.label)} guidance` : `not available: no guidance bundled for ${escapeHtml(d.domain.label)} yet`}</span>${ch ? '<button class="secondary" data-jump="characterisation">Open</button>' : ''}</li>
+      <li><span class="grow"><strong>Mandate &amp; question</strong> — ${filled} field(s) filled from the dossier, marked in green</span><button class="secondary" data-jump="problem">Review</button></li>
+      <li><span class="grow"><strong>Hazard identification</strong> — starts from the substance found</span><button class="primary" id="intakeStartHazardBtn">Start hazard identification</button></li>
+    </ul>
+    <table class="sample-table comp-table"><thead><tr><th>Field</th><th>Value</th><th>Basis</th><th>Where</th></tr></thead><tbody>${rows}</tbody></table>
+    <details class="muted" style="margin-top:10px"><summary>Not taken from the dossier</summary>${notDerivable}</details>`;
+  $('intakeOutput').querySelectorAll('[data-jump]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.jump)));
+  $('intakeStartHazardBtn').addEventListener('click', () => $('startAssessmentBtn').click());
+  $('intakeDomain').addEventListener('change', e => runIntake(e.target.value));
+}
+$('intakeFiles').addEventListener('change', updateIntakeRunState);
+$('intakeFolder').addEventListener('change', updateIntakeRunState);
+$('intakeRunBtn').addEventListener('click', () => runIntake());
+$('startManualBtn').addEventListener('click', () => showTab('problem'));
 $('compFiles').addEventListener('change', updateCompRunState);
 $('compFolder').addEventListener('change', updateCompRunState);
 $('compRunBtn').addEventListener('click', runCompleteness);

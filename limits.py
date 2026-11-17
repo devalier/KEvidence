@@ -127,7 +127,7 @@ def _rate(cls: str) -> tuple[int, int]:
     return (int(m.group(1)), int(m.group(2))) if m else _DEFAULT_RATES[cls]
 
 
-_HEAVY = re.compile(r"/api/(characterisation/(analyse|export\.docx)|sanitisation/(analyse|locate|apply)|completeness/(check|file))$")
+_HEAVY = re.compile(r"/api/(characterisation/(analyse|export\.docx)|sanitisation/(analyse|locate|apply)|completeness/(check|file)|dossier/intake)$")
 _OUTBOUND = re.compile(r"/api/ai/(models|configs|configs/\d+/test)$")
 
 
