@@ -16,4 +16,4 @@ defusedxml==0.7.1
 # Transitive pins held back on purpose (reason, date). Remove a line when its reason no longer holds.
 # annotated-doc 0.0.6 (fastapi) was published 2026-11-10 without a provenance attestation and fixes nothing
 # security-relevant: stay on 0.0.5 until it has aged past the cool-down.
-annotated-doc==0.0.5
+annotated-doc==0.0.6
