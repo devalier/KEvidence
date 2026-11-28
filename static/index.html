@@ -439,7 +439,8 @@
       <div class="panel">
         <h2>Identity &amp; characterisation</h2>
         <div class="warning-box" id="charNotGrounded" hidden></div>
-        <p class="help">Upload the applicant's documents (technical dossier sections, specifications, certificates of analysis, study reports). KEvidence identifies the additive and its components from them, drafts the characterisation in the FEEDAP opinion layout (§1.1.1, Table 1/2, Appendix A) and lists the data gaps against the <strong>FEEDAP Guidance on the identity, characterisation and conditions of use of feed additives</strong> (EFSA Journal 2017;15(10):5023). MVP: chemical characterisation, including plant extracts by their constituents; production-strain characterisation is out of scope.</p>
+        <p class="help" id="charHelpFeed">Upload the applicant's documents (technical dossier sections, specifications, certificates of analysis, study reports). KEvidence identifies the additive and its components from them, drafts the characterisation in the FEEDAP opinion layout (§1.1.1, Table 1/2, Appendix A) and lists the data gaps against the <strong>FEEDAP Guidance on the identity, characterisation and conditions of use of feed additives</strong> (EFSA Journal 2017;15(10):5023). MVP: chemical characterisation, including plant extracts by their constituents; production-strain characterisation is out of scope.</p>
+        <p class="help" id="charHelpEnzyme" hidden>Upload the applicant's documents (technical dossier, certificates of analysis, strain reports, study reports). KEvidence identifies the enzyme (name, EC number), its source and, for microbial enzymes, the production strain and whether it is genetically modified and claims QPS status. It then maps the evidence to each requirement of Part A of the <strong>CEP Panel Scientific Guidance for the submission of dossiers on Food Enzymes</strong> (EFSA Journal 2021;19(10):6851): source, production, characteristics (including absence of viable cells and DNA of the production strain), toxicology and dietary exposure. Requirements that do not apply to the source or strain are marked not applicable. Part B (modifications of an authorisation) is not covered.</p>
         <details class="muted"><summary>About the guidance grounding</summary><div id="charGuidanceStatus" style="margin-top:6px">Loading guidance grounding status…</div></details>
       </div>
 
@@ -459,9 +460,18 @@
       <details class="panel" id="charOptional">
         <summary><strong>Optional details</strong> <span class="muted">— not needed. Leave blank and KEvidence identifies them from the documents; fill in only to correct or complete what it detected, then run again.</span></summary>
         <div class="grid">
-          <div><label for="charProductName">Additive / product name</label><input id="charProductName" placeholder="e.g., trade name of the additive"></div>
-          <div><label for="charForm">Physical form (§2.1.5)</label><select id="charForm"><option value="">Not stated</option><option value="solid">Solid</option><option value="liquid">Liquid</option></select></div>
+          <div><label for="charProductName">Additive / product name</label><input id="charProductName" placeholder="e.g., trade name of the additive or name of the enzyme"></div>
+          <div class="char-feed-only"><label for="charForm">Physical form (§2.1.5)</label><select id="charForm"><option value="">Not stated</option><option value="solid">Solid</option><option value="liquid">Liquid</option></select></div>
         </div>
+        <div class="char-enzyme-only" hidden>
+          <label>Source of the enzyme — decides which of Sections 1, 2 or 3 of the guidance apply</label>
+          <div class="check-row" id="charEnzSource"><label><input type="radio" name="charEnzSource" value="microbial"> Microbial</label><label><input type="radio" name="charEnzSource" value="plant"> Plant</label><label><input type="radio" name="charEnzSource" value="animal"> Animal</label></div>
+          <label>Production organism (microbial enzymes)</label>
+          <div class="check-row" id="charEnzOrganism"><label><input type="radio" name="charEnzOrganism" value="bacteria"> Bacterium</label><label><input type="radio" name="charEnzOrganism" value="yeast"> Yeast</label><label><input type="radio" name="charEnzOrganism" value="filamentous_fungi"> Filamentous fungus</label><label><input type="checkbox" value="bacillus" id="charEnzBacillus"> <em>Bacillus</em> species</label><label><input type="checkbox" value="amr_genes" id="charEnzAmr"> Carries acquired AMR genes</label></div>
+          <label>Animal source</label>
+          <div class="check-row"><label><input type="checkbox" value="porcine" id="charEnzPorcine"> Porcine (pig) tissue</label></div>
+        </div>
+        <div class="char-feed-only">
         <label>Production type — sets the minimum impurity set of §2.1.4</label>
         <div class="check-row" id="charProduction"><label><input type="checkbox" value="chemical_synthesis"> Chemical synthesis</label><label><input type="checkbox" value="fermentation"> Fermentation</label><label><input type="checkbox" value="plant_derived"> Plant-derived</label><label><input type="checkbox" value="animal_derived"> Animal-derived</label><label><input type="checkbox" value="mineral"> Mineral / trace-element compound</label></div>
         <label for="charFormulations" style="margin-top:12px">Preparations / formulations under application (one per line — gives Table 2 with one column each)</label>
@@ -470,16 +480,25 @@
         <p class="muted">Enter each active substance and other component (carriers, formulants) of the product. Leave empty and KEvidence identifies them from the documents (product name, CAS numbers, constituent/marker specifications).</p>
         <table class="sample-table comp-table"><thead><tr><th>Name</th><th>CAS No</th><th>Role</th><th></th></tr></thead><tbody id="charComponents"></tbody></table>
         <div class="actions"><button class="ghost" id="charAddComponentBtn">+ Add component</button></div>
+        </div>
         <div class="check-row"><label><input type="checkbox" id="charAllowLlm"> Also draft section narratives with the external LLM (sends extracted dossier excerpts to the AI provider you configured — leave unticked for confidential dossiers unless approved)</label></div>
       </details>
 
       <div class="panel" id="charQuestions" hidden>
         <h3>Two questions that change which requirements apply</h3>
         <p class="muted">Documents rarely state these clearly. Answer them and run again; leave them blank and the affected requirements stay marked “applicability to confirm”.</p>
+        <div class="char-enzyme-only" hidden>
+        <label>1. Is the production strain genetically modified (Directive 2001/18/EC)? (§1.1.11, §1.3.4)</label>
+        <div class="check-row" id="charEnzGm"><label><input type="radio" name="charEnzGm" value="gm"> Yes</label><label><input type="radio" name="charEnzGm" value="non_gm"> No</label></div>
+        <label>2. Does the production strain qualify for the QPS approach? (§1.1.10, exemption 4.1(a))</label>
+        <div class="check-row" id="charEnzQps"><label><input type="radio" name="charEnzQps" value="qps"> Yes</label><label><input type="radio" name="charEnzQps" value="non_qps"> No</label></div>
+        </div>
+        <div class="char-feed-only">
         <label>1. How will the additive be administered? (§2.4.1 stability, §2.4.2 homogeneity, §2.5.1 conditions of use)</label>
         <div class="check-row" id="charRoutes"><label><input type="checkbox" value="feed"> In feedingstuffs</label><label><input type="checkbox" value="premixture"> Via premixtures</label><label><input type="checkbox" value="water"> In water for drinking</label></div>
         <label for="charAdditiveType">2. Is it one of the additive types the guidance exempts from some studies? (§2.4.1.2, §2.4.2)</label>
         <select id="charAdditiveType" style="max-width:420px"><option value="">Not answered</option><option value="none_of_these">None of these</option><option value="flavouring_compound">Flavouring compound</option><option value="silage_additive">Silage additive</option><option value="colourant">Colourant (feed / ornamental birds or fish)</option></select>
+        </div>
         <div class="actions"><button class="primary" id="charRerunBtn">Run again with these answers</button></div>
       </div>
 
@@ -687,7 +706,7 @@
             <div class="manual-step"><strong>Start — from a dossier or manually.</strong><span class="muted"><em>From a dossier</em>: upload the application once (files, folder or ZIP). KEvidence detects the domain from the regulations and product type it cites, fills every field the dossier answers (applicant, reference, application type, pre-application IDs, substance, species, use level, routes, legal context, problem formulation), runs the completeness check and, in a grounded domain, the characterisation. Filled fields are outlined in green with their file and page; edit any to override. Notified study IDs come from EFSA's database, not the dossier. <em>Manually</em>: choose the domain and fill in the forms.</span></div>
             <div class="manual-step"><strong>Mandate &amp; question — domain and problem formulation.</strong><span class="muted">Choose the domain (every domain gets the workflow and publication; grounded domains also get guidance-checked characterisation), then enter the substance/stressor, use scenario, endpoint of concern and decision context. This frames the four Codex steps.</span></div>
             <div class="manual-step"><strong>Intake — completeness &amp; sanitisation.</strong><span class="muted">Upload the dossier (files, its folder or a ZIP), choose the application type and enter any notified study IDs. KEvidence checks structure and format, the administrative documents, Sections I–V, study notifications (Art. 32b GFL), the confidentiality request and personal data, then drafts the request for missing information. <em>Sanitise</em> opens a file in Publication.</span></div>
-            <div class="manual-step"><strong>Identity &amp; characterisation — what exactly is being assessed?</strong><span class="muted">In a grounded domain (today: feed additives), upload or link the applicant's documents and click <em>Characterise from documents</em>. KEvidence identifies the additive and its components from the documents (optional details only to correct it), maps the evidence to each requirement of the FEEDAP identity/characterisation guidance (EFSA Journal 2017;15(10):5023), cites document and page for every value, lists data gaps, and exports the characterisation as Markdown.</span></div>
+            <div class="manual-step"><strong>Identity &amp; characterisation — what exactly is being assessed?</strong><span class="muted">In a grounded domain (today: feed additives and food enzymes), upload or link the applicant's documents and click <em>Characterise from documents</em>. KEvidence identifies the additive and its components from the documents (optional details only to correct it), maps the evidence to each requirement of the FEEDAP identity/characterisation guidance (EFSA Journal 2017;15(10):5023), cites document and page for every value, lists data gaps, and exports the characterisation as Markdown.</span></div>
             <div class="manual-step"><strong>Hazard identification — can it cause harm?</strong><span class="muted">Search AOPs by chemical, key event, adverse outcome, or AOP ID, and select the pathway representing a plausible route from MIE to adverse outcome.</span></div>
             <div class="manual-step"><strong>Hazard characterisation — nature, severity, dose.</strong><span class="muted">Review KER evidence, pull reference points/HBGVs from OpenFoodTox, and set a dose-response point of departure (POD) mapped to a key event.</span></div>
             <div class="manual-step"><strong>Exposure assessment — who, how much, how often, route.</strong><span class="muted">Record concentration in food × consumption × population × use conditions, and the resulting exposure estimate.</span></div>
@@ -1202,12 +1221,20 @@ function addComponentRow(comp = {}) {
   $('charComponents').appendChild(tr);
 }
 function checkedValues(containerId) { return [...document.querySelectorAll(`#${containerId} input:checked`)].map(i => i.value); }
+function isEnzymeDomain() { return state.domain === 'food-enzymes'; }
 function characterisationMeta() {
   const components = [...document.querySelectorAll('#charComponents tr')].map(tr => ({
     name: tr.querySelector('.char-comp-name').value.trim(),
     cas: tr.querySelector('.char-comp-cas').value.trim(),
     role: tr.querySelector('.char-comp-role').value
   })).filter(c => c.name || c.cas);
+  if (isEnzymeDomain()) {
+    const radio = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
+    const source = radio('charEnzSource');
+    const attributes = [radio('charEnzOrganism'), radio('charEnzGm'), radio('charEnzQps'),
+      ...['charEnzBacillus', 'charEnzAmr', 'charEnzPorcine'].filter(id => $(id).checked).map(id => $(id).value)].filter(Boolean);
+    return { product_name: fieldValue('charProductName'), production_types: source ? [source] : [], attributes };
+  }
   return {
     product_name: fieldValue('charProductName'),
     product_form: fieldValue('charForm'), additive_type: fieldValue('charAdditiveType'),
@@ -1250,11 +1277,15 @@ function applyDomain() {
   $('domainChip').title = info.grounded ? `Guidance grounded: ${(info.sources || []).join('; ')}` : 'Workflow only: no guidance bundled for this domain yet';
   $('navCharSub').textContent = info.grounded ? 'Grounded in the domain guidance' : 'Guidance not loaded for this domain';
   $('charGroundedTool').hidden = !info.grounded;
+  const enz = isEnzymeDomain();
+  $('charHelpFeed').hidden = enz; $('charHelpEnzyme').hidden = !enz;
+  document.querySelectorAll('.char-feed-only').forEach(el => { el.hidden = enz; });
+  document.querySelectorAll('.char-enzyme-only').forEach(el => { el.hidden = !enz; });
   $('charNotGrounded').hidden = !!info.grounded;
   const grounded = Object.values(state.domainInfo || {}).filter(x => x.grounded).map(x => x.label).join(', ');
   $('charNotGrounded').innerHTML = `No guidance is bundled for <strong>${escapeHtml(info.label)}</strong> yet, so this tool cannot check a dossier against its requirements. Grounded today: ${escapeHtml(grounded)}.
     Everything else works for ${escapeHtml(info.label)}: the risk-assessment steps, the AOP/NAM tools, the scientific opinion and publication (sanitisation).
-    To ground this domain, contribute its guidance documents and a catalogue quoting them verbatim — no code change is needed (see the Guide, or <a href="https://github.com/devalier/KEvidence" target="_blank" rel="noopener" style="color:var(--accent)">GitHub</a>).`;
+    To ground this domain, contribute its guidance documents and a catalogue quoting them verbatim. A catalogue alone is enough when the requirements fit the existing extraction; a domain with its own identity data (as food enzymes have strains, TOS and activity units) also needs extraction and an opinion template (see the Guide, or <a href="https://github.com/devalier/KEvidence" target="_blank" rel="noopener" style="color:var(--accent)">GitHub</a>).`;
   if (!state.saniSectorTouched && $('saniSector').options.length) { $('saniSector').value = state.domainSectors?.[state.domain] || $('saniSector').value; loadSanitisationRules(); }
 }
 function setDomain(id) {
@@ -1315,7 +1346,7 @@ async function runCharacterisation() {
 }
 function allCharacterisationResults() {
   const c = state.characterisation || {};
-  const rows = (c.requirements || []).map(r => ({ ...r, scope: 'Additive' }));
+  const rows = (c.requirements || []).map(r => ({ ...r, scope: c.profile === 'food_enzyme' ? 'Food enzyme' : 'Additive' }));
   (c.components || []).forEach(comp => (comp.requirements || []).forEach(r => rows.push({ ...r, scope: comp.component?.name || comp.component?.cas || 'Component' })));
   return rows;
 }
@@ -1346,7 +1377,21 @@ function renderCharacterisation() {
       ${detRow('Component(s) characterised', (c.components || []).length ? { value: c.components.map(x => `${x.component?.name || x.component?.cas} (${x.component?.role || ''})`).join('; ') } : null)}
     </tbody></table>
     <p class="muted">Wrong or missing? Correct it under <em>Optional details</em> and run again — entered values take precedence.</p>`;
-  $('charOutput').innerHTML = `${detectedHtml}<h3>Data-gap analysis — ${escapeHtml(c.meta?.product_name || 'product')}</h3>
+  const enzymeHtml = c.profile === 'food_enzyme' ? (() => {
+    const attr = { gm: 'genetically modified', non_gm: 'not genetically modified', qps: 'QPS status claimed', non_qps: 'not on the QPS list', bacteria: 'bacterium', bacillus: 'Bacillus species', yeast: 'yeast', filamentous_fungi: 'filamentous fungus', amr_genes: 'carries acquired AMR genes', porcine: 'porcine source' };
+    return `<h3>Identified from the documents</h3>
+    <table class="sample-table detected-table"><tbody>
+      ${detRow('Enzyme', det.enzyme_name, 'product_name')}
+      ${detRow('EC number', det.ec_number)}
+      ${detRow('Source', det.source, 'source')}
+      ${detRow('Production organism', det.organism)}
+      ${det.strain ? detRow('Strain', det.strain) : ''}
+      ${(det.attributes || []).map(a => detRow('Production strain', { value: attr[a.value] || a.value, citation: a.citation }, 'attributes')).join('')}
+      ${detRow('Batches', det.batches ? { value: det.batches.ids.join(', '), citation: [...new Set(Object.values(det.batches.citations || {}))].join(', ') } : null)}
+    </tbody></table>
+    <p class="muted">Wrong or missing? Correct the source and strain under <em>Optional details</em> or answer the questions below and run again — entered values take precedence.</p>`;
+  })() : detectedHtml;
+  $('charOutput').innerHTML = `${enzymeHtml}<h3>Data-gap analysis — ${escapeHtml(c.meta?.product_name || 'product')}</h3>
     <div class="metric-grid">
       <div class="metric"><small>Not located</small><strong class="status-gap">${s.gap || 0}</strong></div>
       <div class="metric"><small>Partially addressed</small><strong class="status-partial">${s.partial || 0}</strong></div>
@@ -1357,7 +1402,7 @@ function renderCharacterisation() {
     <table class="sample-table"><thead><tr><th>§</th><th>Requirement</th><th>Scope</th><th>Status</th><th>Missing / to clarify</th></tr></thead><tbody>
     ${rows.filter(r => r.status !== 'not_applicable').map(r => `<tr><td>${escapeHtml(r.guidance_section)}</td><td>${escapeHtml(r.title)}<br><span class="muted">${escapeHtml(r.id)}</span></td><td>${escapeHtml(r.scope)}</td><td class="status-${escapeHtml(r.status)}">${escapeHtml(STATUS_TEXT[r.status] || r.status)}</td><td>${(r.missing || []).slice(0, 4).map(escapeHtml).join('<br>') || '—'}</td></tr>`).join('')}
     </tbody></table>
-    <h3>Characterisation draft (FEEDAP opinion layout), data gaps and evidence map</h3>
+    <h3>Characterisation draft (${c.profile === 'food_enzyme' ? 'food enzyme opinion layout' : 'FEEDAP opinion layout'}), data gaps and evidence map</h3>
     <div class="actions"><button class="secondary" id="charViewRendered">Rendered</button><button class="ghost" id="charViewSource">Markdown source</button></div>
     <div id="charMarkdownView" class="md-view">${renderMarkdown(c.markdown || '')}</div>`;
   $('charViewRendered').addEventListener('click', () => { $('charMarkdownView').className = 'md-view'; $('charMarkdownView').innerHTML = renderMarkdown(c.markdown || ''); });

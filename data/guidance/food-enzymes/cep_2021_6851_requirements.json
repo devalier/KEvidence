@@ -1,0 +1,2084 @@
+{
+ "catalogue_id": "cep-2021-6851-food-enzymes",
+ "catalogue_version": "0.1.0",
+ "profile": "food_enzyme",
+ "scope": "Data required for the evaluation of a food enzyme (Part A): identity of the declared activity, source (microbial, plant, animal), production, characteristics (properties, chemical parameters, purity, viable cells and DNA of the production strain), toxicology and dietary exposure. Applicability follows the source of the enzyme and, for microbial enzymes, whether the production strain is genetically modified and/or qualifies for QPS. Part B (modifications of an authorisation) is not covered.",
+ "guidance": {
+  "title": "Scientific Guidance for the submission of dossiers on Food Enzymes",
+  "author": "EFSA Panel on Food Contact Materials, Enzymes and Processing Aids (CEP)",
+  "citation": "EFSA CEP Panel (Lambré C et al.), 2021. Scientific Guidance for the submission of dossiers on Food Enzymes. EFSA Journal 2021;19(10):6851.",
+  "doi": "10.2903/j.efsa.2021.6851",
+  "url": "https://doi.org/10.2903/j.efsa.2021.6851",
+  "short_name": "CEP 2021 food enzyme guidance (6851)",
+  "bundled_file": "efsa_2021_6851_food_enzymes.pdf",
+  "license": "CC BY-ND 4.0 (open access; redistributed unmodified with citation)",
+  "legal_basis": "Regulation (EC) No 1332/2008 on food enzymes; Regulation (EC) No 1331/2008 and implementing Regulation (EU) No 234/2011 as amended by Regulation (EU) No 562/2012",
+  "adopted": "2021-07-07",
+  "title_check_phrase": "Scientific Guidance for the submission of dossiers on Food Enzymes",
+  "text_source": "Quotes checked against the full text of the final version (EFSA Journal 2021;19(10):6851; Europe PMC PMC8529584).",
+  "general_principles": [
+   {
+    "section": "Scope",
+    "quote": "if some of the data stipulated in the guidance are not considered by the applicant as relevant to a particular case, they may be omitted provided that the omission is fully justified.",
+    "page": 2
+   },
+   {
+    "section": "Structure",
+    "quote": "Completion of Sections 1, 2 and 3 are required for all food enzymes regardless of source, while the requirements for data stipulated under Sections 4 and 5 may be waived in some circumstances (Table 1).",
+    "page": 2
+   }
+  ]
+ },
+ "related_guidance": [
+  {
+   "title": "EFSA statement on the requirements for whole genome sequence analysis of microorganisms intentionally used in the food chain",
+   "citation": "EFSA, 2024. EFSA Journal 2024;22(8):e8912.",
+   "doi": "10.2903/j.efsa.2024.8912",
+   "use": "Updates the WGS reporting requirements referred to in Section 1.1 and Annex B."
+  },
+  {
+   "title": "Update of the list of QPS-recommended biological agents",
+   "citation": "EFSA BIOHAZ Panel, 2026. EFSA Journal 2026 (9823).",
+   "doi": "10.2903/j.efsa.2026.9823",
+   "use": "QPS status of the production strain (Section 1.1.10.1, exemption 4.1(a))."
+  }
+ ],
+ "verification_levels": {
+  "anchored_in_guidance_text": "The requirement's anchor phrases were located in the guidance text loaded in this KEvidence instance; the located passage is shown and must be read by the scientific officer.",
+  "verified_primary": "Requirement wording and verbatim quote checked against the full text of EFSA Journal 2021;19(10):6851 (automated test asserts every quote is on its cited page).",
+  "not_found_in_guidance_text": "One or more anchor phrases were not found in the loaded guidance text. The catalogue entry must be reviewed before use."
+ },
+ "template_sections": [
+  {
+   "token": "S0",
+   "number": "Part A",
+   "title": "Identity of the food enzyme"
+  },
+  {
+   "token": "S1",
+   "number": "1",
+   "title": "Source of the food enzyme"
+  },
+  {
+   "token": "S2",
+   "number": "2",
+   "title": "Production of the food enzyme"
+  },
+  {
+   "token": "S3",
+   "number": "3",
+   "title": "Characteristics of the food enzyme"
+  },
+  {
+   "token": "S4",
+   "number": "4",
+   "title": "Toxicological data"
+  },
+  {
+   "token": "S5",
+   "number": "5",
+   "title": "Dietary exposure"
+  }
+ ],
+ "meta_options": {
+  "production_type": [
+   "microbial",
+   "plant",
+   "animal"
+  ],
+  "attributes": [
+   "gm",
+   "non_gm",
+   "qps",
+   "non_qps",
+   "bacteria",
+   "bacillus",
+   "yeast",
+   "filamentous_fungi",
+   "amr_genes",
+   "porcine"
+  ]
+ },
+ "requirements": [
+  {
+   "id": "FE-A-IDENTITY",
+   "guidance_section": "Part A",
+   "guidance_page": 2,
+   "template_section": "S0",
+   "scope": "dossier",
+   "title": "Identity of the enzyme activity under application",
+   "requirement": "For each declared activity: the IUBMB accepted name, systematic name (when available), common synonyms excluding trade names, the IUBMB Enzyme Classification (EC) number, CAS number and EINECS/ELINCS number (when available), and a brief description of the catalytic activity.",
+   "quote": "A submission should start by indicating the identity of the enzyme activity or activities under application. This should be specified by the applicant and should be focused on the key activities necessary to fulfil the intended technological function of the food enzyme.",
+   "guidance_anchors": [
+    "A submission should start by indicating the identity of the enzyme activity or activities under application",
+    "the accepted name recognised by the International Union of Biochemistry and Molecular Biology (IUBMB)",
+    "the Enzyme Classification Number of the IUBMB (when available)"
+   ],
+   "applies_when": {},
+   "patterns": [
+    "\\bEC\\s*\\d+\\.\\d+\\.\\d+\\.\\d+",
+    "IUBMB",
+    "systematic\\s+name",
+    "enzyme\\s+(nomenclature|classification)",
+    "catalytic\\s+activity",
+    "\\bCAS\\b"
+   ],
+   "sub_items": [
+    {
+     "label": "IUBMB accepted name",
+     "patterns": [
+      "IUBMB",
+      "accepted\\s+name",
+      "common\\s+name"
+     ],
+     "required": true
+    },
+    {
+     "label": "Systematic name",
+     "patterns": [
+      "systematic\\s+name"
+     ],
+     "required": false
+    },
+    {
+     "label": "EC number",
+     "patterns": [
+      "\\bEC\\s*(no\\.?|number)?\\s*:?\\s*\\d+\\.\\d+\\.\\d+\\.\\d+"
+     ],
+     "required": true
+    },
+    {
+     "label": "CAS number",
+     "patterns": [
+      "\\bCAS\\b"
+     ],
+     "required": false
+    },
+    {
+     "label": "Description of the catalytic activity / reaction",
+     "patterns": [
+      "catalys|catalyz|hydroly[sz]|reaction|catalytic\\s+activity"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-1.1.7-IDENTITY",
+   "guidance_section": "1.1.7",
+   "guidance_page": 4,
+   "template_section": "S1",
+   "scope": "dossier",
+   "title": "Identity of the production organism",
+   "requirement": "Genus, species and strain name or code of the production organism; a statement that in-house or third-party names/codes correspond to the production strain; a clear statement on whether it is genetically modified (Directive 2001/18/EC); identification by WGS (ANI/dDDH for bacteria, phylogenomics for yeasts and fungi); origin, history and purpose of modifications including mutagenesis steps.",
+   "quote": "The following taxonomic information should be provided for the production organism: genus, species and strain name or code. If different names or codes are used for the production organism in-house or in third party data, a statement should be provided confirming they correspond to the production strain.",
+   "guidance_anchors": [
+    "The following taxonomic information should be provided for the production organism: genus, species and strain name or code",
+    "A clear statement on whether the production organism is genetically modified according to Directive 2001/18/EC",
+    "The origin of the organism and history and purpose of modifications, including mutagenesis steps performed during the development of the production strain, should be reported in all cases"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ]
+   },
+   "patterns": [
+    "production\\s+(strain|organism)",
+    "taxonom",
+    "\\bstrain\\b",
+    "genetically\\s+modified"
+   ],
+   "sub_items": [
+    {
+     "label": "Genus, species and strain designation",
+     "patterns": [
+      "[A-Z][a-z]+\\s+[a-z]{3,}\\s+(strain\\s+)?[A-Z0-9][\\w-]*\\d",
+      "strain\\s+(name|code|designation)"
+     ],
+     "required": true
+    },
+    {
+     "label": "Statement whether the strain is genetically modified (Directive 2001/18/EC)",
+     "patterns": [
+      "genetically\\s+modified",
+      "\\bGMM\\b",
+      "2001/18"
+     ],
+     "required": true
+    },
+    {
+     "label": "Taxonomic identification (WGS: ANI / dDDH / phylogenomics, or 18S/ITS for fungi without WGS)",
+     "patterns": [
+      "\\bANI\\b",
+      "dDDH",
+      "average\\s+nucleotide\\s+identity",
+      "phylogen",
+      "\\bITS\\b",
+      "18S"
+     ],
+     "required": true
+    },
+    {
+     "label": "Origin and history of the strain, including mutagenesis steps",
+     "patterns": [
+      "derived\\s+from",
+      "lineage",
+      "mutagenesis",
+      "history",
+      "host\\s+strain",
+      "parental"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-1.1.7-DEPOSIT",
+   "guidance_section": "1.1.7",
+   "guidance_page": 5,
+   "template_section": "S1",
+   "scope": "dossier",
+   "title": "Deposit of the production strain",
+   "requirement": "The production strain deposited in an internationally recognised culture collection with International Depositary Authority status under the Budapest Treaty (preferably in the EU), with a valid certificate of deposition giving the accession number.",
+   "quote": "The production strain under assessment should be deposited in an internationally recognised culture collection having acquired the status of International Depositary Authority under the Budapest Treaty (preferably in the EU) and maintained by the culture collection for the authorised period of the food enzyme. A valid certificate of deposition from the collection, which shall specify the accession number under which the strain is held, should be provided.",
+   "guidance_anchors": [
+    "The production strain under assessment should be deposited in an internationally recognised culture collection",
+    "A valid certificate of deposition from the collection, which shall specify the accession number under which the strain is held, should be provided"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ]
+   },
+   "patterns": [
+    "deposit",
+    "culture\\s+collection",
+    "\\b(DSM|CBS|ATCC|NRRL|CECT|NCIMB|LMG|CNCM|BCCM|KCTC|CGMCC|NBRC|FERM|IMI)\\s*[-]?\\s*\\d{2,}",
+    "Budapest\\s+Treaty",
+    "accession\\s+(number|no)"
+   ],
+   "sub_items": [
+    {
+     "label": "Accession number in a recognised collection",
+     "patterns": [
+      "\\b(DSM|CBS|ATCC|NRRL|CECT|NCIMB|LMG|CNCM|BCCM|KCTC|CGMCC|NBRC|FERM|IMI)\\s*[-]?\\s*\\d{2,}",
+      "accession\\s+(number|no)"
+     ],
+     "required": true
+    },
+    {
+     "label": "Certificate of deposition",
+     "patterns": [
+      "certificate\\s+of\\s+deposit|declaration\\s+of\\s+(safe\\s+)?deposit|deposit\\s+certificate|deposit\\s+receipt"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-1.1.1-WGS",
+   "guidance_section": "1.1.1",
+   "guidance_page": 3,
+   "template_section": "S1",
+   "scope": "dossier",
+   "title": "Whole genome sequence of the production strain",
+   "requirement": "WGS analysis (chromosome(s) and extrachromosomal elements) is required for bacterial and yeast production strains and recommended for filamentous fungi, reported as specified in Sections 1.1.2–1.1.6 and Annex B: DNA extraction, library construction, sequencing strategy, read trimming (Phred ≥ 20), average read depth ≥ 30-fold (target 100-fold), contamination < 5 %, assembly statistics (contigs, N50, BUSCO for fungi).",
+   "quote": "Whole genome sequence (WGS) analysis (including chromosome(s) and extrachromosomal genetic elements, e.g. plasmids) is required for the identification and characterisation of bacterial and yeast strains intended for use as production strains. WGS analysis is also recommended for filamentous fungi and other eukaryotic microorganisms.",
+   "guidance_anchors": [
+    "is required for the identification and characterisation of bacterial and yeast strains intended for use as production strains",
+    "The average read depth achieved should be at least 30-fold with a recommended target of 100-fold",
+    "Assigned reads to an unexpected organism should be less than 5%"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ]
+   },
+   "patterns": [
+    "whole\\s+genome\\s+sequenc",
+    "\\bWGS\\b",
+    "genome\\s+(assembly|sequence)",
+    "sequencing"
+   ],
+   "sub_items": [
+    {
+     "label": "Sequencing strategy and instrument",
+     "patterns": [
+      "illumina|nanopore|pacbio|novaseq|miseq|hiseq|promethion|sequel",
+      "sequencing\\s+(strategy|platform|technolog)"
+     ],
+     "required": true
+    },
+    {
+     "label": "Average read depth (≥ 30-fold)",
+     "patterns": [
+      "\\d{2,4}\\s*(x|×|-?fold)\\b",
+      "(read\\s+)?depth|coverage"
+     ],
+     "required": true
+    },
+    {
+     "label": "Contamination check of the reads",
+     "patterns": [
+      "contaminat",
+      "kraken|checkm"
+     ],
+     "required": true
+    },
+    {
+     "label": "Assembly statistics (number of contigs, N50; BUSCO for yeasts/fungi)",
+     "patterns": [
+      "\\bN50\\b",
+      "contigs?",
+      "BUSCO"
+     ],
+     "required": true
+    },
+    {
+     "label": "Read trimming / quality threshold (Phred ≥ 20)",
+     "patterns": [
+      "phred|\\bQ\\s?(20|30)\\b|trimm"
+     ],
+     "required": false
+    }
+   ]
+  },
+  {
+   "id": "FE-1.1.8-CONCERN",
+   "guidance_section": "1.1.8",
+   "guidance_page": 5,
+   "template_section": "S1",
+   "scope": "dossier",
+   "title": "Genes of potential concern in the WGS",
+   "requirement": "The WGS interrogated for genes coding for or contributing to antimicrobial resistance, virulence and toxigenicity, with the hits tabulated (subject name, accession, function, identity, coverage), the strategy, software, parameters, database, version and date of access.",
+   "quote": "The WGS should be interrogated for the presence of genes of potential concern, which include those coding for or contributing to resistance to antimicrobials relevant to their use in humans and animals, virulence and toxigenicity.",
+   "guidance_anchors": [
+    "The WGS should be interrogated for the presence of genes of potential concern",
+    "The strategy, software and all relevant parameters (including algorithm if specified within the software) used to identify genes of interest should be reported"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ]
+   },
+   "patterns": [
+    "virulence",
+    "toxigen",
+    "genes?\\s+of\\s+(potential\\s+)?concern",
+    "antimicrobial\\s+resistance|\\bAMR\\b",
+    "secondary\\s+metabolite"
+   ],
+   "sub_items": [
+    {
+     "label": "Database(s), version and date of access",
+     "patterns": [
+      "database",
+      "version",
+      "accessed|date\\s+of\\s+access"
+     ],
+     "required": true
+    },
+    {
+     "label": "Identity / coverage thresholds of the reported hits (≥ 80 % identity, ≥ 70 % length)",
+     "patterns": [
+      "80\\s*%",
+      "70\\s*%",
+      "identity",
+      "coverage"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-1.1.9-AMR",
+   "guidance_section": "1.1.9",
+   "guidance_page": 5,
+   "template_section": "S1",
+   "scope": "dossier",
+   "title": "Antimicrobial resistance genes (bacteria)",
+   "requirement": "For bacterial production strains: WGS searched against at least two updated databases for genes conferring resistance to antimicrobials of clinical relevance (WHO CIA/HIA), reporting hits ≥ 80 % identity and ≥ 70 % length; acquired AMR genes are a hazard unless viable cells and DNA are shown absent (Section 1.3.4).",
+   "quote": "This section is applicable to all bacteria used as production organisms.",
+   "guidance_anchors": [
+    "This section is applicable to all bacteria used as production organisms",
+    "It is recommended to conduct the search against at least two updated databases"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ],
+    "attributes_any": [
+     "bacteria"
+    ]
+   },
+   "patterns": [
+    "antimicrobial\\s+resistance|\\bAMR\\b",
+    "resfinder|\\bCARD\\b|amrfinder|argannot|megares",
+    "resistance\\s+genes?"
+   ],
+   "sub_items": [
+    {
+     "label": "Search against at least two updated databases",
+     "patterns": [
+      "resfinder|\\bCARD\\b|amrfinder|argannot|megares|ncbi"
+     ],
+     "required": true
+    },
+    {
+     "label": "Result: presence/absence of acquired AMR genes",
+     "patterns": [
+      "no\\s+(acquired\\s+)?(AMR|antimicrobial\\s+resistance)\\s+genes|AMR\\s+genes?\\s+(were|was)\\s+(not\\s+)?(identified|detected|found)"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-1.1.10.1-QPS",
+   "guidance_section": "1.1.10.1",
+   "guidance_page": 5,
+   "template_section": "S1",
+   "scope": "dossier",
+   "title": "Qualified Presumption of Safety (QPS) status",
+   "requirement": "Where the QPS approach is claimed: unequivocal taxonomic status, species on the QPS list, qualifications met; for GMMs, a parental strain qualifying for QPS and a genetic modification giving no concern. For QPS Bacillus and related species, a cytotoxicity test (Vero or other epithelial cells) on culture supernatant.",
+   "quote": "To justify that a microorganism is suitable for evaluation according to the QPS approach, its taxonomic status should be unequivocally established, the species to which it belongs should be included in the QPS list and any qualification set in the list should be met.",
+   "guidance_anchors": [
+    "To justify that a microorganism is suitable for evaluation according to the QPS approach",
+    "the QPS concept can be extended to the genetically modified (GM) production strain",
+    "a cytotoxicity test of culture supernatant on Vero cells or other epithelial cell lines should be made"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ],
+    "attributes_any": [
+     "qps"
+    ]
+   },
+   "patterns": [
+    "\\bQPS\\b",
+    "qualified\\s+presumption\\s+of\\s+safety"
+   ],
+   "sub_items": [
+    {
+     "label": "Species on the QPS list and qualifications met",
+     "patterns": [
+      "\\bQPS\\b.{0,80}(list|status|qualif)",
+      "qualified\\s+presumption"
+     ],
+     "required": true
+    },
+    {
+     "label": "Cytotoxicity test (Vero / epithelial cells) for QPS Bacillus",
+     "patterns": [
+      "cytotox",
+      "vero\\s+cell"
+     ],
+     "required": true,
+     "applies_when": {
+      "attributes_any": [
+       "bacillus"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "FE-1.1.10.2-NONQPS",
+   "guidance_section": "1.1.10.2",
+   "guidance_page": 6,
+   "template_section": "S1",
+   "scope": "dossier",
+   "title": "Toxigenicity and pathogenicity (non-QPS strains)",
+   "requirement": "For non-QPS production strains: information on toxigenicity and virulence including history of use, based on up-to-date literature; strain development steps to reduce toxigenicity documented; bacteria: WGS searched for virulence factors and toxin genes; eukaryotes: targeted WGS searches or literature on the capacity to produce toxic metabolites (e.g. mycotoxins).",
+   "quote": "Information relating to toxigenicity and virulence for humans should be provided for non-QPS production strains, including history of use of the strain or any close relative. This should be based on up-to-date literature searches.",
+   "guidance_anchors": [
+    "Information relating to toxigenicity and virulence for humans should be provided for non-QPS production strains",
+    "The potential pathogenicity or ability to produce metabolites that could be harmful to humans should be assessed for eukaryotic microorganisms"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ],
+    "attributes_any": [
+     "non_qps"
+    ]
+   },
+   "patterns": [
+    "toxigen",
+    "pathogen",
+    "virulence",
+    "mycotoxin",
+    "secondary\\s+metabolite",
+    "antismash",
+    "toxin"
+   ],
+   "sub_items": [
+    {
+     "label": "History of safe use / literature search",
+     "patterns": [
+      "history\\s+of\\s+(safe\\s+)?use",
+      "literature"
+     ],
+     "required": true
+    },
+    {
+     "label": "Search for toxin / secondary-metabolite genes (WGS) or toxic metabolite capacity",
+     "patterns": [
+      "antismash|secondary\\s+metabolite|gene\\s+cluster|mycotoxin|toxin"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-1.1.11-GM",
+   "guidance_section": "1.1.11",
+   "guidance_page": 6,
+   "template_section": "S1",
+   "scope": "dossier",
+   "title": "Genetic modification of the production strain",
+   "requirement": "For a GM production strain: purpose of the modification and resulting traits; characteristics of the inserted sequences (donor organism, nucleotide sequence, map and table of elements; for designed sequences the design rationale and database similarity); deletions and substitutions; structure of the modification characterised by WGS against the parental genome (bacteria, yeasts; recommended for fungi), with maps of all modified regions and genes of concern highlighted; without WGS, vectors, process and absence of vector/AMR sequences confirmed by Southern blot or PCR.",
+   "quote": "If the strain is GM according to the definition in Directive 2001/18/EC the genetic modification should be described.",
+   "guidance_anchors": [
+    "If the strain is GM according to the definition in Directive 2001/18/EC the genetic modification should be described",
+    "The purpose of the genetic modification should be described",
+    "The characterisation of the genetic modification can be done by comparing the WGS of the GMM with that of the non-genetically modified reference genome"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ],
+    "attributes_any": [
+     "gm"
+    ]
+   },
+   "patterns": [
+    "genetic(ally)?\\s+modif",
+    "expression\\s+cassette",
+    "insert(ed|ion)",
+    "delet(ed|ion)",
+    "vector",
+    "promoter"
+   ],
+   "sub_items": [
+    {
+     "label": "Purpose of the genetic modification",
+     "patterns": [
+      "purpose\\s+of\\s+the\\s+(genetic\\s+)?modification",
+      "in\\s+order\\s+to|to\\s+(increase|improve|enhance)\\s+(the\\s+)?(production|expression|yield)"
+     ],
+     "required": true
+    },
+    {
+     "label": "Inserted sequences: donor organism, sequence, map and table of elements",
+     "patterns": [
+      "donor",
+      "expression\\s+cassette",
+      "inserted\\s+(sequence|element|dna)",
+      "physical\\s+map"
+     ],
+     "required": true
+    },
+    {
+     "label": "Deletions / substitutions and their intended effect",
+     "patterns": [
+      "delet",
+      "substitut|frameshift"
+     ],
+     "required": false
+    },
+    {
+     "label": "Structure of the modification from WGS vs the parental genome (maps of modified regions)",
+     "patterns": [
+      "parental|host\\s+strain|reference\\s+genome",
+      "alignment|read\\s+mapping|mapped"
+     ],
+     "required": true
+    },
+    {
+     "label": "Absence of AMR / vector sequences not intended to be present",
+     "patterns": [
+      "no\\s+(AMR|antimicrobial|antibiotic)\\s+(resistance\\s+)?(genes?|markers?)",
+      "vector\\s+(sequence|backbone)",
+      "absence\\s+of"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-1.2-PRODUCTION",
+   "guidance_section": "1.2",
+   "guidance_page": 8,
+   "template_section": "S2",
+   "scope": "dossier",
+   "title": "Production process (microbial)",
+   "requirement": "Full details of the production process with a flow chart of each step, differences between production sites, chemical identity/CAS/function of agents used, and a statement that production meets food safety management system principles (Commission Notice C/2016/4608) and Regulation (EC) No 852/2004.",
+   "quote": "Full details of the production process for the food enzyme should be provided, including a flow chart showing each step in the production process.",
+   "guidance_anchors": [
+    "Full details of the production process for the food enzyme should be provided, including a flow chart showing each step in the production process",
+    "A statement should be provided confirming that the production of the food enzyme meets or will meet food safety management system principles"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ]
+   },
+   "patterns": [
+    "manufactur",
+    "production\\s+process",
+    "flow\\s*-?\\s*chart",
+    "fermentation"
+   ],
+   "sub_items": [
+    {
+     "label": "Flow chart of the production process",
+     "patterns": [
+      "flow\\s*-?\\s*chart|flow\\s*-?\\s*sheet|process\\s+(scheme|diagram)"
+     ],
+     "required": true
+    },
+    {
+     "label": "Statement: food safety management system (C/2016/4608) and Regulation (EC) No 852/2004",
+     "patterns": [
+      "852/2004",
+      "C/2016/4608|food\\s+safety\\s+management",
+      "HACCP",
+      "FSSC|ISO\\s*22000|FAMI-?QS"
+     ],
+     "required": true
+    },
+    {
+     "label": "Differences between production sites (if more than one)",
+     "patterns": [
+      "(production|manufacturing)\\s+sites?|plants?"
+     ],
+     "required": false
+    }
+   ]
+  },
+  {
+   "id": "FE-1.2.1-FERMENTATION",
+   "guidance_section": "1.2.1",
+   "guidance_page": 8,
+   "template_section": "S2",
+   "scope": "dossier",
+   "title": "Fermentation",
+   "requirement": "The type of fermentation system (continuous, (fed-)batch, solid state) and the list of the actual raw materials of the medium and process-control reagents (an indicative list is not accepted); quantitative data for medium ingredients of potential concern.",
+   "quote": "A list of the raw materials contributing to the medium and reagents used for process control is required. These should be the actual materials used; an indicative list will not be accepted.",
+   "guidance_anchors": [
+    "should specify the type of the fermentation system used",
+    "These should be the actual materials used; an indicative list will not be accepted"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ]
+   },
+   "patterns": [
+    "fermentation",
+    "fed-?\\s*batch",
+    "submerged",
+    "raw\\s+materials?",
+    "medium|media"
+   ],
+   "sub_items": [
+    {
+     "label": "Type of fermentation system",
+     "patterns": [
+      "fed-?\\s*batch|continuous|batch\\s+fermentation|solid[\\s-]state|submerged"
+     ],
+     "required": true
+    },
+    {
+     "label": "List of the actual raw materials and process-control reagents",
+     "patterns": [
+      "raw\\s+materials?",
+      "(glucose|sucrose|starch|soy|corn\\s+steep|yeast\\s+extract|ammonium|antifoam)"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-1.2.2-DOWNSTREAM",
+   "guidance_section": "1.2.2",
+   "guidance_page": 8,
+   "template_section": "S2",
+   "scope": "dossier",
+   "title": "Downstream processing",
+   "requirement": "Methods used to kill, disrupt and remove the biomass, concentrate the enzyme liquor and remove microorganisms, with the chemical identity, CAS number and function of every substance used (actual materials).",
+   "quote": "The specific methods used to kill, disrupt and remove microbial biomass after completion of fermentation, to concentrate the enzyme liquor and to remove microorganisms from the food enzyme should be described, when applicable.",
+   "guidance_anchors": [
+    "The specific methods used to kill, disrupt and remove microbial biomass after completion of fermentation"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ]
+   },
+   "patterns": [
+    "downstream",
+    "recovery",
+    "filtration|ultrafiltrat|centrifug|flocculat",
+    "concentrat",
+    "biomass"
+   ],
+   "sub_items": [
+    {
+     "label": "Removal of biomass and microorganisms (e.g. filtration, germ filtration)",
+     "patterns": [
+      "filtrat|centrifug|separation|germ\\s+filtr"
+     ],
+     "required": true
+    },
+    {
+     "label": "Concentration of the enzyme liquor",
+     "patterns": [
+      "ultrafiltrat|concentrat|evaporat"
+     ],
+     "required": true
+    },
+    {
+     "label": "Identity / CAS / function of processing substances",
+     "patterns": [
+      "\\bCAS\\b|flocculant|filter\\s+aid|processing\\s+aid"
+     ],
+     "required": false
+    }
+   ]
+  },
+  {
+   "id": "FE-1.2.3-PREPARATION",
+   "guidance_section": "1.2.3",
+   "guidance_page": 8,
+   "template_section": "S2",
+   "scope": "dossier",
+   "title": "Food enzyme preparation (only in specific cases)",
+   "requirement": "Information on the preparation is generally not required, except when the enzyme liquor is inherently unstable (quantitative data on all excipients to calculate TOS) or when immobilisation/encapsulation may carry over hazardous material (support, cross-linking agents).",
+   "quote": "Information on the method and material used to produce a preparation is generally not required.",
+   "guidance_anchors": [
+    "Information on the method and material used to produce a preparation is generally not required"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ],
+    "manual": "Required only if the enzyme liquor is inherently unstable or the enzyme is immobilised/encapsulated."
+   },
+   "patterns": [
+    "immobili[sz]|encapsulat|cross-?link",
+    "excipient|formulat|preparation"
+   ]
+  },
+  {
+   "id": "FE-1.3.1-PROPERTIES",
+   "guidance_section": "1.3.1",
+   "guidance_page": 8,
+   "template_section": "S3",
+   "scope": "dossier",
+   "title": "Properties of the food enzyme",
+   "requirement": "Amino acid sequence of each declared activity and the molecular mass; subunit structure and glycosylation when relevant; protein pattern (SDS-PAGE or equivalent) of at least three batches plus any batch used in toxicological studies; SOP of the in-house activity method with the unit defined and used throughout; pH and temperature profiles and optima; thermal stability.",
+   "quote": "Amino acid sequence data should be provided for each declared enzyme activity. The sequence should be that of the actual enzyme(s) under assessment; reference to published sequences of enzymes with the same catalytic activity is not acceptable.",
+   "guidance_anchors": [
+    "Amino acid sequence data should be provided for each declared enzyme activity",
+    "The Standard Operating Procedure (SOP) for the in",
+    "The temperature and pH range over which the food enzyme remains active"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ]
+   },
+   "patterns": [
+    "amino\\s+acid\\s+sequence",
+    "molecular\\s+(mass|weight)",
+    "SDS-?PAGE|protein\\s+pattern",
+    "activity\\s+unit|unit\\s+definition|one\\s+unit",
+    "pH\\s+optim|temperature\\s+optim|thermostab|thermal\\s+stab"
+   ],
+   "sub_items": [
+    {
+     "label": "Amino acid sequence of the enzyme under application",
+     "patterns": [
+      "amino\\s+acid\\s+sequence",
+      "mature\\s+(protein|sequence)"
+     ],
+     "required": true
+    },
+    {
+     "label": "Molecular mass (mature protein / with signal sequence)",
+     "patterns": [
+      "molecular\\s+(mass|weight)",
+      "\\bk?Da\\b"
+     ],
+     "required": true
+    },
+    {
+     "label": "Protein pattern of at least three batches (SDS-PAGE or equivalent)",
+     "patterns": [
+      "SDS-?PAGE",
+      "protein\\s+pattern",
+      "size\\s+exclusion"
+     ],
+     "required": true
+    },
+    {
+     "label": "SOP of the activity assay and unit definition",
+     "patterns": [
+      "one\\s+unit|unit\\s+(is\\s+)?defined|definition\\s+of\\s+(the\\s+)?(activity\\s+)?unit|\\bSOP\\b|standard\\s+operating\\s+procedure"
+     ],
+     "required": true
+    },
+    {
+     "label": "pH and temperature profiles / optima",
+     "patterns": [
+      "pH\\s+(optim|profile|range)|optimum\\s+pH|optimal\\s+pH",
+      "temperature\\s+(optim|profile|range)|optimum\\s+temperature"
+     ],
+     "required": true
+    },
+    {
+     "label": "Thermal stability",
+     "patterns": [
+      "thermo-?stab|thermal\\s+stab|heat\\s+stab|inactivat"
+     ],
+     "required": true
+    }
+   ],
+   "min_batches": 3
+  },
+  {
+   "id": "FE-1.3.2-CHEMICAL",
+   "guidance_section": "1.3.2",
+   "guidance_page": 9,
+   "template_section": "S3",
+   "scope": "dossier",
+   "title": "Chemical parameters of at least three batches",
+   "requirement": "For at least three batches representative of commercial production (preferably full-scale): enzyme activity (U/g), total protein, ash and water (% w/w), TOS calculated as 100 % – water – ash, and activity per mg TOS; the same data for any batch used in toxicological studies; methods and certificates of analysis identifying the test item.",
+   "quote": "Chemical characteristics should be provided for at least three batches of the food enzyme representative of those intended for commercialisation.",
+   "guidance_anchors": [
+    "Chemical characteristics should be provided for at least three batches of the food enzyme representative of those intended for commercialisation",
+    "From these data, the percentage of TOS should be calculated (as 100% – % water – % ash)"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ]
+   },
+   "patterns": [
+    "total\\s+organic\\s+solids?|\\bTOS\\b",
+    "\\bash\\b",
+    "water|moisture|loss\\s+on\\s+drying",
+    "total\\s+protein|protein\\s+content",
+    "activity"
+   ],
+   "sub_items": [
+    {
+     "label": "Enzyme activity per batch (U/g)",
+     "patterns": [
+      "\\d[\\d\\s.,]*\\s*(U|units?|FTU|[A-Z]{2,6}U)\\s*/\\s*(g|ml|mL)\\b",
+      "activity"
+     ],
+     "required": true
+    },
+    {
+     "label": "Total protein (% w/w)",
+     "patterns": [
+      "(total\\s+)?protein"
+     ],
+     "required": true
+    },
+    {
+     "label": "Ash (% w/w)",
+     "patterns": [
+      "\\bash\\b"
+     ],
+     "required": true
+    },
+    {
+     "label": "Water (% w/w)",
+     "patterns": [
+      "water|moisture|loss\\s+on\\s+drying"
+     ],
+     "required": true
+    },
+    {
+     "label": "TOS (%) and activity/mg TOS",
+     "patterns": [
+      "\\bTOS\\b|total\\s+organic\\s+solids?"
+     ],
+     "required": true
+    },
+    {
+     "label": "Certificates of analysis identifying the test item",
+     "patterns": [
+      "certificate\\s+of\\s+analysis|\\bCoA\\b"
+     ],
+     "required": true
+    }
+   ],
+   "min_batches": 3,
+   "pilot_batch_patterns": [
+    "\\bpilot\\b"
+   ]
+  },
+  {
+   "id": "FE-1.3.3-PURITY",
+   "guidance_section": "1.3.3",
+   "guidance_page": 9,
+   "template_section": "S3",
+   "scope": "dossier",
+   "title": "Purity (microbial)",
+   "requirement": "Lead (JECFA); medium ingredients other than nutrients (e.g. inducers, antibiotics) that may carry over; compounds of known toxicity (e.g. mycotoxins) where indicated by literature or WGS (generally filamentous fungi); E. coli absent in 25 g; Enterobacteriaceae or coliforms ≤ 30 CFU/g; antibacterial activity (JECFA disc method, six indicator strains); LoD/LoQ, same batches as the chemical characterisation.",
+   "quote": "Microbiological purity should be established. Escherichia coli should not be detected in 25 g of food enzyme (FAO/WHO, 2006), measured according to ISO method 16649-3:2015 or a validated alternative method. Counts of Enterobacteriaceae or total coliforms should not exceed 30 CFU/g measured according to ISO 21528-2:2017 or ISO 4832:2006, respectively.",
+   "guidance_anchors": [
+    "The concentration of lead in the food enzyme should be determined according to JECFA Guidelines",
+    "Escherichia coli should not be detected in 25 g of food enzyme",
+    "Antibacterial activity of the food enzyme should be determined according to JECFA recommendations"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ]
+   },
+   "patterns": [
+    "\\blead\\b|\\bPb\\b",
+    "E\\.?\\s*coli|escherichia",
+    "coliform|enterobacteriaceae",
+    "antibacterial|antimicrobial\\s+activity",
+    "mycotoxin"
+   ],
+   "sub_items": [
+    {
+     "label": "Lead",
+     "patterns": [
+      "\\blead\\b|\\bPb\\b"
+     ],
+     "required": true
+    },
+    {
+     "label": "E. coli (absent in 25 g)",
+     "patterns": [
+      "E\\.?\\s*coli|escherichia"
+     ],
+     "required": true
+    },
+    {
+     "label": "Enterobacteriaceae or total coliforms (≤ 30 CFU/g)",
+     "patterns": [
+      "coliform|enterobacteriaceae"
+     ],
+     "required": true
+    },
+    {
+     "label": "Antibacterial activity (JECFA disc method)",
+     "patterns": [
+      "antibacterial|antimicrobial\\s+activity"
+     ],
+     "required": true
+    },
+    {
+     "label": "Mycotoxins / toxic metabolites where indicated (filamentous fungi)",
+     "patterns": [
+      "mycotoxin|aflatoxin|ochratoxin|zearalenone|fumonisin|trichothecene|sterigmatocystin"
+     ],
+     "required": true,
+     "applies_when": {
+      "attributes_any": [
+       "filamentous_fungi"
+      ]
+     }
+    },
+    {
+     "label": "LoD / LoQ of each method",
+     "patterns": [
+      "\\bLO[DQ]\\b|limit\\s+of\\s+(detection|quantification)|<\\s*\\d"
+     ],
+     "required": true
+    }
+   ],
+   "min_batches": 3
+  },
+  {
+   "id": "FE-1.3.4.1-VIABLE",
+   "guidance_section": "1.3.4.1",
+   "guidance_page": 10,
+   "template_section": "S3",
+   "scope": "dossier",
+   "title": "Absence of viable cells of the production strain",
+   "requirement": "Culture-based detection of viable cells (stressed cells recovered, specificity, spores germinated), none detected in at least 1 g/mL from a sample of at least 10 g/mL, at least nine samples from at least three independent batches (industrial scale), with a positive control spiked with 10–300 cells/spores per plate. Not required for non-GM QPS production strains.",
+   "quote": "This section applies to all food enzymes except for those obtained using non-GM QPS production strains.",
+   "guidance_anchors": [
+    "This section applies to all food enzymes except for those obtained using non-GM QPS production strains",
+    "at least nine samples obtained from a minimum of three independent batches of food enzyme should be analysed",
+    "a positive control with samples of the food enzyme spiked with low counts"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ],
+    "attributes_not_all": [
+     "non_gm",
+     "qps"
+    ]
+   },
+   "patterns": [
+    "viable\\s+(cells?|production\\s+strain|count)",
+    "absence\\s+of\\s+(the\\s+)?(viable\\s+)?production\\s+(strain|organism)",
+    "spiked"
+   ],
+   "sub_items": [
+    {
+     "label": "Culture-based method recovering stressed cells",
+     "patterns": [
+      "plat(e|ing)|cultur|incubat|agar"
+     ],
+     "required": true
+    },
+    {
+     "label": "At least 1 g or mL analysed per sample",
+     "patterns": [
+      "\\b1\\s*(g|ml|mL)\\b|one\\s+gram"
+     ],
+     "required": true
+    },
+    {
+     "label": "At least nine samples from three independent batches",
+     "patterns": [
+      "\\b(nine|9)\\s+samples|triplicate|in\\s+triplicate|three\\s+(independent\\s+)?(batches|lots)"
+     ],
+     "required": true
+    },
+    {
+     "label": "Positive control spiked with the production strain",
+     "patterns": [
+      "spiked|positive\\s+control"
+     ],
+     "required": true
+    }
+   ],
+   "min_batches": 3
+  },
+  {
+   "id": "FE-1.3.4.2-DNA",
+   "guidance_section": "1.3.4.2",
+   "guidance_page": 10,
+   "template_section": "S3",
+   "scope": "dossier",
+   "title": "Absence of DNA of the production strain",
+   "requirement": "For GM production strains (and non-GM strains with acquired AMR genes): PCR targeting a strain-specific fragment (≤ 1 kb; not larger than the smallest AMR gene), DNA extracted from at least 1 g/mL, three independent batches each extracted in triplicate, positive, spiking (LoD), inhibition and negative controls, LoD of 10 ng DNA per g or mL or lower.",
+   "quote": "The presence of DNA from the production strain should be tested in the food enzyme by PCR, targeting a fragment specific for this strain.",
+   "guidance_anchors": [
+    "The presence of DNA from the production strain should be tested in the food enzyme by PCR, targeting a fragment specific for this strain",
+    "at least three independent batches of food enzyme should be sampled, each extracted in triplicate and analysed",
+    "LoD of 10 ng of DNA per g or mL of product or lower"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "microbial"
+    ],
+    "attributes_any": [
+     "gm",
+     "amr_genes"
+    ]
+   },
+   "patterns": [
+    "\\bPCR\\b",
+    "\\brDNA\\b|recombinant\\s+DNA",
+    "DNA\\s+(of|from)\\s+the\\s+production\\s+strain",
+    "primer"
+   ],
+   "sub_items": [
+    {
+     "label": "PCR protocol: target fragment (≤ 1 kb), primers, amplification conditions",
+     "patterns": [
+      "primer",
+      "amplicon|fragment|\\bbp\\b",
+      "PCR"
+     ],
+     "required": true
+    },
+    {
+     "label": "Three independent batches, each extracted in triplicate",
+     "patterns": [
+      "triplicate|three\\s+(independent\\s+)?(batches|lots)"
+     ],
+     "required": true
+    },
+    {
+     "label": "Controls: positive, spiking for LoD, inhibition, negative",
+     "patterns": [
+      "positive\\s+control",
+      "negative\\s+control",
+      "spik"
+     ],
+     "required": true
+    },
+    {
+     "label": "Limit of detection ≤ 10 ng DNA per g or mL",
+     "patterns": [
+      "\\b10\\s*ng\\b|limit\\s+of\\s+detection|\\bLoD\\b"
+     ],
+     "required": true
+    }
+   ],
+   "min_batches": 3
+  },
+  {
+   "id": "FE-2.1-SOURCE",
+   "guidance_section": "2.1",
+   "guidance_page": 11,
+   "template_section": "S1",
+   "scope": "dossier",
+   "title": "Source of the food enzyme (plant)",
+   "requirement": "Plant source by genus and species; plant part used and any treatment; capacity to produce harmful secondary metabolites (literature); raw-material specifications including agents applied (e.g. pesticides); whether the source is a GM plant.",
+   "quote": "All plant sources of the food enzyme should be identified by genus and species using currently accepted nomenclature",
+   "guidance_anchors": [
+    "All plant sources of the food enzyme should be identified by genus and species",
+    "It should be indicated whether the source is from a GM plant"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "plant"
+    ]
+   },
+   "patterns": [
+    "plant\\s+(source|part|material)",
+    "species",
+    "pesticide",
+    "secondary\\s+metabolite"
+   ],
+   "sub_items": [
+    {
+     "label": "Genus and species of the plant",
+     "patterns": [
+      "[A-Z][a-z]+\\s+[a-z]{3,}"
+     ],
+     "required": true
+    },
+    {
+     "label": "Plant part used",
+     "patterns": [
+      "leaves|seeds?|fruits?|tubers?|roots?|latex|stems?|flowers?"
+     ],
+     "required": true
+    },
+    {
+     "label": "Secondary metabolites (literature search)",
+     "patterns": [
+      "secondary\\s+metabolite|literature"
+     ],
+     "required": true
+    },
+    {
+     "label": "Raw-material specifications incl. pesticides",
+     "patterns": [
+      "pesticide|specification"
+     ],
+     "required": true
+    },
+    {
+     "label": "Statement on GM plant",
+     "patterns": [
+      "genetically\\s+modified|\\bGM\\b"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-2.2-PRODUCTION",
+   "guidance_section": "2.2",
+   "guidance_page": 11,
+   "template_section": "S2",
+   "scope": "dossier",
+   "title": "Production process (plant)",
+   "requirement": "Full process with flow chart; extraction (plant parts, comminution, extraction method, conditions, actual raw materials with identity/CAS/function); downstream processing (biomass removal, concentration, microbial control); food safety management statement.",
+   "quote": "Full details of the production process for the food enzyme should be provided, including a flow chart showing each step in the production process. Where manufacture of the food enzyme occurs at more than one manufacturing site, the production process for the main production site should be described in detail",
+   "guidance_anchors": [
+    "Information on the extraction stage of the food enzyme should specify the plant parts extracted"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "plant"
+    ]
+   },
+   "patterns": [
+    "extraction",
+    "flow\\s*-?\\s*chart",
+    "manufactur|production\\s+process"
+   ],
+   "sub_items": [
+    {
+     "label": "Flow chart",
+     "patterns": [
+      "flow\\s*-?\\s*chart"
+     ],
+     "required": true
+    },
+    {
+     "label": "Extraction method and raw materials",
+     "patterns": [
+      "extract"
+     ],
+     "required": true
+    },
+    {
+     "label": "Downstream processing",
+     "patterns": [
+      "filtrat|concentrat|purif"
+     ],
+     "required": true
+    },
+    {
+     "label": "Food safety management statement (852/2004)",
+     "patterns": [
+      "852/2004|HACCP|food\\s+safety\\s+management"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-2.3.1-PROPERTIES",
+   "guidance_section": "2.3.1",
+   "guidance_page": 12,
+   "template_section": "S3",
+   "scope": "dossier",
+   "title": "Properties of the food enzyme",
+   "requirement": "Amino acid sequence of each declared activity and the molecular mass; subunit structure and glycosylation when relevant; protein pattern (SDS-PAGE or equivalent) of at least three batches plus any batch used in toxicological studies; SOP of the in-house activity method with the unit defined and used throughout; pH and temperature profiles and optima; thermal stability.",
+   "quote": "The amino acid sequence should be provided for the enzyme activity(ies) under application.",
+   "guidance_anchors": [
+    "The amino acid sequence should be provided for the enzyme activity(ies) under application",
+    "The SOP for the in",
+    "The temperature and pH range over which the food enzyme remains active"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "plant"
+    ]
+   },
+   "patterns": [
+    "amino\\s+acid\\s+sequence",
+    "molecular\\s+(mass|weight)",
+    "SDS-?PAGE|protein\\s+pattern",
+    "activity\\s+unit|unit\\s+definition|one\\s+unit",
+    "pH\\s+optim|temperature\\s+optim|thermostab|thermal\\s+stab"
+   ],
+   "sub_items": [
+    {
+     "label": "Amino acid sequence of the enzyme under application",
+     "patterns": [
+      "amino\\s+acid\\s+sequence",
+      "mature\\s+(protein|sequence)"
+     ],
+     "required": true
+    },
+    {
+     "label": "Molecular mass (mature protein / with signal sequence)",
+     "patterns": [
+      "molecular\\s+(mass|weight)",
+      "\\bk?Da\\b"
+     ],
+     "required": true
+    },
+    {
+     "label": "Protein pattern of at least three batches (SDS-PAGE or equivalent)",
+     "patterns": [
+      "SDS-?PAGE",
+      "protein\\s+pattern",
+      "size\\s+exclusion"
+     ],
+     "required": true
+    },
+    {
+     "label": "SOP of the activity assay and unit definition",
+     "patterns": [
+      "one\\s+unit|unit\\s+(is\\s+)?defined|definition\\s+of\\s+(the\\s+)?(activity\\s+)?unit|\\bSOP\\b|standard\\s+operating\\s+procedure"
+     ],
+     "required": true
+    },
+    {
+     "label": "pH and temperature profiles / optima",
+     "patterns": [
+      "pH\\s+(optim|profile|range)|optimum\\s+pH|optimal\\s+pH",
+      "temperature\\s+(optim|profile|range)|optimum\\s+temperature"
+     ],
+     "required": true
+    },
+    {
+     "label": "Thermal stability",
+     "patterns": [
+      "thermo-?stab|thermal\\s+stab|heat\\s+stab|inactivat"
+     ],
+     "required": true
+    }
+   ],
+   "min_batches": 3
+  },
+  {
+   "id": "FE-2.3.2-CHEMICAL",
+   "guidance_section": "2.3.2",
+   "guidance_page": 9,
+   "template_section": "S3",
+   "scope": "dossier",
+   "title": "Chemical parameters of at least three batches",
+   "requirement": "For at least three batches representative of commercial production (preferably full-scale): enzyme activity (U/g), total protein, ash and water (% w/w), TOS calculated as 100 % – water – ash, and activity per mg TOS; the same data for any batch used in toxicological studies; methods and certificates of analysis identifying the test item.",
+   "quote": "Chemical characteristics should be provided for at least three batches of the food enzyme representative of those intended for commercialisation.",
+   "guidance_anchors": [
+    "Chemical characteristics should be provided for at least three batches of the food enzyme representative of those intended for commercialisation",
+    "From these data, the percentage of TOS should be calculated (as 100% – % water – % ash)"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "plant"
+    ]
+   },
+   "patterns": [
+    "total\\s+organic\\s+solids?|\\bTOS\\b",
+    "\\bash\\b",
+    "water|moisture|loss\\s+on\\s+drying",
+    "total\\s+protein|protein\\s+content",
+    "activity"
+   ],
+   "sub_items": [
+    {
+     "label": "Enzyme activity per batch (U/g)",
+     "patterns": [
+      "\\d[\\d\\s.,]*\\s*(U|units?|FTU|[A-Z]{2,6}U)\\s*/\\s*(g|ml|mL)\\b",
+      "activity"
+     ],
+     "required": true
+    },
+    {
+     "label": "Total protein (% w/w)",
+     "patterns": [
+      "(total\\s+)?protein"
+     ],
+     "required": true
+    },
+    {
+     "label": "Ash (% w/w)",
+     "patterns": [
+      "\\bash\\b"
+     ],
+     "required": true
+    },
+    {
+     "label": "Water (% w/w)",
+     "patterns": [
+      "water|moisture|loss\\s+on\\s+drying"
+     ],
+     "required": true
+    },
+    {
+     "label": "TOS (%) and activity/mg TOS",
+     "patterns": [
+      "\\bTOS\\b|total\\s+organic\\s+solids?"
+     ],
+     "required": true
+    },
+    {
+     "label": "Certificates of analysis identifying the test item",
+     "patterns": [
+      "certificate\\s+of\\s+analysis|\\bCoA\\b"
+     ],
+     "required": true
+    }
+   ],
+   "min_batches": 3,
+   "pilot_batch_patterns": [
+    "\\bpilot\\b"
+   ]
+  },
+  {
+   "id": "FE-2.3.3-PURITY",
+   "guidance_section": "2.3.3",
+   "guidance_page": 12,
+   "template_section": "S3",
+   "scope": "dossier",
+   "title": "Purity (plant)",
+   "requirement": "Lead, cadmium, mercury, arsenic (≤ 5, 0.5, 0.5, 3 mg/kg); pesticide residues unless cultivation is controlled; relevant mycotoxins; known plant toxicants where indicated; E. coli absent in 25 g; Enterobacteriaceae/coliforms ≤ 30 CFU/g; yeasts and moulds ≤ 100 CFU/g.",
+   "quote": "Quantitative values for lead, cadmium, mercury and arsenic should be reported as a routine (threshold values 5, 0.5, 0.5 and 3 mg/kg food enzyme, respectively)",
+   "guidance_anchors": [
+    "Quantitative values for lead, cadmium, mercury and arsenic should be reported as a routine",
+    "Filamentous fungi and yeast should not exceed 100 CFU/g in the food enzyme"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "plant"
+    ]
+   },
+   "patterns": [
+    "\\blead\\b|cadmium|mercury|arsenic",
+    "pesticide",
+    "mycotoxin",
+    "E\\.?\\s*coli|coliform|enterobacteriaceae",
+    "yeasts?\\s+and\\s+moulds?|filamentous\\s+fungi"
+   ],
+   "sub_items": [
+    {
+     "label": "Lead, cadmium, mercury, arsenic",
+     "patterns": [
+      "\\blead\\b|cadmium|mercury|arsenic"
+     ],
+     "required": true
+    },
+    {
+     "label": "Pesticide residues",
+     "patterns": [
+      "pesticide"
+     ],
+     "required": true
+    },
+    {
+     "label": "Mycotoxins",
+     "patterns": [
+      "mycotoxin|aflatoxin|ochratoxin"
+     ],
+     "required": true
+    },
+    {
+     "label": "E. coli, Enterobacteriaceae/coliforms",
+     "patterns": [
+      "E\\.?\\s*coli|coliform|enterobacteriaceae"
+     ],
+     "required": true
+    },
+    {
+     "label": "Yeasts and moulds",
+     "patterns": [
+      "yeasts?|moulds?|molds?|filamentous\\s+fungi"
+     ],
+     "required": true
+    }
+   ],
+   "min_batches": 3
+  },
+  {
+   "id": "FE-3.1-SOURCE",
+   "guidance_section": "3.1",
+   "guidance_page": 13,
+   "template_section": "S1",
+   "scope": "dossier",
+   "title": "Source of the food enzyme (animal)",
+   "requirement": "Animal source by genus and species; tissue/product used and how it is sourced; suitability for human consumption (Regulation (EU) 2015/1162 reference in the guidance); history of consumption; source-material specifications, inspection and hygiene; measures against viruses/zoonotic agents; whether the source is a GM animal.",
+   "quote": "All animal sources of the food enzyme should be identified by genus and species (and subspecies if relevant) using currently accepted nomenclature.",
+   "guidance_anchors": [
+    "All animal sources of the food enzyme should be identified by genus and species",
+    "The methods used to ensure the absence of any risk of infectivity from viruses or other zoonotic agents should also be provided"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "animal"
+    ]
+   },
+   "patterns": [
+    "animal\\s+(source|tissue)",
+    "abomas|pancrea|stomach|mucosa|gland",
+    "fit\\s+for\\s+human\\s+consumption|veterinary\\s+inspection",
+    "zoonotic|virus"
+   ],
+   "sub_items": [
+    {
+     "label": "Species and tissue",
+     "patterns": [
+      "bovine|porcine|ovine|caprine|calf|pig|abomas|pancrea|stomach|mucosa"
+     ],
+     "required": true
+    },
+    {
+     "label": "Fitness for human consumption / inspection",
+     "patterns": [
+      "human\\s+consumption|inspect"
+     ],
+     "required": true
+    },
+    {
+     "label": "Measures against viruses / zoonotic agents",
+     "patterns": [
+      "virus|zoonotic|prion|TSE|BSE"
+     ],
+     "required": true
+    },
+    {
+     "label": "Statement on GM animal",
+     "patterns": [
+      "genetically\\s+modified|\\bGM\\b"
+     ],
+     "required": false
+    }
+   ]
+  },
+  {
+   "id": "FE-3.2-PRODUCTION",
+   "guidance_section": "3.2",
+   "guidance_page": 13,
+   "template_section": "S2",
+   "scope": "dossier",
+   "title": "Production process (animal)",
+   "requirement": "Full process with flow chart; extraction (tissues, comminution, method, conditions, actual raw materials with identity/CAS/function); downstream processing aids; food safety management statement.",
+   "quote": "Information on the extraction stage of the production of the food enzyme should specify the tissue(s) and products extracted.",
+   "guidance_anchors": [
+    "Information on the extraction stage of the production of the food enzyme should specify the tissue(s) and products extracted"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "animal"
+    ]
+   },
+   "patterns": [
+    "extraction",
+    "flow\\s*-?\\s*chart",
+    "manufactur|production\\s+process"
+   ],
+   "sub_items": [
+    {
+     "label": "Flow chart",
+     "patterns": [
+      "flow\\s*-?\\s*chart"
+     ],
+     "required": true
+    },
+    {
+     "label": "Extraction method and raw materials",
+     "patterns": [
+      "extract"
+     ],
+     "required": true
+    },
+    {
+     "label": "Food safety management statement (852/2004)",
+     "patterns": [
+      "852/2004|HACCP|food\\s+safety\\s+management"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-3.3.1-PROPERTIES",
+   "guidance_section": "3.3.1",
+   "guidance_page": 13,
+   "template_section": "S3",
+   "scope": "dossier",
+   "title": "Properties of the food enzyme",
+   "requirement": "Amino acid sequence of each declared activity and the molecular mass; subunit structure and glycosylation when relevant; protein pattern (SDS-PAGE or equivalent) of at least three batches plus any batch used in toxicological studies (not required for animal sources); SOP of the in-house activity method with the unit defined and used throughout; pH and temperature profiles and optima; thermal stability.",
+   "quote": "The amino acid sequence should be provided for the enzyme activity under application.",
+   "guidance_anchors": [
+    "The amino acid sequence should be provided for the enzyme activity under application",
+    "The SOP for the in",
+    "The temperature and pH range over which the food enzyme remains active"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "animal"
+    ]
+   },
+   "patterns": [
+    "amino\\s+acid\\s+sequence",
+    "molecular\\s+(mass|weight)",
+    "SDS-?PAGE|protein\\s+pattern",
+    "activity\\s+unit|unit\\s+definition|one\\s+unit",
+    "pH\\s+optim|temperature\\s+optim|thermostab|thermal\\s+stab"
+   ],
+   "sub_items": [
+    {
+     "label": "Amino acid sequence of the enzyme under application",
+     "patterns": [
+      "amino\\s+acid\\s+sequence",
+      "mature\\s+(protein|sequence)"
+     ],
+     "required": true
+    },
+    {
+     "label": "Molecular mass (mature protein / with signal sequence)",
+     "patterns": [
+      "molecular\\s+(mass|weight)",
+      "\\bk?Da\\b"
+     ],
+     "required": true
+    },
+    {
+     "label": "SOP of the activity assay and unit definition",
+     "patterns": [
+      "one\\s+unit|unit\\s+(is\\s+)?defined|definition\\s+of\\s+(the\\s+)?(activity\\s+)?unit|\\bSOP\\b|standard\\s+operating\\s+procedure"
+     ],
+     "required": true
+    },
+    {
+     "label": "pH and temperature profiles / optima",
+     "patterns": [
+      "pH\\s+(optim|profile|range)|optimum\\s+pH|optimal\\s+pH",
+      "temperature\\s+(optim|profile|range)|optimum\\s+temperature"
+     ],
+     "required": true
+    },
+    {
+     "label": "Thermal stability",
+     "patterns": [
+      "thermo-?stab|thermal\\s+stab|heat\\s+stab|inactivat"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-3.3.2-CHEMICAL",
+   "guidance_section": "3.3.2",
+   "guidance_page": 9,
+   "template_section": "S3",
+   "scope": "dossier",
+   "title": "Chemical parameters of at least three batches",
+   "requirement": "For at least three batches representative of commercial production (preferably full-scale): enzyme activity (U/g), total protein, ash and water (% w/w), TOS calculated as 100 % – water – ash, and activity per mg TOS; the same data for any batch used in toxicological studies; methods and certificates of analysis identifying the test item.",
+   "quote": "Chemical characteristics should be provided for at least three batches of the food enzyme representative of those intended for commercialisation.",
+   "guidance_anchors": [
+    "Chemical characteristics should be provided for at least three batches of the food enzyme representative of those intended for commercialisation",
+    "From these data, the percentage of TOS should be calculated (as 100% – % water – % ash)"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "animal"
+    ]
+   },
+   "patterns": [
+    "total\\s+organic\\s+solids?|\\bTOS\\b",
+    "\\bash\\b",
+    "water|moisture|loss\\s+on\\s+drying",
+    "total\\s+protein|protein\\s+content",
+    "activity"
+   ],
+   "sub_items": [
+    {
+     "label": "Enzyme activity per batch (U/g)",
+     "patterns": [
+      "\\d[\\d\\s.,]*\\s*(U|units?|FTU|[A-Z]{2,6}U)\\s*/\\s*(g|ml|mL)\\b",
+      "activity"
+     ],
+     "required": true
+    },
+    {
+     "label": "Total protein (% w/w)",
+     "patterns": [
+      "(total\\s+)?protein"
+     ],
+     "required": true
+    },
+    {
+     "label": "Ash (% w/w)",
+     "patterns": [
+      "\\bash\\b"
+     ],
+     "required": true
+    },
+    {
+     "label": "Water (% w/w)",
+     "patterns": [
+      "water|moisture|loss\\s+on\\s+drying"
+     ],
+     "required": true
+    },
+    {
+     "label": "TOS (%) and activity/mg TOS",
+     "patterns": [
+      "\\bTOS\\b|total\\s+organic\\s+solids?"
+     ],
+     "required": true
+    },
+    {
+     "label": "Certificates of analysis identifying the test item",
+     "patterns": [
+      "certificate\\s+of\\s+analysis|\\bCoA\\b"
+     ],
+     "required": true
+    }
+   ],
+   "min_batches": 3,
+   "pilot_batch_patterns": [
+    "\\bpilot\\b"
+   ]
+  },
+  {
+   "id": "FE-3.3.3-PURITY",
+   "guidance_section": "3.3.3",
+   "guidance_page": 14,
+   "template_section": "S3",
+   "scope": "dossier",
+   "title": "Purity (animal)",
+   "requirement": "Microbiological purity in three batches: E. coli absent in 25 g; Enterobacteriaceae/coliforms ≤ 30 CFU/g; Campylobacter, STEC (ruminants) and Salmonella not detected in 25 g; yeasts and moulds ≤ 100 CFU/g; Hepatitis E virus absent for pig sources.",
+   "quote": "Microbiological purity should be established in three batches of the food enzyme.",
+   "guidance_anchors": [
+    "Microbiological purity should be established in three batches of the food enzyme",
+    "For enzyme derived from pig sources, the absence of Hepatitis E virus should be demonstrated in three batches of the food enzyme"
+   ],
+   "applies_when": {
+    "production_type_any": [
+     "animal"
+    ]
+   },
+   "patterns": [
+    "E\\.?\\s*coli|coliform|enterobacteriaceae",
+    "salmonella",
+    "campylobacter",
+    "STEC|shiga",
+    "hepatitis\\s+E"
+   ],
+   "sub_items": [
+    {
+     "label": "E. coli, Enterobacteriaceae/coliforms",
+     "patterns": [
+      "E\\.?\\s*coli|coliform|enterobacteriaceae"
+     ],
+     "required": true
+    },
+    {
+     "label": "Salmonella, Campylobacter (and STEC for ruminants)",
+     "patterns": [
+      "salmonella|campylobacter|STEC"
+     ],
+     "required": true
+    },
+    {
+     "label": "Yeasts and moulds",
+     "patterns": [
+      "yeasts?|moulds?|molds?"
+     ],
+     "required": true
+    },
+    {
+     "label": "Hepatitis E virus (pig sources)",
+     "patterns": [
+      "hepatitis\\s+E|\\bHEV\\b"
+     ],
+     "required": true,
+     "applies_when": {
+      "attributes_any": [
+       "porcine"
+      ]
+     }
+    }
+   ],
+   "min_batches": 3
+  },
+  {
+   "id": "FE-4.1-EXEMPTION",
+   "guidance_section": "4.1",
+   "guidance_page": 14,
+   "template_section": "S4",
+   "scope": "dossier",
+   "title": "Exemption from toxicity testing (if claimed)",
+   "requirement": "If toxicity testing is not provided, the ground for the exemption: (a) QPS production strain, no concern from the genetic modification or the manufacturing process; (b) substitute toxicological data from the same strain lineage; (c) edible plant/animal sources with comparable exposure; (d) animal rennet; (e) no or negligible carry-over of TOS into the final food.",
+   "quote": "In the following circumstances, the need for toxicity testing is waived:",
+   "guidance_anchors": [
+    "In the following circumstances, the need for toxicity testing is waived",
+    "when appropriate substitute toxicological data are available"
+   ],
+   "applies_when": {},
+   "patterns": [
+    "\\bQPS\\b",
+    "substitute|same\\s+(strain\\s+)?lineage",
+    "waiv|exempt|not\\s+(required|necessary|needed)",
+    "no\\s+toxicolog|toxicological\\s+(studies|data|tests)\\s+(are|were)\\s+not"
+   ],
+   "manual_review": true,
+   "conditional_note": "Toxicological studies are waived in the cases listed in Section 4.1 (e.g. QPS production strain with no concern from the genetic modification or the manufacturing process)."
+  },
+  {
+   "id": "FE-4.2-TESTITEM",
+   "guidance_section": "4.2",
+   "guidance_page": 15,
+   "template_section": "S4",
+   "scope": "dossier",
+   "title": "Test item representative of the commercial batches",
+   "requirement": "Toxicology batch(es) representative of commercial batches (similar or lower activity:TOS ratio), characterised as in the chemical-parameter and purity sections, with certificates of analysis; doses expressed as µg TOS/plate, µg TOS/mL or mg TOS/kg bw per day.",
+   "quote": "The batch(es) used for the toxicological studies should be representative of the commercial batches, as judged by a similar (or lower) activity:TOS ratio.",
+   "guidance_anchors": [
+    "The batch(es) used for the toxicological studies should be representative of the commercial batches"
+   ],
+   "applies_when": {
+    "manual": "Toxicological studies are waived in the cases listed in Section 4.1 (e.g. QPS production strain with no concern from the genetic modification or the manufacturing process)."
+   },
+   "patterns": [
+    "test\\s+(item|material|batch)",
+    "activity\\s*:\\s*TOS|activity/TOS|activity\\s+per\\s+(mg\\s+)?TOS",
+    "toxicolog"
+   ]
+  },
+  {
+   "id": "FE-4.3-GENOTOX",
+   "guidance_section": "4.3",
+   "guidance_page": 15,
+   "template_section": "S4",
+   "scope": "dossier",
+   "title": "Genotoxicity (in vitro battery)",
+   "requirement": "Bacterial reverse mutation assay (OECD TG 471, treat-and-plate recommended, top concentration at least 5 mg TOS/plate) and in vitro mammalian cell micronucleus test (OECD TG 487, top concentration 2 mg TOS/mL); in vivo follow-up if positive; historical control data.",
+   "quote": "The following two in vitro tests are recommended as the first step",
+   "guidance_anchors": [
+    "The following two in vitro tests are recommended as the first step",
+    "The recommended maximum test concentration for soluble non-cytotoxic substances is at least 5 mg TOS/plate",
+    "The highest test concentration should correspond to 2 mg TOS/mL"
+   ],
+   "applies_when": {
+    "manual": "Toxicological studies are waived in the cases listed in Section 4.1 (e.g. QPS production strain with no concern from the genetic modification or the manufacturing process)."
+   },
+   "patterns": [
+    "genotox",
+    "\\bAmes\\b|reverse\\s+mutation|TG\\s*471",
+    "micronucleus|TG\\s*487"
+   ],
+   "sub_items": [
+    {
+     "label": "Bacterial reverse mutation assay (OECD TG 471)",
+     "patterns": [
+      "\\bAmes\\b|reverse\\s+mutation|TG\\s*471"
+     ],
+     "required": true
+    },
+    {
+     "label": "In vitro micronucleus test (OECD TG 487)",
+     "patterns": [
+      "micronucleus|TG\\s*487"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-4.4-90DAY",
+   "guidance_section": "4.4",
+   "guidance_page": 16,
+   "template_section": "S4",
+   "scope": "dossier",
+   "title": "Repeated dose 90-day oral toxicity study",
+   "requirement": "Subchronic oral toxicity study in rodents (OECD TG 408) with the highest dose at least 1,000 mg TOS/kg bw per day unless technologically impossible, with relevant historical control data.",
+   "quote": "A subchronic oral toxicity study should be provided for assessment of systemic toxicity. The protocol according to the OECD TG 408 (2018) is recommended. A highest dose selected should be at least 1,000 mg TOS/kg bw per day, unless technological considerations will not allow doses of this magnitude.",
+   "guidance_anchors": [
+    "A subchronic oral toxicity study should be provided for assessment of systemic toxicity",
+    "A highest dose selected should be at least 1,000 mg TOS/kg bw per day"
+   ],
+   "applies_when": {
+    "manual": "Toxicological studies are waived in the cases listed in Section 4.1 (e.g. QPS production strain with no concern from the genetic modification or the manufacturing process)."
+   },
+   "patterns": [
+    "90-?\\s*day",
+    "sub-?chronic",
+    "TG\\s*408",
+    "NOAEL"
+   ],
+   "sub_items": [
+    {
+     "label": "OECD TG 408 study",
+     "patterns": [
+      "TG\\s*408|90-?\\s*day"
+     ],
+     "required": true
+    },
+    {
+     "label": "Highest dose ≥ 1,000 mg TOS/kg bw per day",
+     "patterns": [
+      "1[\\s,.]?000\\s*mg\\s*TOS"
+     ],
+     "required": true
+    },
+    {
+     "label": "NOAEL / reference point",
+     "patterns": [
+      "NOAEL|reference\\s+point|no\\s+observed\\s+adverse"
+     ],
+     "required": false
+    }
+   ]
+  },
+  {
+   "id": "FE-4.5-ALLERGEN",
+   "guidance_section": "4.5",
+   "guidance_page": 16,
+   "template_section": "S4",
+   "scope": "dossier",
+   "title": "Allergenicity",
+   "requirement": "Unless the TOS is shown absent from the final food: alignment of the enzyme's amino acid sequence against an updated allergen database (identity > 35 % over a sliding window of 80 amino acids; database, version and date given; hits discussed); literature search on sensitisation/elicitation by the enzyme; search for allergic reactions to enzymes of the same family.",
+   "quote": "An alignment-based study using the amino acid sequence of the food enzyme and reporting any sequence identity greater than 35% to a known allergen using a sliding window of 80 amino acids as proposed by FAO/WHO, 2001.",
+   "guidance_anchors": [
+    "reporting any sequence identity greater than 35% to a known allergen using a sliding window of 80 amino acids",
+    "A search of the literature for reports that the specific enzyme(s) under application may give rise to sensitisation or elicitation reactions"
+   ],
+   "applies_when": {},
+   "patterns": [
+    "allergen",
+    "allergenicity",
+    "35\\s*%",
+    "80\\s+amino\\s+acids",
+    "sensiti[sz]ation|occupational"
+   ],
+   "sub_items": [
+    {
+     "label": "Sequence alignment against an allergen database (> 35 % / 80 aa window)",
+     "patterns": [
+      "35\\s*%|80\\s+amino\\s+acids|sliding\\s+window",
+      "allergen\\s+(database|online|protein)|allergenonline|COMPARE|SDAP"
+     ],
+     "required": true
+    },
+    {
+     "label": "Database, version and date of access",
+     "patterns": [
+      "version|accessed|release"
+     ],
+     "required": true
+    },
+    {
+     "label": "Literature search on the enzyme (sensitisation / elicitation)",
+     "patterns": [
+      "literature",
+      "sensiti[sz]|elicitation|occupational|respiratory"
+     ],
+     "required": true
+    },
+    {
+     "label": "Enzymes of the same family",
+     "patterns": [
+      "same\\s+(enzyme\\s+)?family|related\\s+enzymes|family\\s+of\\s+enzymes"
+     ],
+     "required": false
+    }
+   ]
+  },
+  {
+   "id": "FE-5.1-USE",
+   "guidance_section": "5.1",
+   "guidance_page": 17,
+   "template_section": "S5",
+   "scope": "dossier",
+   "title": "Intended uses and use levels",
+   "requirement": "All food manufacturing processes for which the enzyme is intended (aligned with Annex D where possible), the technological need and function in each, process flow charts for processes not in Annex D, and use levels in mg TOS/kg raw material (recommended and maximum), with yield factors where relevant.",
+   "quote": "All food manufacturing processes for which the food enzyme is intended to be used should be listed.",
+   "guidance_anchors": [
+    "All food manufacturing processes for which the food enzyme is intended to be used should be listed",
+    "Units of activity should be converted to the weight unit TOS/kg of physical raw material"
+   ],
+   "applies_when": {},
+   "patterns": [
+    "food\\s+manufacturing\\s+process",
+    "intended\\s+use",
+    "use\\s+level",
+    "mg\\s*TOS\\s*/\\s*kg",
+    "technological\\s+(need|function|purpose)"
+   ],
+   "sub_items": [
+    {
+     "label": "List of food manufacturing processes",
+     "patterns": [
+      "food\\s+manufacturing\\s+process|baking|brewing|starch\\s+processing|distill|dairy|juice|cereal"
+     ],
+     "required": true
+    },
+    {
+     "label": "Technological need / function in each process",
+     "patterns": [
+      "technological\\s+(need|function|purpose|benefit)|function\\s+of\\s+the\\s+(food\\s+)?enzyme"
+     ],
+     "required": true
+    },
+    {
+     "label": "Use levels in mg TOS/kg raw material (recommended and maximum)",
+     "patterns": [
+      "mg\\s*TOS\\s*/\\s*kg"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-5.2-REMOVAL",
+   "guidance_section": "5.2",
+   "guidance_page": 17,
+   "template_section": "S5",
+   "scope": "dossier",
+   "title": "Removal / absence of transfer of TOS (if claimed)",
+   "requirement": "Processes in Annex D where TOS transfer is considered negligible waive the exposure assessment; any other removal claim needs experimental data on the removal of enzyme activity and TOS markers (e.g. total nitrogen) in at least three independent samples, with methods, LoD and LoQ.",
+   "quote": "By default, it is generally assumed that the entire food enzyme TOS is transferred into the food produced, unless evidence is available to prove the contrary.",
+   "guidance_anchors": [
+    "By default, it is generally assumed that the entire food enzyme TOS is transferred into the food produced",
+    "At least three independent samples should be analysed"
+   ],
+   "applies_when": {
+    "manual": "Applies only if the absence or removal of TOS from the final food is claimed."
+   },
+   "patterns": [
+    "remov(al|ed)",
+    "distillation|purification|filtration",
+    "carry-?\\s*over",
+    "negligible",
+    "not\\s+(be\\s+)?(present|detected)\\s+in\\s+the\\s+final"
+   ]
+  },
+  {
+   "id": "FE-5.4-EXPOSURE",
+   "guidance_section": "5.4",
+   "guidance_page": 18,
+   "template_section": "S5",
+   "scope": "dossier",
+   "title": "Dietary exposure estimate (FEIM)",
+   "requirement": "Exposure estimated with all appropriate EFSA Food Enzyme Intake Models (FEIM), per process, for infants, toddlers, children, adolescents, adults and the elderly, as mg TOS/kg bw per day, reporting min–max mean and 95th percentile across surveys.",
+   "quote": "Applicants should use all FEIM calculators available as appropriate and submit exposure estimates for each process separately, in the tabular format provided below.",
+   "guidance_anchors": [
+    "Applicants should use all FEIM calculators available as appropriate",
+    "Exposure estimates to food enzymes should be reported for all six population groups"
+   ],
+   "applies_when": {},
+   "patterns": [
+    "\\bFEIM\\b|food\\s+enzyme\\s+intake\\s+model",
+    "exposure",
+    "95th\\s+percentile|P95",
+    "toddlers|infants|elderly"
+   ],
+   "sub_items": [
+    {
+     "label": "FEIM calculator(s) used",
+     "patterns": [
+      "\\bFEIM\\b|food\\s+enzyme\\s+intake\\s+model"
+     ],
+     "required": true
+    },
+    {
+     "label": "Six population groups",
+     "patterns": [
+      "infants",
+      "toddlers",
+      "adolescents|elderly"
+     ],
+     "required": true
+    },
+    {
+     "label": "Mean and 95th percentile (mg TOS/kg bw per day)",
+     "patterns": [
+      "95th|P95",
+      "mg\\s*TOS\\s*/\\s*kg\\s*(bw|body\\s+weight)"
+     ],
+     "required": true
+    }
+   ]
+  },
+  {
+   "id": "FE-5.5-RISK",
+   "guidance_section": "5.5",
+   "guidance_page": 18,
+   "template_section": "S5",
+   "scope": "dossier",
+   "title": "Risk characterisation (margin of exposure)",
+   "requirement": "Margin of exposure calculated as the reference point from the 90-day study divided by the highest P95 exposure; for edible plant/animal sources a comparison with exposure to a similar fraction of the source material.",
+   "quote": "The MoE is calculated as follows: MoE = Reference point/highest P95 value",
+   "guidance_anchors": [
+    "The MoE is calculated as follows"
+   ],
+   "applies_when": {
+    "manual": "Applies when toxicological data are provided (not when the toxicity testing is waived)."
+   },
+   "patterns": [
+    "margin\\s+of\\s+exposure|\\bMoE\\b"
+   ]
+  }
+ ]
+}
