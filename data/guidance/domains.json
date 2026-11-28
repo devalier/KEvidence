@@ -98,7 +98,7 @@
       "id": "food-enzymes",
       "label": "Food enzymes",
       "panel": "FEZ",
-      "description": "Food enzymes (Regulation (EC) No 1332/2008), including production strains.",
+      "description": "Food enzymes (Regulation (EC) No 1332/2008), including production strains: source, production, characteristics, toxicology and dietary exposure.",
       "transparency_sector": "f",
       "legal_context": "Regulation (EC) No 1332/2008 on food enzymes",
       "dossier_cues": {
@@ -110,6 +110,23 @@
           "\\bIUBMB\\b",
           "\\bEC\\s+\\d+\\.\\d+\\.\\d+\\.\\d+\\b"
         ]
+      },
+      "directory": "food-enzymes",
+      "assistant_role": "EFSA scientific officers assessing food enzymes",
+      "primary": {
+        "catalogue": "cep_2021_6851_requirements.json",
+        "template": "characterisation_template.md"
+      },
+      "supporting": [
+        {
+          "catalogue": "../feed/efsa_2024_8912_wgs_requirements.json"
+        },
+        {
+          "catalogue": "../feed/efsa_2026_9823_qps_requirements.json"
+        }
+      ],
+      "datasets": {
+        "qps": "../feed/efsa_2026_9823_qps_cycle_assessments.json"
       }
     },
     {

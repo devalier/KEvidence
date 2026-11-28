@@ -110,7 +110,8 @@ def _normalise_ws(text: str) -> str:
     return re.sub(r"\s+", " ", text or "").strip()
 
 
-LIGATURES = {"ﬁ": "fi", "ﬂ": "fl", "ﬀ": "ff", "ﬃ": "ffi", "ﬄ": "ffl", "–": "-", "—": "-", "−": "-", "’": "'", "‘": "'",
+LIGATURES = {"ﬁ": "fi", "ﬂ": "fl", "ﬀ": "ff", "ﬃ": "ffi", "ﬄ": "ffl", "–": "-", "—": "-", "−": "-", "\u2010": "-", "\u2011": "-",
+             "’": "'", "‘": "'",
              "\u00ad": "", "\u200b": ""}
 
 
@@ -199,12 +200,13 @@ def load_domain_bundle(domain_id: Optional[str] = None, root: Path = GUIDANCE_RO
         raise DomainNotGrounded(domain_id)
     directory = root / entry["directory"]
     primary_cat = load_catalogue(directory / entry["primary"]["catalogue"])
-    sources = [{"role": "primary", "catalogue": primary_cat,
-                "pages": load_pdf_pages(directory / primary_cat["guidance"]["bundled_file"])}]
+    primary_pdf = (directory / entry["primary"]["catalogue"]).parent / primary_cat["guidance"]["bundled_file"]
+    sources = [{"role": "primary", "catalogue": primary_cat, "pdf_path": primary_pdf, "pages": load_pdf_pages(primary_pdf)}]
     for sup in entry.get("supporting", []):
+        # A domain may reuse another domain's catalogue (e.g. "../feed/..."): its PDF sits next to the catalogue.
         cat = load_knowledge_catalogue(directory / sup["catalogue"])
-        sources.append({"role": "supporting", "catalogue": cat,
-                        "pages": load_pdf_pages(directory / cat["guidance"]["bundled_file"])})
+        pdf = (directory / sup["catalogue"]).parent / cat["guidance"]["bundled_file"]
+        sources.append({"role": "supporting", "catalogue": cat, "pdf_path": pdf, "pages": load_pdf_pages(pdf)})
     datasets = {}
     for key, fname in (entry.get("datasets") or {}).items():
         with open(directory / fname, encoding="utf-8") as f:
@@ -880,6 +882,13 @@ def _applicable(applies_when: dict[str, Any], meta: dict[str, Any]) -> str:
         verdicts.append("unknown" if not additive_type else ("yes" if additive_type & set(applies_when["additive_type_any"]) else "no"))
     if "additive_type_not" in applies_when:
         verdicts.append("no" if additive_type & set(applies_when["additive_type_not"]) else "yes")
+    attributes = _meta_list(meta, "attributes")
+    if "attributes_any" in applies_when:
+        verdicts.append("unknown" if not attributes else ("yes" if attributes & set(applies_when["attributes_any"]) else "no"))
+    if "attributes_not" in applies_when:
+        verdicts.append("no" if attributes & set(applies_when["attributes_not"]) else "yes")
+    if "attributes_not_all" in applies_when:  # exemption only when every listed attribute is stated (e.g. non-GM and QPS)
+        verdicts.append("no" if set(applies_when["attributes_not_all"]) <= attributes else "yes")
     if "components_min" in applies_when:
         verdicts.append("yes" if int(meta.get("_component_count") or 0) >= applies_when["components_min"] else "no")
     if "no" in verdicts:
@@ -1303,8 +1312,10 @@ def apply_inference(meta: dict[str, Any], inferred: dict[str, Any]) -> dict[str,
 
 def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optional[dict[str, Any]] = None,
                     guidance_pages: Optional[list[str]] = None, fetch_notes: Optional[list[str]] = None,
-                    datasets: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+                    datasets: Optional[dict[str, Any]] = None, template_path: Optional[Path] = None) -> dict[str, Any]:
     catalogue = catalogue or load_catalogue()
+    if catalogue.get("profile") == "food_enzyme":
+        return analyse_food_enzyme(docs, meta, catalogue, guidance_pages, fetch_notes, template_path)
     segments = segment_documents(docs)
     meta = dict(meta or {})
     meta["routes"] = sorted(_meta_list(meta, "routes"))
@@ -1391,8 +1402,266 @@ def analyse_dossier(docs: list[Document], meta: dict[str, Any], catalogue: Optio
         "opinion": opinion,
         "solvent_checks": vich_solvent_checks(opinion["all_rows"], (datasets or {}).get("vich")),
     }
-    result["markdown"] = render_markdown(result, catalogue)
+    result["markdown"] = render_markdown(result, catalogue, template_path)
     return result
+
+
+# ---------------------------------------------------------------------------
+# Food enzymes (EFSA CEP Panel 2021 guidance, EFSA Journal 2021;19(10):6851)
+# ---------------------------------------------------------------------------
+# The whole dossier is assessed against one catalogue (no per-component scope). What the requirements depend on is the
+# source of the enzyme (microbial, plant, animal) and, for microbial enzymes, whether the production strain is
+# genetically modified and qualifies for QPS; these are detected from the documents (with citations) and can be
+# corrected by the assessor: meta["production_types"] = source, meta["attributes"] = strain properties.
+
+ENZ_EC_RE = re.compile(r"\bEC\s*(?:No\.?|number)?\s*:?\s*(\d{1,2}\.\d{1,3}\.\d{1,3}\.\d{1,4})\b")
+ENZ_NAME_RE = re.compile(r"\b((?:[A-Za-z0-9]+[- ]){0,3}[a-z0-9-]*ase(?:\s+[A-Z0-9]{1,3})?)\s*\(\s*(?:EC\s*)?\d{1,2}\.\d")
+ENZ_ORG_RE = re.compile(r"(?:produced|obtained|derived|manufactured)\s+(?:by|with|from|using)\s+(?:a\s+|the\s+)?"
+                        r"(?:(?:non-?\s?)?genetically\s+modified\s+)?(?:(?:production\s+)?strain\s+of\s+)?"
+                        r"([A-Z][a-z]{2,}\s+[a-z]{3,})(?:\s+(?:strain|subsp\.\s+\w+))?\s*([A-Z]{0,6}[\s-]?[A-Z0-9][\w-]*\d[\w-]*)?")
+BACTERIA_GENERA = {"bacillus", "escherichia", "streptomyces", "pseudomonas", "lactobacillus", "lactococcus", "corynebacterium", "geobacillus",
+                   "paenibacillus", "klebsiella", "cellulosimicrobium", "thermus", "anoxybacillus", "pullulanibacillus", "streptococcus",
+                   "leuconostoc", "lactiplantibacillus", "lacticaseibacillus", "microbacterium", "protaminobacter", "arthrobacter"}
+YEAST_GENERA = {"saccharomyces", "komagataella", "pichia", "kluyveromyces", "yarrowia", "hansenula", "ogataea", "candida", "schizosaccharomyces"}
+FUNGI_GENERA = {"aspergillus", "trichoderma", "penicillium", "rhizopus", "rhizomucor", "mucor", "talaromyces", "thermomyces", "humicola",
+                "fusarium", "myceliophthora", "chaetomium", "neurospora", "acremonium", "disporotrichum", "rasamsonia", "cryphonectria"}
+ENZ_PLANT_RE = re.compile(r"\b(latex|papaya|Carica\s+papaya|Ficus|pineapple|Ananas|malted?\s+(barley|wheat)|barley\s+malt|seeds?\s+of|plant\s+source)\b", re.I)
+ENZ_ANIMAL_RE = re.compile(r"\b(abomas\w*|pancrea\w*|stomach|calves|calf|bovine|porcine|ovine|caprine|animal\s+tissue|rennet)\b", re.I)
+ENZ_GM_RE = re.compile(r"(?<!non-)(?<!non )(?<!not )\bgenetically\s+modified\b|\bGMM\b|\brecombinant\s+(strain|production)", re.I)
+ENZ_NON_GM_RE = re.compile(r"\b(non-?\s?genetically\s+modified|not\s+genetically\s+modified|is\s+not\s+a\s+GMM|non-?GM\b)", re.I)
+ENZ_QPS_RE = re.compile(r"\bQPS\b[^.]{0,120}\b(status|list|approach|qualif|recommended)|qualified\s+presumption\s+of\s+safety", re.I)
+ENZ_NON_QPS_RE = re.compile(r"\b(?:is|are|was)\s+not\s+(?:included\s+)?(?:in|on)\s+the\s+QPS\s+list|(?<!if it )(?<!If it )does\s+not\s+(?:qualify|meet)\s+(?:for\s+)?(?:the\s+)?QPS", re.I)
+ENZ_NAME_STOP = {"the", "a", "an", "of", "is", "food", "enzyme", "enzymes", "remains", "and", "with", "this", "that", "as", "for", "by", "to", "are", "be"}
+ENZ_PARAM_RE = re.compile(r"^\s*(?P<label>total\s+organic\s+solids?(?:\s*\(TOS\))?|%?\s*TOS\b|TOS\s*\(%\)|water|moisture|loss\s+on\s+drying|ash|"
+                          r"total\s+protein|protein(?:\s+content)?|(?:[A-Za-z-]+\s+){0,3}activity)\b[^0-9<≤\n]{0,45}"
+                          r"(?P<values>(?:[<≤]?\s*\d[\d\s]{0,7}(?:[.,]\d+)?\s*(?:%|U/g|[A-Z]{1,6}U/g|units?/g|mg/g)?\s*[|;]?\s*){1,10})", re.I)
+
+
+def _most_common(items: list[tuple[str, "Segment"]]) -> Optional[dict[str, Any]]:
+    if not items:
+        return None
+    counts: dict[str, int] = {}
+    first: dict[str, Segment] = {}
+    for value, seg in items:
+        counts[value] = counts.get(value, 0) + 1
+        first.setdefault(value, seg)
+    best = max(counts, key=lambda v: (counts[v], -len(v)))
+    return {"value": best, "citation": cite(first[best]), "mentions": counts[best]}
+
+
+def infer_enzyme(segments: list[Segment]) -> dict[str, Any]:
+    """Identity of the food enzyme and its source, with the citation of the first mention of each value."""
+    ecs, names, orgs = [], [], []
+    for seg in segments:
+        for m in ENZ_EC_RE.finditer(seg.text):
+            ecs.append((m.group(1), seg))
+        for m in ENZ_NAME_RE.finditer(seg.text):
+            tokens = m.group(1).split()
+            while tokens and tokens[0].lower() in ENZ_NAME_STOP:
+                tokens.pop(0)
+            name = " ".join(tokens)
+            if len(name) > 3 and name.lower().endswith(("ase",)) or re.search(r"ase\s+[A-Z0-9]{1,3}$", name):
+                names.append((name.lower(), seg))
+        for m in ENZ_ORG_RE.finditer(seg.text):
+            org = m.group(1)
+            if org.split()[0].lower() in BACTERIA_GENERA | YEAST_GENERA | FUNGI_GENERA or org.split()[1] not in ("the", "and", "with"):
+                strain = (m.group(2) or "").strip()
+                orgs.append((org + (f" {strain}" if strain and any(ch.isdigit() for ch in strain) else ""), seg))
+    ec = _most_common(ecs)
+    name = _most_common(names)
+    if not name:
+        # Fallback: the most frequent "...ase" name on the pages that carry the EC number or a product title.
+        pages = {(s.doc_id, s.page) for _, s in ecs}
+        cand = []
+        for seg in segments:
+            if (seg.doc_id, seg.page) in pages or re.search(r"produced\s+by|food\s+enzyme", seg.text, re.I):
+                for m in re.finditer(r"\b((?:(?:alpha|beta|gamma|endo|exo|\d(?:,\d)*)[-\u2010])*[A-Za-z]{3,}ase)\b", seg.text, re.I):
+                    word = m.group(1)
+                    if word.lower() not in ("base", "case", "phase", "release", "increase", "decrease", "database", "purchase", "lease", "please", "disease", "erase", "chase", "ease"):
+                        cand.append((word.lower(), seg))
+        name = _most_common(cand)
+    org_species = _most_common([(o.split()[0] + " " + o.split()[1], s) for o, s in orgs])
+    org_full = _most_common([(o, s) for o, s in orgs if org_species and o.startswith(org_species["value"]) and len(o.split()) > 2])
+    if not org_full and org_species:
+        strains = [(m.group(1), seg) for seg in segments if org_species["value"].split()[1] in seg.text
+                   for m in re.finditer(r"\bstrain\s+([A-Z][A-Z0-9]{1,}(?:[-\u2010][A-Z0-9]+)+|[A-Z]{1,6}[\s-]?\d[\w-]*)", seg.text)]
+        best = _most_common(strains)
+        if best:
+            org_full = {**best, "value": f"{org_species['value']} {best['value']}"}
+    out: dict[str, Any] = {"ec_number": ec, "enzyme_name": name, "organism": org_species, "strain": org_full}
+
+    genus = org_species["value"].split()[0].lower() if org_species else ""
+    def first(regex):
+        hit = next((s for s in segments if regex.search(s.text)), None)
+        return hit
+    source = None
+    if genus in BACTERIA_GENERA | YEAST_GENERA | FUNGI_GENERA:
+        source = {"value": "microbial", "citation": org_species["citation"]}
+    else:
+        ferm = first(re.compile(r"\bfermentation\b", re.I))
+        plant, animal = first(ENZ_PLANT_RE), first(ENZ_ANIMAL_RE)
+        if ferm and org_species:
+            source = {"value": "microbial", "citation": cite(ferm)}
+        elif plant and not animal:
+            source = {"value": "plant", "citation": cite(plant)}
+        elif animal and not plant:
+            source = {"value": "animal", "citation": cite(animal)}
+    out["source"] = source
+    attrs: list[dict[str, Any]] = []
+    if source and source["value"] == "microbial":
+        kind = "bacteria" if genus in BACTERIA_GENERA else "yeast" if genus in YEAST_GENERA else "filamentous_fungi" if genus in FUNGI_GENERA else None
+        if kind:
+            attrs.append({"value": kind, "citation": org_species["citation"]})
+        if genus == "bacillus":
+            attrs.append({"value": "bacillus", "citation": org_species["citation"]})
+        non_gm, gm = first(ENZ_NON_GM_RE), first(ENZ_GM_RE)
+        if non_gm and not gm:
+            attrs.append({"value": "non_gm", "citation": cite(non_gm)})
+        elif gm:
+            attrs.append({"value": "gm", "citation": cite(gm)})
+        non_qps, qps = first(ENZ_NON_QPS_RE), first(ENZ_QPS_RE)
+        if non_qps:
+            attrs.append({"value": "non_qps", "citation": cite(non_qps)})
+        elif qps:
+            attrs.append({"value": "qps", "citation": cite(qps)})
+    if source and source["value"] == "animal":
+        pig = first(re.compile(r"\b(porcine|pigs?|swine)\b", re.I))
+        if pig:
+            attrs.append({"value": "porcine", "citation": cite(pig)})
+    out["attributes"] = attrs
+    out["batches"] = None
+    batches = detect_batches(segments)
+    if batches["distinct_batch_ids"]:
+        out["batches"] = {"ids": batches["distinct_batch_ids"][:12],
+                          "citations": {k: v for k, v in batches["batch_id_citations"].items() if k in batches["distinct_batch_ids"][:12]}}
+    return out
+
+
+def extract_enzyme_parameters(segments: list[Segment]) -> list[dict[str, Any]]:
+    """Batch data lines for activity, TOS, water, ash and protein, as stated in the dossier (one row per line)."""
+    rows, seen = [], set()
+    for seg in segments:
+        m = ENZ_PARAM_RE.match(seg.text)
+        if not m:
+            continue
+        values = [v.strip() for v in re.split(r"\s*[|;]\s*|\s{2,}", m.group("values").strip()) if re.search(r"\d", v)]
+        label = re.sub(r"\s+", " ", m.group("label")).strip()
+        key = (label.lower(), tuple(values))
+        if not values or key in seen:
+            continue
+        seen.add(key)
+        rows.append({"label": label, "values": values[:10], "citation": cite(seg)})
+    return rows[:60]
+
+
+def analyse_food_enzyme(docs: list[Document], meta: dict[str, Any], catalogue: dict[str, Any],
+                        guidance_pages: Optional[list[str]] = None, fetch_notes: Optional[list[str]] = None,
+                        template_path: Optional[Path] = None) -> dict[str, Any]:
+    segments = segment_documents(docs)
+    meta = dict(meta or {})
+    detected = infer_enzyme(segments)
+    used: dict[str, Any] = {}
+    if not _meta_list(meta, "production_types") and detected["source"]:
+        meta["production_types"] = [detected["source"]["value"]]
+        used["source"] = detected["source"]
+    if not _meta_list(meta, "attributes") and detected["attributes"]:
+        meta["attributes"] = [a["value"] for a in detected["attributes"]]
+        used["attributes"] = detected["attributes"]
+    if not meta.get("product_name"):
+        ident = detected.get("enzyme_name") or {}
+        if ident.get("value"):
+            meta["product_name"] = ident["value"] + (f" (EC {detected['ec_number']['value']})" if detected.get("ec_number") else "")
+            used["product_name"] = ident
+    meta["production_types"] = sorted(_meta_list(meta, "production_types"))
+    meta["attributes"] = sorted(_meta_list(meta, "attributes"))
+    results = [evaluate_requirement(r, segments, meta) for r in catalogue["requirements"]]
+    anchors = anchor_requirements(catalogue, guidance_pages)
+    for res in results:
+        res["grounding"] = anchors[res["id"]]
+    summary: dict[str, int] = {k: 0 for k in STATUS_LABELS}
+    for res in results:
+        summary[res["status"]] = summary.get(res["status"], 0) + 1
+    scope_flags = []
+    if not meta["production_types"]:
+        scope_flags.append({"flag": "Source of the enzyme not identified",
+                            "detail": "Microbial, plant and animal enzymes have different requirements (Sections 1–3 of the guidance). Select the "
+                                      "source under 'Optional details' and run again; until then source-specific requirements stay 'applicability to confirm'.",
+                            "evidence": []})
+    elif "microbial" in meta["production_types"] and not {"gm", "non_gm"} & set(meta["attributes"]):
+        scope_flags.append({"flag": "Genetic modification status of the production strain not identified",
+                            "detail": "Whether the strain is genetically modified decides Sections 1.1.11 and 1.3.4.2. Answer the question below and run again.",
+                            "evidence": []})
+    unreadable = [d for d in docs if not d.char_count]
+    if unreadable:
+        scope_flags.append({"flag": "Documents without extractable text",
+                            "detail": "Absence of evidence for these documents may reflect extraction limits rather than true data gaps: "
+                                      + ", ".join(f"{d.doc_id} {d.name}" for d in unreadable), "evidence": []})
+    meta["_inferred"] = used
+    meta_out = {k: v for k, v in meta.items() if not k.startswith("_")}
+    result = {
+        "profile": "food_enzyme",
+        "detected": {"inferred_and_used": used, "all": detected},
+        "generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
+        "meta": meta_out,
+        "catalogue": {"id": catalogue["catalogue_id"], "version": catalogue["catalogue_version"], "guidance": catalogue["guidance"]},
+        "guidance_text_loaded": bool(guidance_pages),
+        "documents": [{"doc_id": d.doc_id, "name": d.name, "source": d.source, "kind": d.kind, "doc_type": d.doc_type,
+                       "pages": len(d.pages), "characters": d.char_count, "warnings": d.warnings} for d in docs],
+        "fetch_notes": fetch_notes or [],
+        "cas_numbers_found": find_cas_numbers(segments),
+        "components": [],
+        "requirements": results,
+        "summary": summary,
+        "scope_flags": scope_flags,
+        "enzyme": {"parameters": extract_enzyme_parameters(segments)},
+        "opinion": {"all_rows": []},
+        "solvent_checks": [],
+    }
+    result["markdown"] = render_markdown(result, catalogue, template_path)
+    return result
+
+
+ATTRIBUTE_LABELS = {"gm": "genetically modified production strain", "non_gm": "production strain not genetically modified",
+                    "qps": "QPS status claimed", "non_qps": "not on the QPS list", "bacteria": "bacterium", "bacillus": "Bacillus species",
+                    "yeast": "yeast", "filamentous_fungi": "filamentous fungus", "amr_genes": "carries acquired AMR genes", "porcine": "porcine source"}
+
+
+def _enzyme_identity_md(result: dict[str, Any]) -> str:
+    det = result["detected"]["all"]
+    used = result["detected"]["inferred_and_used"]
+    meta = result["meta"]
+    def row(label, item, flag=False):
+        if not item:
+            return f"| {label} | **[not identified]** | |"
+        value = item["value"] if isinstance(item, dict) else item
+        return f"| {label} | {_md_escape(value)}{' *(detected — confirm)*' if flag else ''} | {_md_escape(item.get('citation', '')) if isinstance(item, dict) else ''} |"
+    lines = ["| Item | Identified | Source |", "|---|---|---|",
+             row("Enzyme (as named in the dossier)", det.get("enzyme_name"), "product_name" in used),
+             row("EC number (IUBMB)", det.get("ec_number")),
+             row("Source of the enzyme", {"value": ", ".join(meta.get("production_types") or []) or "not stated",
+                                          "citation": (det.get("source") or {}).get("citation", "entered") if meta.get("production_types") else ""}, "source" in used),
+             row("Production organism", det.get("organism")),
+             row("Strain designation", det.get("strain"))]
+    for a in (det.get("attributes") or []):
+        lines.append(row("Production strain", {"value": ATTRIBUTE_LABELS.get(a["value"], a["value"]), "citation": a["citation"]}, "attributes" in used))
+    entered = [a for a in meta.get("attributes") or [] if a not in {x["value"] for x in det.get("attributes") or []}]
+    for a in entered:
+        lines.append(f"| Production strain | {_md_escape(ATTRIBUTE_LABELS.get(a, a))} | entered by the assessor |")
+    if det.get("batches"):
+        lines.append(f"| Batch / lot identifiers | {_md_escape(', '.join(det['batches']['ids']))} | |")
+    return "\n".join(lines)
+
+
+def _enzyme_parameters_md(result: dict[str, Any]) -> str:
+    rows = (result.get("enzyme") or {}).get("parameters") or []
+    if not rows:
+        return ("**[DATA GAP / NOT EXTRACTED]** No batch data for activity, TOS, water, ash or protein were recognised in the text. "
+                "Check the certificates of analysis (scanned tables need OCR).")
+    lines = ["Values as stated in the dossier (one line per source line; verify against the certificates of analysis):", "",
+             "| Parameter | Values | Source |", "|---|---|---|"]
+    for r in rows:
+        lines.append(f"| {_md_escape(r['label'])} | {_md_escape(' · '.join(r['values']))} | {_md_escape(r['citation'])} |")
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -2020,7 +2289,7 @@ def _requirement_block(res: dict[str, Any], level: str = "###") -> str:
     if res.get("conditional_note"):
         lines += [f"*Note:* {res['conditional_note']}", ""]
     if res["status"] == "not_applicable":
-        return "\n".join(lines + ["Not applicable on the basis of the product form / route / production type / additive type entered.", ""])
+        return "\n".join(lines + ["Not applicable on the basis of the details entered or identified (e.g. product form, route, production type or source, production-strain properties).", ""])
     if res["status"] == "manual_review":
         lines += ["*Scientific-officer review item: this requirement cannot be assessed by pattern detection.*", ""]
     if res.get("sub_items"):
@@ -2060,7 +2329,7 @@ def _requirement_block(res: dict[str, Any], level: str = "###") -> str:
         lines += [f"- {_md_escape(m)}" for m in res["missing"]]
         lines.append("")
     if res.get("justification"):
-        lines.append("**Possible applicant justification located (guidance p.5: reasons should be given for omissions):**")
+        lines.append("**Possible applicant justification located (the guidance asks for omissions to be justified):**")
         lines += [f"- [{j['citation']}] {_md_escape(j['text'])}" for j in res["justification"]]
         lines.append("")
     return "\n".join(lines)
@@ -2103,11 +2372,11 @@ def _components_md(result: dict[str, Any]) -> str:
 def _gap_table_md(result: dict[str, Any]) -> str:
     rows = ["| § | Requirement | Scope | Status | Missing / to clarify | Justification located |", "|---|---|---|---|---|---|"]
     order = {"gap": 0, "partial": 1, "conditional": 2, "manual_review": 3, "evidence_located": 4, "not_applicable": 5}
-    entries = [(res, "Additive") for res in result["requirements"]]
+    entries = [(res, "Food enzyme" if result.get("profile") == "food_enzyme" else "Additive") for res in result["requirements"]]
     for comp in result["components"]:
         name = comp["component"].get("name") or comp["component"].get("cas") or "component"
         entries += [(res, name) for res in comp["requirements"]]
-    entries.sort(key=lambda e: (order.get(e[0]["status"], 9), [int(x) for x in e[0]["guidance_section"].split(".")]))
+    entries.sort(key=lambda e: (order.get(e[0]["status"], 9), [int(x) if x.isdigit() else 0 for x in e[0]["guidance_section"].split(".")]))
     for res, scope in entries:
         missing = "; ".join(res.get("missing", [])[:4]) or "—"
         just = ", ".join(j["citation"] for j in res.get("justification", [])) or "—"
@@ -2121,8 +2390,9 @@ def _gap_table_md(result: dict[str, Any]) -> str:
     for f in result.get("scope_flags", []):
         cites = ", ".join(e["citation"] for e in f.get("evidence", [])[:3])
         flags.append(f"> **{f['flag']}.** {f['detail']}{(' Evidence: ' + cites + '.') if cites else ''}")
-    general = ("Per the guidance (p.5): *\"Reasons should be given for the omission from the dossier of any data prescribed there.\"* "
-               "For each gap below, check whether the applicant has justified the omission.")
+    principle = next(iter(result.get("catalogue", {}).get("guidance", {}).get("general_principles") or []), None)
+    general = (f"Per the guidance (p.{principle['page']}): *\"{principle['quote']}\"* " if principle else "") + \
+        "For each gap below, check whether the applicant has justified the omission."
     return "\n".join([head, "", general, ""] + sum(([f, ""] for f in flags), []) + rows)
 
 
@@ -2162,17 +2432,30 @@ def render_markdown(result: dict[str, Any], catalogue: dict[str, Any], template_
     for res in result["requirements"]:
         by_section.setdefault(res["section"], []).append(_requirement_block(res))
     product = meta.get("product_name") or "[product name not entered]"
-    header = "\n".join([
-        *([f"*Applicant:* {meta['applicant']} · *Dossier / question reference:* {meta.get('dossier_ref') or '—'}  "]
-          if meta.get("applicant") or meta.get("dossier_ref") else []),
-        f"*Product form:* {meta.get('product_form') or 'not stated'} · *Routes:* {', '.join(meta.get('routes') or []) or 'not stated'} · "
-        f"*Production type:* {', '.join(meta.get('production_types') or []) or 'not stated'} · *Additive type:* {meta.get('additive_type') or 'not stated'}  ",
-        f"*Generated:* {result['generated_at']} by KEvidence identity & characterisation (chemical MVP) against "
-        f"{catalogue['guidance']['citation']}  ",
-        "**Draft for scientific-officer verification — contains confidential dossier information.**",
-    ])
-    caveats = ("---\n*This draft structures the applicant's evidence against the FEEDAP (2017) guidance on identity, characterisation "
-               "and conditions of use of feed additives. It is not an EFSA assessment or conclusion. Values are reproduced as stated "
+    enzyme = result.get("profile") == "food_enzyme"
+    if enzyme:
+        attrs = ", ".join(ATTRIBUTE_LABELS.get(a, a) for a in meta.get("attributes") or []) or "not stated"
+        header = "\n".join([
+            *([f"*Applicant:* {meta['applicant']} · *Dossier / question reference:* {meta.get('dossier_ref') or '—'}  "]
+              if meta.get("applicant") or meta.get("dossier_ref") else []),
+            f"*Source:* {', '.join(meta.get('production_types') or []) or 'not stated'} · *Production strain:* {attrs}  ",
+            f"*Generated:* {result['generated_at']} by KEvidence identity & characterisation against {catalogue['guidance']['citation']}  ",
+            "**Draft for scientific-officer verification — contains confidential dossier information.**",
+        ])
+    else:
+        header = "\n".join([
+            *([f"*Applicant:* {meta['applicant']} · *Dossier / question reference:* {meta.get('dossier_ref') or '—'}  "]
+              if meta.get("applicant") or meta.get("dossier_ref") else []),
+            f"*Product form:* {meta.get('product_form') or 'not stated'} · *Routes:* {', '.join(meta.get('routes') or []) or 'not stated'} · "
+            f"*Production type:* {', '.join(meta.get('production_types') or []) or 'not stated'} · *Additive type:* {meta.get('additive_type') or 'not stated'}  ",
+            f"*Generated:* {result['generated_at']} by KEvidence identity & characterisation (chemical MVP) against "
+            f"{catalogue['guidance']['citation']}  ",
+            "**Draft for scientific-officer verification — contains confidential dossier information.**",
+        ])
+    scope_text = ("the CEP Panel (2021) guidance for the submission of dossiers on food enzymes" if enzyme else
+                  "the FEEDAP (2017) guidance on identity, characterisation and conditions of use of feed additives")
+    caveats = (f"---\n*This draft structures the applicant's evidence against {scope_text}. "
+               "It is not an EFSA assessment or conclusion. Values are reproduced as stated "
                "in the dossier and must be verified against the source documents. A 'not located' element can result from "
                "extraction limits (scanned PDFs, images, unusual table layouts) as well as from a true data gap.*")
     narrative = result.get("narrative") or {}
@@ -2183,15 +2466,18 @@ def render_markdown(result: dict[str, Any], catalogue: dict[str, Any], template_
         "GAP_ANALYSIS": _gap_table_md(result),
         "GROUNDING": _grounding_section_md(result, catalogue),
         "CAVEATS": caveats,
-        "OPINION_111": _opinion_111_md(result),
-        "DETECTED": _detected_md(result),
-        "APPENDIX_A": _appendix_a_md(result),
-        "OPINION_112": _opinion_112_md(result),
+        "OPINION_111": "" if enzyme else _opinion_111_md(result),
+        "DETECTED": "" if enzyme else _detected_md(result),
+        "APPENDIX_A": "" if enzyme else _appendix_a_md(result),
+        "OPINION_112": "" if enzyme else _opinion_112_md(result),
+        "ENZYME_IDENTITY": _enzyme_identity_md(result) if enzyme else "",
+        "ENZYME_BATCHES": _enzyme_parameters_md(result) if enzyme else "",
     }
     for section in catalogue["template_sections"]:
         token = section["token"]
         replacements[token] = "\n".join(by_section.get(token, []))
-    replacements["S2_2"] = "\n".join(by_section.get("S2_2", []) + [_components_md(result)])
+    if not enzyme:
+        replacements["S2_2"] = "\n".join(by_section.get("S2_2", []) + [_components_md(result)])
     for token, text in narrative.items():
         if token in replacements and text.get("text"):
             flag = ("all numbers traced to dossier excerpts" if text.get("grounded")
@@ -2207,10 +2493,10 @@ def render_markdown(result: dict[str, Any], catalogue: dict[str, Any], template_
 # Optional LLM drafting (off by default)
 # ---------------------------------------------------------------------------
 
-NARRATIVE_SYSTEM_PROMPT = """You draft the characterisation section of an EFSA FEEDAP scientific opinion.
+NARRATIVE_SYSTEM_PROMPT = """You draft the characterisation section of an EFSA scientific opinion ({panel}).
 Rules (strict):
 1. Use ONLY the evidence excerpts provided. Never add values, batch numbers, methods or conclusions that are not in the excerpts.
-2. Follow the requirement text, which comes from the FEEDAP (2017) identity/characterisation guidance (EFSA Journal 15(10):5023).
+2. Follow the requirement text, which comes from {guidance}.
 3. Report values as stated by the applicant ("The applicant reported…"), cite the source in square brackets, e.g. [D2 p.4].
 4. Where the evidence is missing or below the guidance minimum (e.g. fewer batches than required), say so explicitly.
 5. Do not express safety or efficacy conclusions.
@@ -2241,7 +2527,10 @@ def draft_narrative(result: dict[str, Any], complete: Callable[[str, str], str],
             })
         payload.append(block)
     user = json.dumps(payload)[:max_chars]
-    raw = complete(NARRATIVE_SYSTEM_PROMPT, user)
+    g = (result.get("catalogue") or {}).get("guidance") or {}
+    system = (NARRATIVE_SYSTEM_PROMPT.replace("{panel}", "food enzymes, CEP Panel" if result.get("profile") == "food_enzyme" else "feed additives, FEEDAP Panel")
+              .replace("{guidance}", g.get("citation") or "the FEEDAP (2017) identity/characterisation guidance (EFSA Journal 15(10):5023)"))
+    raw = complete(system, user)
     try:
         parsed = json.loads(re.search(r"\{.*\}", raw, re.S).group(0))
         drafted = parsed.get("sections", {})

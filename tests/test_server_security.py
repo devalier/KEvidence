@@ -85,17 +85,18 @@ def test_domains_endpoint_lists_all_areas_with_grounding_status(client):
     by_id = {d["id"]: d for d in data["domains"]}
     assert by_id["feed"]["grounded"] and by_id["feed"]["sources"]
     assert {"food-enzymes", "gmo", "nams", "pesticides", "novel-foods"} <= set(by_id)
-    assert not any(d["grounded"] for i, d in by_id.items() if i != "feed")
+    assert by_id["food-enzymes"]["grounded"] and by_id["food-enzymes"]["sources"]
+    assert not any(d["grounded"] for i, d in by_id.items() if i not in ("feed", "food-enzymes"))
     assert by_id["gmo"]["transparency_sector"] == "b" and by_id["pesticides"]["transparency_sector"] == "g"
 
 
 def test_workflow_only_domain_explains_instead_of_failing_silently(client, monkeypatch):
     monkeypatch.setattr(ai, "llm_chat", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no LLM")))
-    r = client.post("/api/characterisation/analyse", data={"urls": "x", "domain": "food-enzymes"})
-    assert r.status_code == 400 and "No guidance is bundled for Food enzymes" in r.json()["detail"]
+    r = client.post("/api/characterisation/analyse", data={"urls": "x", "domain": "novel-foods"})
+    assert r.status_code == 400 and "No guidance is bundled for Novel foods" in r.json()["detail"]
     body = client.post("/api/chat", json={"message": "batch requirements?",
-                                          "context": {"workflow_step": "characterisation", "domain": "food-enzymes"}}).json()
-    assert body["no_data"] and "Food enzymes" in body["answer"]
+                                          "context": {"workflow_step": "characterisation", "domain": "novel-foods"}}).json()
+    assert body["no_data"] and "Novel foods" in body["answer"]
     assert client.get("/api/sanitisation/rules?domain=gmo").json()["sector"] == "b"
 
 

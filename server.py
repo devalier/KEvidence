@@ -2914,7 +2914,7 @@ async def characterisation_guidance_pdf(domain: str = "", source: str = ""):
     if src is None:
         raise HTTPException(404, "Unknown guidance source for this domain")
     g = src["catalogue"]["guidance"]
-    pdf = bundle["directory"] / g["bundled_file"]
+    pdf = src.get("pdf_path") or bundle["directory"] / g["bundled_file"]
     if not pdf.exists():
         raise HTTPException(404, "Guidance PDF not bundled in this instance")
     return FileResponse(str(pdf), media_type="application/pdf", filename=f"EFSA_{g['doi'].rsplit('/', 1)[-1]}.pdf")
@@ -2960,11 +2960,11 @@ def characterisation_analyse(
     if len(url_list) > 10:
         notes.append(f"{len(url_list) - 10} URL(s) ignored (limit 10 per analysis).")
 
-    result = charmod.analyse_dossier(docs, meta_obj, catalogue, guidance_pages, notes)
+    template_path = charmod.domain_template_path(bundle)
+    result = charmod.analyse_dossier(docs, meta_obj, catalogue, guidance_pages, notes, template_path=template_path)
     result["domain"] = {"id": bundle["id"], "label": bundle["label"]}
     accounts.log("characterisation.analysed", {"domain": bundle["id"], "documents": len(docs),
                                                "ai_narrative_requested": str(allow_external_llm).lower() in ("1", "true", "yes", "on")})
-    template_path = charmod.domain_template_path(bundle)
 
     use_llm = str(allow_external_llm).lower() in ("1", "true", "yes", "on")
     result["llm"] = {"requested": use_llm, "used": False}
@@ -3349,7 +3349,8 @@ def _char_file_rank(f) -> int:
 def _characterise_dossier_files(files: list, domain: str, meta: dict, substance: Optional[dict] = None) -> dict:
     """Characterisation of the dossier already read for intake, without a second upload."""
     bundle = CHAR_DOMAINS[domain]
-    readable = [f for f in files if f.pages and not f.error and f.size <= charmod.MAX_FILE_BYTES]
+    # A completeness/suitability checklist restates every requirement of the guidance: it is not evidence for any of them.
+    readable = [f for f in files if f.pages and not f.error and f.size <= charmod.MAX_FILE_BYTES and f.role != "cclist"]
     readable.sort(key=lambda f: (_char_file_rank(f), f.path))
     chosen = readable[:charmod.MAX_FILES]
     docs = [charmod.extract_document(f.name[:300], f.data, f"D{i}", "dossier") for i, f in enumerate(chosen, 1)]
@@ -3357,7 +3358,8 @@ def _characterise_dossier_files(files: list, domain: str, meta: dict, substance:
         d.name = f.path[:300]
     notes = [f"{len(readable) - len(chosen)} dossier file(s) not read for characterisation (limit {charmod.MAX_FILES}); "
              "Section II and its annexes come first."] if len(readable) > len(chosen) else []
-    result = charmod.analyse_dossier(docs, meta, bundle["primary"]["catalogue"], bundle["primary"]["pages"], notes)
+    result = charmod.analyse_dossier(docs, meta, bundle["primary"]["catalogue"], bundle["primary"]["pages"], notes,
+                                     template_path=charmod.domain_template_path(bundle))
     result["domain"] = {"id": bundle["id"], "label": bundle["label"]}
     result["llm"] = {"requested": False, "used": False}
     # The intake profile found the product name in a labelled field the characterisation does not read: show where.
